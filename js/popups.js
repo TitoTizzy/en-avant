@@ -71,9 +71,10 @@
         -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
         -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; z-index:3;
       }
-      .ea-pop-video-frame video{
+      .ea-pop-video-frame video,
+      .ea-pop-video-frame iframe{
         position:absolute; inset:0; width:100%; height:100%;
-        object-fit:cover; background:#05060a; display:block;
+        object-fit:cover; background:#05060a; display:block; border:0;
       }
       .ea-pop-badge{
         position:absolute; top:14px; left:14px; z-index:4;
@@ -85,9 +86,12 @@
         letter-spacing:.04em;
       }
       .ea-flag-chip{
-        display:inline-block; width:18px; height:12px; border-radius:2px; vertical-align:-1px;
-        background:linear-gradient(to bottom, ${HT_BLUE} 0 50%, ${HT_RED} 50% 100%);
-        box-shadow:0 0 0 1px rgba(255,255,255,.3) inset;
+        display:inline-block; width:26px; height:17px; border-radius:3px; vertical-align:-3px;
+        /* vrai drapeau d'Haïti (avec armoiries) ; dégradé bleu/rouge en repli si l'image manque */
+        background-image:url("/pictures/flag-haiti.png"),
+                         linear-gradient(to bottom, ${HT_BLUE} 0 50%, ${HT_RED} 50% 100%);
+        background-size:cover, cover; background-position:center; background-repeat:no-repeat;
+        box-shadow:0 0 0 1px rgba(255,255,255,.45);
       }
       .ea-pop-close{
         position:absolute; top:12px; right:12px; z-index:5;
@@ -198,11 +202,23 @@
     document.head.appendChild(style);
   }
 
-  /* ─── Popup vidéo ──────────────────────────────────────────────────── */
+  /* ─── Popup vidéo (MP4 Supabase OU embed TikTok) ───────────────────── */
+  function tiktokIdFromUrl(url) {
+    const m =
+      String(url).match(/(?:\/video\/|\/player\/v1\/|\/embed\/v2\/|\/embed\/)(\d{6,})/) ||
+      String(url).match(/\b(\d{15,25})\b/);
+    return m ? m[1] : null;
+  }
+
   function initVideoPopup(cfg) {
     if (!cfg || cfg.enabled !== true || !cfg.url) return Promise.resolve();
     // 1× par session (réapparait sur une nouvelle visite / nouvel onglet)
     if (sessionStorage.getItem("ea-video-seen")) return Promise.resolve();
+
+    const isTikTok = /tiktok\.com/i.test(cfg.url);
+    const tkId = isTikTok ? tiktokIdFromUrl(cfg.url) : null;
+    // Lien TikTok court non résolu (sans ID) → on n'affiche rien plutôt qu'un cadre vide.
+    if (isTikTok && !tkId) return Promise.resolve();
 
     return new Promise((resolve) => {
       const overlay = document.createElement("div");
@@ -214,33 +230,31 @@
       const headline = (cfg.headline || "En Avant").replace(/</g, "&lt;");
       const subtext  = (cfg.subtext || "").replace(/</g, "&lt;");
 
+      // TikTok : le lecteur officiel remplit le cadre (il gère son, légende, musique).
+      // MP4 : lecteur custom avec légende, CTA et bouton son.
+      const media = tkId
+        ? `<iframe src="https://www.tiktok.com/player/v1/${tkId}?autoplay=1&controls=1&loop=1&rel=0&music_info=0&description=0&native_context_menu=0"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen
+                title="Vidéo En Avant"></iframe>`
+        : `<video playsinline muted preload="metadata"></video>
+           <div class="ea-pop-video-caption">
+             <h3>${headline}</h3>
+             ${subtext ? `<p>${subtext}</p>` : ""}
+             <div class="ea-pop-actions">
+               <a class="ea-pop-cta" href="/adherer.html"><i class="fa-solid fa-bolt"></i> Rejoindre le mouvement</a>
+               <button class="ea-pop-mute" type="button"><i class="fa-solid fa-volume-xmark"></i> <span>Activer le son</span></button>
+             </div>
+           </div>`;
+
       overlay.innerHTML = `
         <div class="ea-pop-video-frame">
-          <span class="ea-pop-badge"><span class="ea-flag-chip" role="img" aria-label="Haïti"></span> EN AVANT</span>
-          <button class="ea-pop-close" type="button" aria-label="Fermer">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-          <video playsinline muted preload="metadata"></video>
-          <div class="ea-pop-video-caption">
-            <h3>${headline}</h3>
-            ${subtext ? `<p>${subtext}</p>` : ""}
-            <div class="ea-pop-actions">
-              <a class="ea-pop-cta" href="/adherer.html">
-                <i class="fa-solid fa-bolt"></i> Rejoindre le mouvement
-              </a>
-              <button class="ea-pop-mute" type="button">
-                <i class="fa-solid fa-volume-xmark"></i> <span>Activer le son</span>
-              </button>
-            </div>
-          </div>
+          <span class="ea-pop-badge"><span class="ea-flag-chip" role="img" aria-label="Drapeau d'Haïti"></span> EN AVANT</span>
+          <button class="ea-pop-close" type="button" aria-label="Fermer"><i class="fa-solid fa-xmark"></i></button>
+          ${media}
         </div>`;
 
       document.body.appendChild(overlay);
-      const frame  = overlay.querySelector(".ea-pop-video-frame");
-      const video  = overlay.querySelector("video");
-      const muteBtn = overlay.querySelector(".ea-pop-mute");
-
-      video.src = cfg.url;
+      const video = overlay.querySelector("video");
       sessionStorage.setItem("ea-video-seen", "1");
 
       let closed = false;
@@ -248,7 +262,7 @@
         if (closed) return;
         closed = true;
         overlay.classList.remove("is-open");
-        try { video.pause(); } catch {}
+        try { if (video) video.pause(); } catch {}
         document.body.style.overflow = "";
         document.removeEventListener("keydown", onKey);
         setTimeout(() => { overlay.remove(); resolve(); }, 480);
@@ -259,32 +273,27 @@
       overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
       document.addEventListener("keydown", onKey);
 
-      // Tap sur la vidéo : lecture / pause
-      video.addEventListener("click", () => {
-        if (video.paused) video.play().catch(() => {});
-        else video.pause();
-      });
+      // Mode MP4 : src, tap play/pause, bouton son.
+      if (video) {
+        const muteBtn = overlay.querySelector(".ea-pop-mute");
+        video.src = cfg.url;
+        video.addEventListener("click", () => {
+          if (video.paused) video.play().catch(() => {}); else video.pause();
+        });
+        muteBtn.addEventListener("click", () => {
+          video.muted = !video.muted;
+          const icon = muteBtn.querySelector("i");
+          const label = muteBtn.querySelector("span");
+          if (video.muted) { icon.className = "fa-solid fa-volume-xmark"; label.textContent = "Activer le son"; }
+          else { icon.className = "fa-solid fa-volume-high"; label.textContent = "Couper le son"; video.play().catch(() => {}); }
+        });
+      }
 
-      // Bouton son
-      muteBtn.addEventListener("click", () => {
-        video.muted = !video.muted;
-        const icon = muteBtn.querySelector("i");
-        const label = muteBtn.querySelector("span");
-        if (video.muted) {
-          icon.className = "fa-solid fa-volume-xmark";
-          label.textContent = "Activer le son";
-        } else {
-          icon.className = "fa-solid fa-volume-high";
-          label.textContent = "Couper le son";
-          video.play().catch(() => {});
-        }
-      });
-
-      // Ouverture + autoplay muet
+      // Ouverture (autoplay muet pour le MP4 ; le TikTok gère son propre autoplay).
       requestAnimationFrame(() => {
         overlay.classList.add("is-open");
         document.body.style.overflow = "hidden";
-        video.play().catch(() => {});
+        if (video) video.play().catch(() => {});
       });
     });
   }

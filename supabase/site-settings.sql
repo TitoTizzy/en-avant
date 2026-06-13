@@ -33,8 +33,8 @@ create policy "settings: lecture publique"
 -- ----------------------------------------------------------------------------
 insert into public.site_settings (key, value) values
   ('popup_video', jsonb_build_object(
-      'enabled', false,
-      'url', '',
+      'enabled', true,
+      'url', 'https://www.tiktok.com/@jerrytardieu/video/7650257755273563412',
       'headline', 'En Avant — Pour changer Haïti ensemble',
       'subtext', 'Découvrez notre vision en 15 secondes.'
    )),

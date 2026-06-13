@@ -8,10 +8,13 @@ import { json, getBody, handleError, clean } from '../_lib/http.js';
 const NORMALIZERS = {
   popup_video(v = {}) {
     const url = clean(v.url);
-    const safeUrl = /^https:\/\/[\w.-]+\/storage\/v1\/object\/public\//.test(url) || url === '' ? url : '';
+    // Autorisé : vide, vidéo Supabase Storage publique, ou lien TikTok.
+    const ok = url === ''
+      || /^https:\/\/[\w.-]+\/storage\/v1\/object\/public\//.test(url)
+      || /^https:\/\/([\w-]+\.)?tiktok\.com\//i.test(url);
     return {
       enabled: v.enabled === true,
-      url: safeUrl.slice(0, 500),
+      url: (ok ? url : '').slice(0, 500),
       headline: clean(v.headline).slice(0, 120),
       subtext: clean(v.subtext).slice(0, 200),
     };
@@ -52,7 +55,18 @@ export default async function handler(req, res) {
       const normalize = NORMALIZERS[key];
       if (!normalize) return json(res, 422, { error: 'Clé de réglage inconnue.' });
 
-      const value = normalize(body.value || {});
+      const raw = body.value || {};
+
+      // Résout les liens TikTok courts (vt./vm.tiktok.com) en URL canonique
+      // contenant l'ID vidéo (l'embed côté client en a besoin).
+      if (key === 'popup_video' && /^https:\/\/(vt|vm)\.tiktok\.com\//i.test(clean(raw.url))) {
+        try {
+          const resolved = await fetch(clean(raw.url), { redirect: 'follow', signal: AbortSignal.timeout(6000) });
+          if (resolved?.url) raw.url = resolved.url.split('?')[0];
+        } catch { /* on garde l'URL telle quelle si la résolution échoue */ }
+      }
+
+      const value = normalize(raw);
       const { data, error } = await supabase
         .from('site_settings')
         .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
