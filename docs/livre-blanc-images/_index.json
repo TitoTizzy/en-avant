@@ -1,0 +1,418 @@
+[
+  {
+    "file": "p001_01.png",
+    "page": 1,
+    "w": 1950,
+    "h": 2700,
+    "ext": "png",
+    "bytes": 133203
+  },
+  {
+    "file": "p004_01.jpeg",
+    "page": 4,
+    "w": 650,
+    "h": 763,
+    "ext": "jpeg",
+    "bytes": 90774
+  },
+  {
+    "file": "p009_01.jpeg",
+    "page": 9,
+    "w": 692,
+    "h": 757,
+    "ext": "jpeg",
+    "bytes": 140182
+  },
+  {
+    "file": "p012_01.jpeg",
+    "page": 12,
+    "w": 595,
+    "h": 769,
+    "ext": "jpeg",
+    "bytes": 117242
+  },
+  {
+    "file": "p017_01.jpeg",
+    "page": 17,
+    "w": 786,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 174337
+  },
+  {
+    "file": "p017_02.jpeg",
+    "page": 17,
+    "w": 798,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 198612
+  },
+  {
+    "file": "p017_03.jpeg",
+    "page": 17,
+    "w": 1583,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 272468
+  },
+  {
+    "file": "p017_04.jpeg",
+    "page": 17,
+    "w": 798,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 130389
+  },
+  {
+    "file": "p017_05.jpeg",
+    "page": 17,
+    "w": 798,
+    "h": 572,
+    "ext": "jpeg",
+    "bytes": 124271
+  },
+  {
+    "file": "p022_01.jpeg",
+    "page": 22,
+    "w": 798,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 165177
+  },
+  {
+    "file": "p022_02.jpeg",
+    "page": 22,
+    "w": 1574,
+    "h": 886,
+    "ext": "jpeg",
+    "bytes": 500406
+  },
+  {
+    "file": "p022_03.jpeg",
+    "page": 22,
+    "w": 798,
+    "h": 573,
+    "ext": "jpeg",
+    "bytes": 178144
+  },
+  {
+    "file": "p025_01.jpeg",
+    "page": 25,
+    "w": 794,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 239562
+  },
+  {
+    "file": "p025_02.jpeg",
+    "page": 25,
+    "w": 798,
+    "h": 650,
+    "ext": "jpeg",
+    "bytes": 176460
+  },
+  {
+    "file": "p025_03.jpeg",
+    "page": 25,
+    "w": 1583,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 279828
+  },
+  {
+    "file": "p025_04.jpeg",
+    "page": 25,
+    "w": 798,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 222422
+  },
+  {
+    "file": "p025_05.jpeg",
+    "page": 25,
+    "w": 798,
+    "h": 639,
+    "ext": "jpeg",
+    "bytes": 182718
+  },
+  {
+    "file": "p029_01.jpeg",
+    "page": 29,
+    "w": 783,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 144315
+  },
+  {
+    "file": "p029_02.jpeg",
+    "page": 29,
+    "w": 798,
+    "h": 646,
+    "ext": "jpeg",
+    "bytes": 139541
+  },
+  {
+    "file": "p029_03.jpeg",
+    "page": 29,
+    "w": 1583,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 263695
+  },
+  {
+    "file": "p029_04.jpeg",
+    "page": 29,
+    "w": 798,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 111861
+  },
+  {
+    "file": "p029_05.jpeg",
+    "page": 29,
+    "w": 798,
+    "h": 655,
+    "ext": "jpeg",
+    "bytes": 194975
+  },
+  {
+    "file": "p032_01.jpeg",
+    "page": 32,
+    "w": 794,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 208748
+  },
+  {
+    "file": "p032_02.jpeg",
+    "page": 32,
+    "w": 798,
+    "h": 746,
+    "ext": "jpeg",
+    "bytes": 142645
+  },
+  {
+    "file": "p032_03.jpeg",
+    "page": 32,
+    "w": 1583,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 258902
+  },
+  {
+    "file": "p032_04.jpeg",
+    "page": 32,
+    "w": 798,
+    "h": 580,
+    "ext": "jpeg",
+    "bytes": 168356
+  },
+  {
+    "file": "p032_05.jpeg",
+    "page": 32,
+    "w": 780,
+    "h": 746,
+    "ext": "jpeg",
+    "bytes": 182128
+  },
+  {
+    "file": "p038_01.jpeg",
+    "page": 38,
+    "w": 2870,
+    "h": 3968,
+    "ext": "jpeg",
+    "bytes": 1868818
+  },
+  {
+    "file": "p052_01.jpeg",
+    "page": 52,
+    "w": 2617,
+    "h": 3618,
+    "ext": "jpeg",
+    "bytes": 513031
+  },
+  {
+    "file": "p056_01.jpeg",
+    "page": 56,
+    "w": 1801,
+    "h": 2491,
+    "ext": "jpeg",
+    "bytes": 325779
+  },
+  {
+    "file": "p065_01.jpeg",
+    "page": 65,
+    "w": 2877,
+    "h": 3978,
+    "ext": "jpeg",
+    "bytes": 599234
+  },
+  {
+    "file": "p079_01.jpeg",
+    "page": 79,
+    "w": 2675,
+    "h": 3699,
+    "ext": "jpeg",
+    "bytes": 2694627
+  },
+  {
+    "file": "p086_01.jpeg",
+    "page": 86,
+    "w": 2525,
+    "h": 3491,
+    "ext": "jpeg",
+    "bytes": 546725
+  },
+  {
+    "file": "p094_01.jpeg",
+    "page": 94,
+    "w": 1674,
+    "h": 2315,
+    "ext": "jpeg",
+    "bytes": 233624
+  },
+  {
+    "file": "p102_01.jpeg",
+    "page": 102,
+    "w": 2876,
+    "h": 3977,
+    "ext": "jpeg",
+    "bytes": 652129
+  },
+  {
+    "file": "p109_01.jpeg",
+    "page": 109,
+    "w": 2774,
+    "h": 3836,
+    "ext": "jpeg",
+    "bytes": 722192
+  },
+  {
+    "file": "p114_01.jpeg",
+    "page": 114,
+    "w": 2564,
+    "h": 3545,
+    "ext": "jpeg",
+    "bytes": 389273
+  },
+  {
+    "file": "p119_01.jpeg",
+    "page": 119,
+    "w": 1683,
+    "h": 2321,
+    "ext": "jpeg",
+    "bytes": 616935
+  },
+  {
+    "file": "p129_01.jpeg",
+    "page": 129,
+    "w": 1960,
+    "h": 2710,
+    "ext": "jpeg",
+    "bytes": 671562
+  },
+  {
+    "file": "p137_01.jpeg",
+    "page": 137,
+    "w": 2834,
+    "h": 3918,
+    "ext": "jpeg",
+    "bytes": 1973292
+  },
+  {
+    "file": "p146_01.jpeg",
+    "page": 146,
+    "w": 1933,
+    "h": 2669,
+    "ext": "jpeg",
+    "bytes": 318873
+  },
+  {
+    "file": "p158_01.jpeg",
+    "page": 158,
+    "w": 2877,
+    "h": 3972,
+    "ext": "jpeg",
+    "bytes": 746870
+  },
+  {
+    "file": "p165_01.jpeg",
+    "page": 165,
+    "w": 1398,
+    "h": 1926,
+    "ext": "jpeg",
+    "bytes": 306481
+  },
+  {
+    "file": "p172_01.jpeg",
+    "page": 172,
+    "w": 1274,
+    "h": 1762,
+    "ext": "jpeg",
+    "bytes": 137199
+  },
+  {
+    "file": "p178_01.png",
+    "page": 178,
+    "w": 2639,
+    "h": 3649,
+    "ext": "png",
+    "bytes": 1566021
+  },
+  {
+    "file": "p185_01.jpeg",
+    "page": 185,
+    "w": 1959,
+    "h": 2710,
+    "ext": "jpeg",
+    "bytes": 181121
+  },
+  {
+    "file": "p193_01.jpeg",
+    "page": 193,
+    "w": 2176,
+    "h": 3010,
+    "ext": "jpeg",
+    "bytes": 650893
+  },
+  {
+    "file": "p218_01.jpeg",
+    "page": 218,
+    "w": 829,
+    "h": 658,
+    "ext": "jpeg",
+    "bytes": 233569
+  },
+  {
+    "file": "p218_02.jpeg",
+    "page": 218,
+    "w": 1653,
+    "h": 942,
+    "ext": "jpeg",
+    "bytes": 607278
+  },
+  {
+    "file": "p218_03.jpeg",
+    "page": 218,
+    "w": 833,
+    "h": 667,
+    "ext": "jpeg",
+    "bytes": 168714
+  },
+  {
+    "file": "p218_04.jpeg",
+    "page": 218,
+    "w": 826,
+    "h": 667,
+    "ext": "jpeg",
+    "bytes": 152697
+  },
+  {
+    "file": "p218_05.jpeg",
+    "page": 218,
+    "w": 833,
+    "h": 667,
+    "ext": "jpeg",
+    "bytes": 256694
+  }
+]

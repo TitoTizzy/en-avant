@@ -1,0 +1,15 @@
+# Schéma SQL : à exécuter dans Supabase, inutile sur le CDN
+supabase
+
+# Outils locaux (tests de connexion) : jamais servis publiquement
+scripts
+
+# Dépendances (Vercel les réinstalle lui-même)
+node_modules
+
+# Fichiers locaux et secrets
+.env
+.env.*
+.vscode
+.claude
+*.log

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Quiz du Livre blanc | En Avant</title>
+  <meta name="description" content="Testez vos connaissances sur le projet d'En Avant pour Haïti : 8 questions tirées du Livre blanc. Défiez vos amis et partagez votre score !">
+
+  <meta property="og:title" content="Le Quiz du Livre blanc | En Avant">
+  <meta property="og:description" content="8 questions pour tester vos connaissances sur le projet de redressement national. Quel sera votre score ?">
+  <meta property="og:url" content="https://enavant.org/trivia">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#071229">
+
+  <style>
+    /* Badge mode IA — visible uniquement pour les membres connectés */
+    .tq-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(99,102,241,.18), rgba(139,92,246,.18));
+      border: 1px solid rgba(139,92,246,.4);
+      color: #a78bfa;
+      font-size: .83rem;
+      font-weight: 600;
+      margin: 0 auto 1.5rem;
+    }
+
+    /* CTA déblocage mode IA — affiché après une partie en mode public */
+    .tq-member-cta {
+      margin: 2rem 0 0;
+      padding: 2rem 1.5rem;
+      border-radius: 1.25rem;
+      background: linear-gradient(135deg, rgba(99,102,241,.10), rgba(255,106,42,.07));
+      border: 1px solid rgba(139,92,246,.25);
+      text-align: center;
+    }
+    .tq-cta-spark {
+      font-size: 2rem;
+      color: #a78bfa;
+      display: block;
+      margin-bottom: .75rem;
+    }
+    .tq-member-cta h3 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: .65rem;
+    }
+    .tq-member-cta > p {
+      color: var(--text-muted, rgba(255,255,255,.65));
+      font-size: .95rem;
+      max-width: 520px;
+      margin: 0 auto 1.25rem;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar pilule flottante -->
+  <header class="u-nav" id="main-header">
+    <div class="u-nav-shell">
+      <a href="/index.html" class="brand" aria-label="En Avant — Accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant">
+      </a>
+
+      <nav class="u-links" id="main-nav" aria-label="Menu principal">
+        <a href="/index.html">Accueil</a>
+        <a href="/Apropos.html">À propos</a>
+        <a href="/historique.html">Historique</a>
+        <a href="/organisation.html">Organisation</a>
+        <a href="/vingt-chantiers.html">Vingt chantiers</a>
+        <a href="/blog.html">Blog</a>
+        <a href="/livre-blanc.html">Livre blanc</a>
+
+        <div class="u-links-cta">
+          <a href="/login.html" class="u-login"><i class="fa-solid fa-circle-user"></i> Connexion</a>
+          <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+          <a href="/don.html" class="btn btn-primary">Faire un don</a>
+        </div>
+      </nav>
+
+      <div class="u-nav-actions">
+        <a href="/login.html" class="u-login">
+          <i class="fa-solid fa-circle-user"></i>
+          <span>Connexion</span>
+        </a>
+        <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+        <a href="/don.html" class="btn btn-primary">Faire un don</a>
+
+        <button id="btn-mobile-menu" class="menu-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="tq-wrap">
+      <!-- En-tête -->
+      <div class="tq-head reveal-up">
+        <span class="eyebrow">Quiz · Livre blanc</span>
+        <h1 class="section-title">Connaissez-vous vraiment le <span class="u-grad">Livre blanc</span>&nbsp;?</h1>
+        <p class="section-intro">
+          Huit questions tirées du Livre blanc et du projet des 20 chantiers.
+          Répondez, apprenez, partagez votre score.
+        </p>
+      </div>
+
+      <!-- Écran 1 : démarrage -->
+      <section class="tq-stage reveal-up" id="tq-start" aria-label="Démarrer le quiz">
+        <div class="tq-coach" aria-hidden="true"></div>
+
+        <!-- Badge mode IA — affiché uniquement pour les membres connectés -->
+        <div class="tq-mode-badge" id="tq-mode-badge" hidden>
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+          <span>Mode Membre — Questions générées par l'IA</span>
+        </div>
+
+        <ul class="tq-rules">
+          <li>
+            <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+            <span><strong id="tq-total-label">8 questions</strong> à choix multiples, une seule bonne réponse.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+            <span>Chaque réponse est expliquée et sourcée depuis le document.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+            <span>À la fin : votre score, à partager sur WhatsApp ou X.</span>
+          </li>
+        </ul>
+
+        <button type="button" class="btn btn-primary btn-lg btn-full" id="tq-begin">
+          <i class="fa-solid fa-play" aria-hidden="true"></i>
+          Commencer le quiz
+        </button>
+
+        <p class="tts-note" id="tq-src" style="text-align:center; margin:1rem 0 0;"></p>
+      </section>
+
+      <!-- Écran 2 : jeu -->
+      <section class="tq-stage" id="tq-game" hidden aria-live="polite">
+        <div class="tq-progress" id="tq-progress" aria-hidden="true"></div>
+        <div class="tq-coach" id="tq-coach" aria-hidden="true"></div>
+
+        <span class="tq-qnum" id="tq-qnum">Question 1</span>
+        <h2 class="tq-question" id="tq-question">…</h2>
+
+        <div class="tq-options" id="tq-options"></div>
+
+        <div class="tq-feedback" id="tq-feedback" hidden></div>
+
+        <div class="tq-actions">
+          <button type="button" class="btn btn-primary" id="tq-next" hidden>
+            Question suivante
+            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Écran 3 : résultat -->
+      <section class="tq-stage" id="tq-end" hidden style="text-align:center;">
+        <div class="tq-confetti" id="tq-confetti" aria-hidden="true"></div>
+
+        <span class="eyebrow">Résultat</span>
+        <div class="tq-trophy" id="tq-trophy">0/8</div>
+        <h2 class="section-title" id="tq-verdict" style="font-size:clamp(1.6rem,3.4vw,2.3rem);">Bravo !</h2>
+        <p class="section-intro" id="tq-verdict-text"></p>
+
+        <div class="tq-ranking-submit">
+          <label for="tq-pseudo">Votre pseudonyme dans le classement</label>
+          <div>
+            <input id="tq-pseudo" maxlength="40" placeholder="Ex. TitoTizzy" autocomplete="nickname">
+            <button type="button" class="btn btn-primary" id="tq-save-score">Enregistrer</button>
+          </div>
+          <p class="tts-note" id="tq-score-status"></p>
+        </div>
+
+        <div class="tq-leaderboard">
+          <div class="tq-leaderboard-head">
+            <h3>Classement</h3>
+            <button type="button" class="btn btn-ghost btn-xs" id="tq-refresh-ranking">Actualiser</button>
+          </div>
+          <ol id="tq-ranking-list"><li>Chargement…</li></ol>
+        </div>
+
+        <div class="tq-share-row">
+          <button type="button" class="btn btn-primary" id="tq-share">
+            <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+            Partager mon score
+          </button>
+          <button type="button" class="btn btn-ghost" id="tq-replay">
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+            Rejouer
+          </button>
+        </div>
+
+        <p class="tts-note" id="tq-share-status" style="margin-top:0.9rem;"></p>
+
+        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:2rem 0;">
+
+        <p class="section-intro" style="margin-bottom:1.2rem;">
+          Convaincu par le projet ? Passez à l'action.
+        </p>
+        <div class="tq-share-row" style="margin-top:0;">
+          <a href="/adherer.html" class="btn btn-light">Adhérer au parti</a>
+          <a href="/don.html" class="btn btn-ghost">Faire un don</a>
+        </div>
+      </section>
+
+      <!-- CTA Trivia IA — visible uniquement après une partie en mode public -->
+      <div class="tq-member-cta" id="tq-member-cta" hidden>
+        <i class="fa-solid fa-wand-magic-sparkles tq-cta-spark" aria-hidden="true"></i>
+        <h3>Débloquez le Trivia IA</h3>
+        <p>
+          Les membres accèdent à un quiz généré à la volée par intelligence artificielle —
+          des questions inédites à chaque partie, directement depuis le Livre blanc.
+        </p>
+        <div class="tq-share-row">
+          <a href="/adherer.html" class="btn btn-primary">Devenir membre</a>
+          <a href="/login.html" class="btn btn-ghost">J'ai déjà un compte</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="u-footer">
+    <div class="u-shell u-footer-grid">
+      <div class="u-footer-brand">
+        <img src="/pictures/logo/logo.png" alt="En Avant" class="footer-logo">
+        <p>
+          Un nouveau leadership politique, moderne et avant-gardiste pour conduire Haïti
+          sur la voie du progrès.
+        </p>
+        <ul class="u-socials" aria-label="Réseaux sociaux">
+          <li><a href="https://www.instagram.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a></li>
+          <li><a href="https://x.com/EnAvantHT" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a></li>
+          <li><a href="https://www.facebook.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a></li>
+          <li><a href="https://www.youtube.com/@mouvementenavant9694" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Découvrir</h4>
+        <ul>
+          <li><a href="/Apropos.html">Qui sommes-nous ?</a></li>
+          <li><a href="/historique.html">Historique</a></li>
+          <li><a href="/organisation.html">Organisation</a></li>
+          <li><a href="/vingt-chantiers.html">Les 20 chantiers</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Agir</h4>
+        <ul>
+          <li><a href="/adherer.html">Rejoindre le parti</a></li>
+          <li><a href="/don.html">Faire un don</a></li>
+          <li><a href="/livre-blanc.html">Lire le Livre blanc</a></li>
+          <li><a href="/trivia.html">Jouer au quiz</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Contact</h4>
+        <address>
+          <p><i class="fa-solid fa-location-dot"></i> 44, Impasse Lescot, Laboule 12, Pétionville, Haïti</p>
+          <p><i class="fa-solid fa-phone"></i> +509 4621-2121</p>
+          <p><i class="fa-solid fa-envelope"></i> contact@enavant.org</p>
+        </address>
+      </div>
+    </div>
+
+    <div class="u-footer-bottom">
+      <div class="u-shell u-footer-bottom-row">
+        <p>© 2026 Parti Politique En Avant. Tous droits réservés.</p>
+        <ul class="legal-links">
+          <li><a href="#">Mentions légales</a></li>
+          <li><a href="#">Politique de confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
+  </footer>
+
+  <!-- Chatbot -->
+  <button class="chatbot-fab" id="chatbotFab" aria-label="Ouvrir le chat">
+    <span class="chatbot-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5.5C4 4.12 5.12 3 6.5 3h11C18.88 3 20 4.12 20 5.5v7c0 1.38-1.12 2.5-2.5 2.5H11l-4.2 3.4c-.33.27-.8.03-.8-.4V15.8C4.84 15.57 4 14.62 4 13.5v-8z" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="chatbot-dot"></span>
+  </button>
+
+  <script src="/js/env.js"></script>
+  <script src="/js/premium.js"></script>
+  <script src="/js/trivia.js"></script>
+</body>
+</html>

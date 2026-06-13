@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion | En Avant</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#071229">
+</head>
+
+<body>
+  <main class="auth-wrap">
+    <div class="ea-glass-card auth-card">
+      <a href="/index.html" class="brand" aria-label="Retour à l'accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant">
+      </a>
+
+      <span class="eyebrow">Espace membre</span>
+      <h1 class="section-title" style="font-size:1.9rem; margin-bottom:1.6rem;">Connexion</h1>
+
+      <!-- Étape 1 : identifiants -->
+      <form id="login-form" novalidate>
+        <div class="ea-field">
+          <label for="login-identifier">Identifiant ou adresse email</label>
+          <input type="text" id="login-identifier" name="identifier" autocomplete="username" placeholder="votre.identifiant ou vous@enavant.org" required>
+          <span class="ea-error">Identifiant ou adresse email requis.</span>
+        </div>
+
+        <div class="ea-field">
+          <label for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" name="password" autocomplete="current-password" placeholder="••••••••" required>
+          <span class="ea-error">Mot de passe requis.</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-full" id="login-submit">
+          <i class="fa-solid fa-lock" aria-hidden="true"></i>
+          Se connecter
+        </button>
+      </form>
+
+      <!-- Étape 2 : PIN SuperAdmin vérifié côté serveur -->
+      <form id="pin-form" hidden novalidate>
+        <p class="u-note" style="margin:0 0 1.4rem;">
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+          Identité confirmée. Saisissez maintenant votre PIN SuperAdmin.
+        </p>
+
+        <div class="ea-field">
+          <label for="login-pin">PIN</label>
+          <input type="password" id="login-pin" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" placeholder="••••••" autocomplete="one-time-code">
+          <span class="ea-error">PIN de 4 à 8 chiffres requis.</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-full">Vérifier</button>
+      </form>
+
+      <div class="ea-form-status" id="login-status" role="status" aria-live="polite"></div>
+
+      <p style="margin:1.6rem 0 0; text-align:center; font-size:0.9rem; color:var(--ink-500,rgba(255,255,255,.5));">
+        Pas encore membre ?
+        <a href="/register.html" class="text-link" style="font-size:0.9rem;">Créer un compte</a>
+      </p>
+      <p style="margin:.75rem 0 0; text-align:center; font-size:0.9rem; color:var(--ink-500,rgba(255,255,255,.5));">
+        <a href="/index.html" class="text-link" style="font-size:0.9rem;">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au site
+        </a>
+      </p>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/env.js"></script>
+  <script src="/js/premium.js"></script>
+  <script src="/js/login.js"></script>
+</body>
+</html>

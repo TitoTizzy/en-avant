@@ -1,0 +1,775 @@
+/* ==========================================================================
+   EN AVANT — COUCHE "ULTRA-PREMIUM"
+   Chargée APRÈS les feuilles de chaque page : elle unifie la marque
+   (bleu nuit + orange), le glassmorphism et les micro-interactions
+   sur l'ensemble du site, sans casser les styles existants.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. TOKENS DE MARQUE + UNIFICATION DES VARIABLES DES PAGES
+   -------------------------------------------------------------------------- */
+:root {
+  /* Marque */
+  --ea-orange: #ff6a2a;
+  --ea-orange-light: #ff8a4c;
+  --ea-orange-deep: #e0551f;
+  --ea-peach: #ffd9c6;
+
+  /* Bleu nuit (échelle) — aligné sur ultra.css : le bleu doit se voir */
+  --ea-night-950: #050b1d;
+  --ea-night-900: #071229;
+  --ea-night-850: #0a1834;
+  --ea-night-800: #0e2044;
+  --ea-night-700: #16305c;
+  --ea-night-600: #1f4378;
+
+  /* Rouge du bicolore — touches discrètes */
+  --ea-rouge: #d21034;
+
+  /* Encre & surfaces claires */
+  --ea-ink: #0e1726;
+  --ea-muted: #5b6b82;
+  --ea-porcelain: #f7f8fb;
+  --ea-porcelain-soft: #eef1f6;
+
+  /* Verre */
+  --ea-glass-dark: rgba(8, 17, 32, 0.62);
+  --ea-glass-dark-strong: rgba(6, 13, 26, 0.78);
+  --ea-glass-light: rgba(255, 255, 255, 0.66);
+  --ea-glass-border: rgba(255, 255, 255, 0.1);
+  --ea-glass-border-light: rgba(13, 27, 46, 0.08);
+  --ea-blur: 22px;
+
+  /* Lueurs */
+  --ea-glow-orange: 0 18px 50px rgba(255, 106, 42, 0.32);
+  --ea-glow-soft: 0 24px 70px rgba(4, 9, 16, 0.45);
+
+  --ea-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ea-font-body: "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ea-font-display: "Space Grotesk", "Manrope", system-ui, sans-serif;
+
+  /* Unification des tokens hérités de style.css */
+  --color-primary: var(--ea-orange);
+  --color-primary-light: var(--ea-orange-light);
+  --color-primary-dark: var(--ea-orange-deep);
+  --color-secondary: var(--ea-ink);
+  --color-secondary-soft: var(--ea-night-700);
+  --color-dark: var(--ea-night-900);
+  --color-bg: var(--ea-porcelain);
+  --color-bg-soft: var(--ea-porcelain-soft);
+  --color-border: var(--ea-glass-border-light);
+  --font-display: var(--ea-font-display);
+  --font-body: var(--ea-font-body);
+
+  /* Unification des tokens des pages secondaires
+     (vingt-chantiers : --primary/--blue · organisation : --orange/--navy) */
+  --primary: var(--ea-orange);
+  --primary-dark: var(--ea-orange-deep);
+  --blue: var(--ea-night-700);
+  --blue-dark: var(--ea-night-800);
+  --orange: var(--ea-orange);
+  --navy: var(--ea-night-800);
+  --line: rgba(255, 106, 42, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   2. SOCLE GLOBAL — typographie massive, sélection, scrollbar, focus
+   -------------------------------------------------------------------------- */
+body {
+  font-family: var(--ea-font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, .section-title, .hero h1 {
+  font-family: var(--ea-font-display);
+  letter-spacing: -0.03em;
+}
+
+::selection {
+  background: rgba(255, 106, 42, 0.85);
+  color: #fff;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ea-night-700) transparent;
+}
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--ea-night-950); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--ea-night-600), var(--ea-night-700));
+  border-radius: 999px;
+  border: 2px solid var(--ea-night-950);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ea-orange-deep); }
+
+:focus-visible {
+  outline: 2px solid var(--ea-orange);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   3. REVEAL — filet de sécurité sans JS + système auto [data-ea-reveal]
+   -------------------------------------------------------------------------- */
+html:not(.js-ready) .reveal-up,
+html:not(.js-ready) .reveal-left,
+html:not(.js-ready) .reveal-right,
+html:not(.js-ready) [data-ea-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html.js-ready [data-ea-reveal] {
+  opacity: 0;
+  transform: translateY(26px) scale(0.985);
+  filter: blur(7px);
+  transition:
+    opacity 0.9s var(--ea-ease),
+    transform 0.9s var(--ea-ease),
+    filter 0.9s var(--ea-ease);
+  transition-delay: var(--ea-delay, 0s);
+  will-change: opacity, transform, filter;
+}
+
+html.js-ready [data-ea-reveal].ea-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* --------------------------------------------------------------------------
+   4. BARRE DE PROGRESSION DE SCROLL (injectée par premium.js)
+   -------------------------------------------------------------------------- */
+.ea-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 4000;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ea-orange-deep), var(--ea-orange), var(--ea-peach));
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   5. HEADERS — smart sticky + verre profond + dropdown en verre sombre
+   -------------------------------------------------------------------------- */
+.site-header,
+.blog-header,
+header.header {
+  transition: transform 0.5s var(--ea-ease), background 0.35s ease,
+    box-shadow 0.35s ease, border-color 0.35s ease, padding 0.35s ease;
+}
+
+.ea-header-hidden {
+  transform: translateY(-110%) !important;
+}
+
+.site-header.scrolled,
+.blog-header.scroll-down {
+  background: var(--ea-glass-dark) !important;
+  -webkit-backdrop-filter: blur(var(--ea-blur)) saturate(160%);
+  backdrop-filter: blur(var(--ea-blur)) saturate(160%);
+  border-bottom: 1px solid var(--ea-glass-border);
+  box-shadow: 0 16px 50px rgba(4, 9, 16, 0.35);
+}
+
+/* Dropdowns : verre bleu nuit, plus de carte blanche */
+.dropdown-menu {
+  background: var(--ea-glass-dark-strong) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
+  border: 1px solid var(--ea-glass-border) !important;
+  box-shadow: 0 30px 80px rgba(4, 9, 16, 0.55) !important;
+  border-radius: 18px;
+}
+
+.dropdown-menu a {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.dropdown-menu a:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: var(--ea-peach) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. BOUTONS — lueur, feedback tactile, états focus
+   -------------------------------------------------------------------------- */
+.btn, .btn-primary, .btn-outline, .btn-ghost, .btn-light, .btn-secondary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active,
+.btn-primary:active,
+.btn-outline:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.12s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--ea-orange) 0%, var(--ea-orange-light) 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    var(--ea-glow-orange);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 22px 60px rgba(255, 106, 42, 0.45);
+}
+
+.btn-secondary,
+.btn-ghost,
+.btn-outline {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* --------------------------------------------------------------------------
+   7. CARTES — bordure dégradée + lueur qui suit le curseur [data-ea-glow]
+   -------------------------------------------------------------------------- */
+[data-ea-glow] {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.5s var(--ea-ease), box-shadow 0.5s var(--ea-ease),
+    border-color 0.5s var(--ea-ease);
+}
+
+[data-ea-glow]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    340px circle at var(--ea-mx, 50%) var(--ea-my, 50%),
+    rgba(255, 122, 61, 0.16),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+[data-ea-glow]:hover::after { opacity: 1; }
+
+[data-ea-glow]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 138, 76, 0.55),
+    rgba(255, 255, 255, 0.12) 38%,
+    rgba(28, 58, 102, 0.45)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+[data-ea-glow]:hover::before { opacity: 1; }
+
+[data-ea-glow]:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--ea-glow-soft);
+}
+
+[data-ea-glow] > * { position: relative; z-index: 2; }
+
+/* --------------------------------------------------------------------------
+   8. (Héros : gérés par ultra.css depuis le redesign structurel)
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   9. FOOTER — bleu nuit profond, liseré orange
+   -------------------------------------------------------------------------- */
+.site-footer {
+  position: relative;
+  background: linear-gradient(180deg, var(--ea-night-900) 0%, var(--ea-night-950) 100%);
+}
+
+.site-footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 106, 42, 0.65), transparent);
+}
+
+.footer-col a {
+  transition: color 0.25s ease, padding-left 0.25s ease;
+}
+
+.footer-col ul a:hover {
+  padding-left: 6px;
+  color: var(--ea-peach);
+}
+
+/* --------------------------------------------------------------------------
+   10. UI INJECTÉE — retour en haut, rideau de transition de page
+   -------------------------------------------------------------------------- */
+.ea-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 6.4rem;
+  z-index: 1200;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--ea-glass-border);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ea-glass-dark);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px);
+  transition: 0.45s var(--ea-ease);
+}
+
+.ea-top:hover {
+  background: var(--ea-orange);
+  border-color: transparent;
+  box-shadow: var(--ea-glow-orange);
+}
+
+.ea-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ea-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 106, 42, 0.16), transparent 36%),
+    linear-gradient(135deg, var(--ea-night-950) 0%, var(--ea-night-800) 100%);
+  transform: translateY(103%);
+  pointer-events: none;
+}
+
+.ea-veil.in {
+  transform: translateY(0);
+  transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.ea-veil.out {
+  transform: translateY(0);
+  animation: eaVeilOut 0.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes eaVeilOut {
+  to { transform: translateY(-103%); }
+}
+
+.ea-veil-mark {
+  font-family: var(--ea-font-display);
+  font-weight: 700;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  letter-spacing: 0.22em;
+  color: #fff;
+}
+
+.ea-veil-mark i { color: var(--ea-orange); font-style: normal; }
+
+/* Marque texte de secours si le logo image est introuvable */
+.brand.ea-no-logo,
+.header-logo a.ea-no-logo {
+  font-family: var(--ea-font-display);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: 1.05rem;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.brand.ea-no-logo i,
+.header-logo a.ea-no-logo i { color: var(--ea-orange); font-style: normal; }
+
+/* --------------------------------------------------------------------------
+   11. FORMULAIRES PREMIUM (adhésion, don) — style Apple : border-bottom seul
+   -------------------------------------------------------------------------- */
+.ea-page-dark {
+  min-height: 100vh;
+  background:
+    radial-gradient(50% 36% at 85% -5%, rgba(255, 106, 42, 0.14), transparent 70%),
+    radial-gradient(42% 34% at 8% 12%, rgba(28, 58, 102, 0.5), transparent 72%),
+    linear-gradient(165deg, var(--ea-night-950) 0%, var(--ea-night-850) 60%, var(--ea-night-800) 100%);
+  color: #fff;
+}
+
+.ea-shell {
+  width: min(calc(100% - 2rem), 1140px);
+  margin: 0 auto;
+}
+
+.ea-form-layout {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 3.5rem;
+  align-items: center;
+  padding: 9.5rem 0 6rem;
+}
+
+.ea-form-aside .eyebrow { margin-bottom: 1.4rem; }
+
+.ea-form-aside h1 {
+  font-size: clamp(2.6rem, 4.6vw, 4.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  margin-bottom: 1.2rem;
+  color: #fff;
+}
+
+.ea-form-aside h1 span {
+  background: linear-gradient(110deg, var(--ea-peach) 10%, var(--ea-orange) 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ea-form-aside p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.05rem;
+  line-height: 1.75;
+  max-width: 46ch;
+}
+
+.ea-points { margin-top: 2rem; display: grid; gap: 0.9rem; }
+
+.ea-points li {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.ea-points i {
+  margin-top: 0.2rem;
+  color: var(--ea-orange);
+}
+
+.ea-glass-card {
+  position: relative;
+  padding: 2.6rem;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--ea-glass-border);
+  -webkit-backdrop-filter: blur(var(--ea-blur)) saturate(150%);
+  backdrop-filter: blur(var(--ea-blur)) saturate(150%);
+  box-shadow: 0 40px 110px rgba(4, 9, 16, 0.6);
+}
+
+.ea-field {
+  position: relative;
+  margin-bottom: 1.7rem;
+}
+
+.ea-field label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ea-field input,
+.ea-field select,
+.ea-field textarea {
+  width: 100%;
+  padding: 0.85rem 0.2rem;
+  border: 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 1.05rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ea-field select { cursor: pointer; }
+.ea-field select option { color: var(--ea-ink); }
+
+.ea-field input::placeholder { color: rgba(255, 255, 255, 0.28); }
+
+.ea-field input:focus,
+.ea-field select:focus,
+.ea-field textarea:focus {
+  outline: none;
+  border-color: var(--ea-orange);
+  box-shadow: 0 14px 30px -18px rgba(255, 106, 42, 0.65);
+}
+
+.ea-field.is-valid input { border-color: #2fd08f; }
+.ea-field.is-invalid input { border-color: #ff5470; }
+
+.ea-field .ea-error {
+  display: none;
+  margin-top: 0.45rem;
+  font-size: 0.85rem;
+  color: #ff8aa0;
+}
+
+.ea-field .ea-hint {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ea-field.is-invalid .ea-error { display: block; }
+
+.ea-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+}
+
+.ea-consent {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0.4rem 0 1.6rem;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.ea-consent input {
+  margin-top: 0.25rem;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--ea-orange);
+}
+
+.ea-hp { position: absolute; left: -9999px; opacity: 0; pointer-events: none; }
+
+/* Montants de don */
+.ea-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.9rem;
+  margin-bottom: 1.6rem;
+}
+
+.ea-amount {
+  padding: 1.05rem 0.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.3s var(--ea-ease);
+}
+
+.ea-amount:hover { border-color: rgba(255, 138, 76, 0.55); transform: translateY(-2px); }
+
+.ea-amount.active {
+  background: linear-gradient(135deg, var(--ea-orange), var(--ea-orange-light));
+  border-color: transparent;
+  box-shadow: var(--ea-glow-orange);
+}
+
+.ea-form-status {
+  display: none;
+  margin-top: 1.2rem;
+  padding: 1rem 1.2rem;
+  border-radius: 14px;
+  font-weight: 600;
+}
+
+.ea-form-status.success {
+  display: block;
+  background: rgba(47, 208, 143, 0.12);
+  border: 1px solid rgba(47, 208, 143, 0.4);
+  color: #7ce8bd;
+}
+
+.ea-form-status.error {
+  display: block;
+  background: rgba(255, 84, 112, 0.1);
+  border: 1px solid rgba(255, 84, 112, 0.38);
+  color: #ff9eb1;
+}
+
+.btn-loading { position: relative; pointer-events: none; opacity: 0.75; }
+
+.btn-loading::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: eaSpin 0.7s linear infinite;
+}
+
+@keyframes eaSpin { to { transform: rotate(360deg); } }
+
+/* Modale de confirmation (verre) */
+.ea-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+  background: rgba(4, 9, 16, 0.62);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.35s ease;
+}
+
+.ea-modal.open { opacity: 1; visibility: visible; }
+
+.ea-modal-card {
+  width: min(100%, 480px);
+  padding: 2.6rem 2.2rem;
+  border-radius: 26px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--ea-glass-border);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
+  box-shadow: 0 50px 130px rgba(4, 9, 16, 0.7);
+  color: #fff;
+  transform: scale(0.94) translateY(10px);
+  transition: transform 0.4s var(--ea-ease);
+}
+
+.ea-modal.open .ea-modal-card { transform: none; }
+
+.ea-modal-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.7rem;
+  background: rgba(47, 208, 143, 0.14);
+  color: #2fd08f;
+  border: 1px solid rgba(47, 208, 143, 0.35);
+}
+
+.ea-modal-card h3 { font-size: 1.6rem; margin-bottom: 0.7rem; color: #fff; }
+.ea-modal-card p { color: rgba(255, 255, 255, 0.72); margin-bottom: 1.6rem; }
+
+/* --------------------------------------------------------------------------
+   12. DIVERS — cibles tactiles, chatbot, compteurs
+   -------------------------------------------------------------------------- */
+.slider-dot { position: relative; }
+.slider-dot::before { content: ""; position: absolute; inset: -10px; }
+
+/* Base complète du chatbot : nécessaire sur les pages qui ne chargent pas style.css */
+.chatbot-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 64px;
+  height: 64px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ea-orange-light), var(--ea-orange));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1300;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 16px 44px rgba(255, 90, 31, 0.42);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.chatbot-fab:hover { transform: translateY(-4px) scale(1.03); }
+.chatbot-fab:active { transform: translateY(-1px) scale(0.97); }
+
+.chatbot-icon { width: 28px; height: 28px; display: flex; }
+.chatbot-icon svg { width: 100%; height: 100%; }
+
+.chatbot-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #38d39f;
+  border: 3px solid #fff;
+}
+
+[data-ea-count] { font-variant-numeric: tabular-nums; }
+
+/* --------------------------------------------------------------------------
+   13. RESPONSIVE + ACCESSIBILITÉ MOUVEMENT
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .ea-form-layout {
+    grid-template-columns: 1fr;
+    gap: 2.4rem;
+    padding: 7.5rem 0 4rem;
+  }
+
+  .ea-glass-card { padding: 1.8rem 1.4rem; }
+  .ea-form-row { grid-template-columns: 1fr; }
+  .ea-amounts { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+  .ea-top { right: 1rem; bottom: 5.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  html.js-ready [data-ea-reveal],
+  .reveal-up, .reveal-left, .reveal-right {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+
+  html.js-ready .hero .hero-bg,
+  .hero::after,
+  .vision-strip-track,
+  .chatbot-fab::before {
+    animation: none !important;
+  }
+
+  .ea-veil { display: none !important; }
+}

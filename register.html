@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Créer un compte | En Avant</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#071229">
+</head>
+
+<body>
+  <main class="auth-wrap">
+    <div class="ea-glass-card auth-card">
+      <a href="/index.html" class="brand" aria-label="Retour à l'accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant">
+      </a>
+
+      <span class="eyebrow">Espace membre</span>
+      <h1 class="section-title" style="font-size:1.9rem; margin-bottom:.5rem;">Créer un compte</h1>
+      <p style="color:var(--ink-500,rgba(255,255,255,.55)); font-size:.9rem; margin-bottom:1.6rem;">
+        Accédez au Trivia IA et aux fonctionnalités réservées aux membres.
+      </p>
+
+      <form id="register-form" novalidate>
+        <div class="ea-field">
+          <label for="reg-nom">Nom complet</label>
+          <input type="text" id="reg-nom" name="nom" autocomplete="name"
+                 placeholder="Prénom Nom" maxlength="120" required>
+          <span class="ea-error" id="err-nom">Nom invalide (2 à 120 caractères).</span>
+        </div>
+
+        <div class="ea-field">
+          <label for="reg-pseudo">Pseudo <span style="color:var(--ink-500);font-weight:400;">(affiché dans la navigation)</span></label>
+          <input type="text" id="reg-pseudo" name="pseudo" autocomplete="nickname"
+                 placeholder="ex : Marie, JerryT, EnAvant13" maxlength="30" required>
+          <span class="ea-error" id="err-pseudo">Pseudo invalide (2 à 30 caractères).</span>
+        </div>
+
+        <div class="ea-field">
+          <label for="reg-email">Adresse email</label>
+          <input type="email" id="reg-email" name="email" autocomplete="email"
+                 placeholder="vous@example.com" required>
+          <span class="ea-error" id="err-email">Adresse email invalide.</span>
+        </div>
+
+        <div class="ea-field">
+          <label for="reg-password">Mot de passe</label>
+          <input type="password" id="reg-password" name="password"
+                 autocomplete="new-password" placeholder="8 caractères minimum" required>
+          <span class="ea-error" id="err-password">Mot de passe trop court (8 caractères minimum).</span>
+        </div>
+
+        <div class="ea-field">
+          <label for="reg-confirm">Confirmer le mot de passe</label>
+          <input type="password" id="reg-confirm" name="confirm"
+                 autocomplete="new-password" placeholder="Retapez votre mot de passe" required>
+          <span class="ea-error" id="err-confirm">Les mots de passe ne correspondent pas.</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-full" id="reg-submit">
+          <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+          Créer mon compte
+        </button>
+      </form>
+
+      <div class="ea-form-status" id="reg-status" role="status" aria-live="polite"></div>
+
+      <p style="margin:1.6rem 0 0; text-align:center; font-size:0.9rem; color:var(--ink-500,rgba(255,255,255,.5));">
+        Déjà un compte ?
+        <a href="/login.html" class="text-link" style="font-size:0.9rem;">Se connecter</a>
+      </p>
+      <p style="margin:.75rem 0 0; text-align:center; font-size:0.9rem; color:var(--ink-500,rgba(255,255,255,.5));">
+        <a href="/index.html" class="text-link" style="font-size:0.9rem;">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au site
+        </a>
+      </p>
+    </div>
+  </main>
+
+  <script src="/js/premium.js"></script>
+  <script src="/js/register.js"></script>
+</body>
+</html>

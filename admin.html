@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | En Avant</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#040b1b">
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     GARDE — affiché pendant la vérification, caché après auth
+════════════════════════════════════════════════════════════════════════ -->
+<div id="adm-guard" class="adm-guard-page">
+  <div class="u-card" style="text-align:center; padding:3rem 1.5rem; max-width:440px; width:100%;">
+    <div style="margin-bottom:1.4rem; font-size:2.2rem; opacity:.35;">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <p id="adm-guard-msg" style="margin:0; color:var(--ink-300); font-size:1rem;">
+      <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
+      Vérification de votre session…
+    </p>
+    <p id="adm-guard-action" hidden style="margin:1.4rem 0 0;">
+      <a href="/login.html" class="btn btn-primary">Se connecter</a>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     APPLICATION — layout sidebar + main
+════════════════════════════════════════════════════════════════════════ -->
+<div id="adm-app" class="adm-layout" hidden>
+
+  <!-- ── Barre latérale ──────────────────────────────────────────────── -->
+  <aside class="adm-sidebar">
+
+    <!-- Branding -->
+    <div class="adm-sidebar-brand">
+      <img src="/pictures/logo/logo.png" alt="Logo En Avant" class="adm-brand-logo">
+      <div class="adm-brand-text">
+        <strong>En Avant</strong>
+        <small>Administration</small>
+      </div>
+    </div>
+
+    <!-- Utilisateur connecté -->
+    <div class="adm-sidebar-user">
+      <div class="adm-avatar" id="adm-avatar">EA</div>
+      <div class="adm-sidebar-user-info">
+        <strong id="adm-email"></strong>
+        <span class="badge approved" id="adm-role" hidden>superadmin</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="adm-nav" aria-label="Navigation administration">
+      <p class="adm-nav-section">Général</p>
+      <button class="adm-nav-item active" data-panel="panel-home" type="button">
+        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Tableau de bord
+      </button>
+
+      <p class="adm-nav-section">Contenu</p>
+      <button class="adm-nav-item" data-panel="panel-articles" type="button">
+        <i class="fa-solid fa-newspaper" aria-hidden="true"></i> Articles
+      </button>
+      <button class="adm-nav-item" data-panel="panel-events" type="button">
+        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Événements
+      </button>
+      <button class="adm-nav-item" data-panel="panel-media" type="button">
+        <i class="fa-solid fa-photo-film" aria-hidden="true"></i> Médiathèque
+      </button>
+      <button class="adm-nav-item" data-panel="panel-team" type="button">
+        <i class="fa-solid fa-people-group" aria-hidden="true"></i> Équipe
+      </button>
+
+      <p class="adm-nav-section">Membres &amp; Dons</p>
+      <button class="adm-nav-item" data-panel="panel-members" type="button">
+        <i class="fa-solid fa-id-card" aria-hidden="true"></i> Membres
+      </button>
+      <button class="adm-nav-item" data-panel="panel-donations" type="button">
+        <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> Dons
+      </button>
+      <button class="adm-nav-item" data-panel="panel-leads" type="button">
+        <i class="fa-solid fa-envelope-open-text" aria-hidden="true"></i> Leads
+      </button>
+
+      <p class="adm-nav-section">Pilotage</p>
+      <button class="adm-nav-item" data-panel="panel-trivia" type="button">
+        <i class="fa-solid fa-brain" aria-hidden="true"></i> Trivia IA
+      </button>
+      <button class="adm-nav-item" data-panel="panel-integrations" type="button">
+        <i class="fa-solid fa-plug" aria-hidden="true"></i> Intégrations
+      </button>
+
+      <p class="adm-nav-section">SuperAdmin</p>
+      <button class="adm-nav-item" data-panel="panel-security" type="button">
+        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Sécurité
+      </button>
+    </nav>
+
+    <!-- Pied de sidebar -->
+    <div class="adm-sidebar-footer">
+      <a href="/index.html" class="adm-nav-item adm-nav-link" target="_blank" rel="noopener">
+        <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Voir le site
+      </a>
+      <a href="/membre.html" class="adm-nav-item adm-nav-link" id="adm-membre-link" hidden>
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Espace membre
+      </a>
+      <button type="button" class="adm-nav-item adm-nav-danger" id="adm-logout" hidden>
+        <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Déconnexion
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Zone principale ─────────────────────────────────────────────── -->
+  <main class="adm-main">
+
+    <!-- Topbar -->
+    <header class="adm-topbar">
+      <div class="adm-topbar-left">
+        <h1 id="adm-topbar-title">Tableau de bord</h1>
+        <p>Administration / <span id="adm-topbar-section">Accueil</span></p>
+      </div>
+      <div class="adm-topbar-right">
+        <a href="/index.html" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
+          <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Voir le site
+        </a>
+        <div class="adm-topbar-user">
+          <div class="adm-avatar adm-avatar-sm" id="adm-avatar-top">EA</div>
+          <span id="adm-email-top"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenu des panels -->
+    <div class="adm-content">
+
+      <!-- ════════════════════ ACCUEIL ════════════════════════════════ -->
+      <section class="adm-panel" id="panel-home">
+
+        <!-- Stats -->
+        <div class="adm-home-stats">
+          <div class="adm-stat-card" style="--stat-color:#ff6a2a;">
+            <div class="adm-stat-icon"><i class="fa-solid fa-id-card"></i></div>
+            <div class="adm-stat-body"><strong id="st-members">—</strong><span>Adhésions</span></div>
+          </div>
+          <div class="adm-stat-card" style="--stat-color:#22c55e;">
+            <div class="adm-stat-icon" style="background:rgba(34,197,94,.1);"><i class="fa-solid fa-hand-holding-heart"></i></div>
+            <div class="adm-stat-body"><strong id="st-donations">—</strong><span>Dons</span></div>
+          </div>
+          <div class="adm-stat-card" style="--stat-color:#3b82f6;">
+            <div class="adm-stat-icon" style="background:rgba(59,130,246,.1);"><i class="fa-solid fa-envelope-open-text"></i></div>
+            <div class="adm-stat-body"><strong id="st-leads">—</strong><span>Leads</span></div>
+          </div>
+          <div class="adm-stat-card" style="--stat-color:#a855f7;">
+            <div class="adm-stat-icon" style="background:rgba(168,85,247,.1);"><i class="fa-solid fa-brain"></i></div>
+            <div class="adm-stat-body"><strong id="st-trivia">—</strong><span>Questions Trivia</span></div>
+          </div>
+          <div class="adm-stat-card" style="--stat-color:#ec4899;">
+            <div class="adm-stat-icon" style="background:rgba(236,72,153,.1);"><i class="fa-solid fa-newspaper"></i></div>
+            <div class="adm-stat-body"><strong id="st-articles">—</strong><span>Articles</span></div>
+          </div>
+          <div class="adm-stat-card" style="--stat-color:#f59e0b;">
+            <div class="adm-stat-icon" style="background:rgba(245,158,11,.1);"><i class="fa-solid fa-calendar-days"></i></div>
+            <div class="adm-stat-body"><strong id="st-events">—</strong><span>Événements</span></div>
+          </div>
+          <div class="adm-stat-card" style="--stat-color:#06b6d4;">
+            <div class="adm-stat-icon" style="background:rgba(6,182,212,.1);"><i class="fa-solid fa-photo-film"></i></div>
+            <div class="adm-stat-body"><strong id="st-media">—</strong><span>Médias</span></div>
+          </div>
+        </div>
+
+        <!-- Actions rapides + Infos -->
+        <div class="adm-home-row">
+          <div class="adm-home-box">
+            <h3 class="adm-box-title">Actions rapides</h3>
+            <div class="adm-quick-actions">
+              <button class="adm-quick-btn" data-panel="panel-articles" type="button">
+                <i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Rédiger un article
+              </button>
+              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-events" type="button">
+                <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> Ajouter un événement
+              </button>
+              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-members" type="button">
+                <i class="fa-solid fa-users" aria-hidden="true"></i> Gérer les membres
+              </button>
+              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-team" type="button">
+                <i class="fa-solid fa-people-group" aria-hidden="true"></i> Modifier l'équipe
+              </button>
+              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-trivia" type="button">
+                <i class="fa-solid fa-brain" aria-hidden="true"></i> Générer des questions Trivia
+              </button>
+            </div>
+          </div>
+
+          <div class="adm-home-box">
+            <h3 class="adm-box-title">Informations</h3>
+            <div class="adm-info-list">
+              <div class="adm-info-row">
+                <i class="fa-solid fa-calendar-check" style="color:var(--peach);"></i>
+                <span>Aujourd'hui : <strong id="adm-today"></strong></span>
+              </div>
+              <div class="adm-info-row">
+                <i class="fa-solid fa-circle-user" style="color:#a855f7;"></i>
+                <span>Connecté en tant que : <strong>SuperAdmin</strong></span>
+              </div>
+              <div class="adm-info-row">
+                <i class="fa-solid fa-server" style="color:#22c55e;"></i>
+                <span>Base de données : <strong>Supabase</strong></span>
+              </div>
+              <div class="adm-info-row">
+                <i class="fa-solid fa-cloud" style="color:#3b82f6;"></i>
+                <span>Hébergement : <strong>Vercel</strong></span>
+              </div>
+              <div class="adm-info-row">
+                <i class="fa-solid fa-globe" style="color:#06b6d4;"></i>
+                <span>Site public : <a href="/index.html" target="_blank" rel="noopener" class="text-link">En Avant</a></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════ ARTICLES ═══════════════════════════════ -->
+      <section class="adm-panel" id="panel-articles" hidden>
+        <div class="adm-module-layout">
+          <form class="u-card adm-create-card" id="article-create-form" novalidate>
+            <h4>Nouvel article</h4>
+            <div class="ea-field">
+              <label for="article-title">Titre</label>
+              <input id="article-title" maxlength="200" required>
+            </div>
+            <div class="ea-field">
+              <label for="article-category">Catégorie</label>
+              <select id="article-category">
+                <option value="actualite">Actualité</option>
+                <option value="politique">Politique</option>
+                <option value="economie">Économie</option>
+                <option value="societe">Société</option>
+                <option value="diaspora">Diaspora</option>
+                <option value="programme">Programme</option>
+                <option value="communique">Communiqué</option>
+              </select>
+            </div>
+            <div class="ea-field">
+              <label for="article-excerpt">Résumé</label>
+              <textarea id="article-excerpt" rows="3" maxlength="300"></textarea>
+            </div>
+            <div class="ea-field">
+              <label for="article-content">Contenu</label>
+              <textarea id="article-content" rows="9" required></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit" id="article-create-submit">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Créer le brouillon
+            </button>
+            <div class="ea-form-status" id="article-status" role="status" aria-live="polite"></div>
+          </form>
+          <div id="articles-admin" class="adm-record-list">
+            <p class="adm-loading">Chargement des articles…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════ ÉVÉNEMENTS ═════════════════════════════ -->
+      <section class="adm-panel" id="panel-events" hidden>
+        <div class="adm-module-layout">
+          <form class="u-card adm-create-card" id="event-create-form" novalidate>
+            <h4>Nouvel événement</h4>
+            <div class="ea-field">
+              <label for="event-title">Titre</label>
+              <input id="event-title" maxlength="160" required>
+            </div>
+            <div class="ea-field">
+              <label for="event-date">Date et heure</label>
+              <input id="event-date" type="datetime-local" required>
+            </div>
+            <div class="ea-field">
+              <label for="event-place">Lieu</label>
+              <input id="event-place" maxlength="160">
+            </div>
+            <div class="ea-field">
+              <label for="event-description">Description</label>
+              <textarea id="event-description" rows="5" maxlength="500"></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit" id="event-create-submit">
+              <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> Ajouter
+            </button>
+            <div class="ea-form-status" id="event-status" role="status" aria-live="polite"></div>
+          </form>
+          <div id="events-admin" class="adm-record-list">
+            <p class="adm-loading">Chargement des événements…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════ MÉDIATHÈQUE ════════════════════════════ -->
+      <section class="adm-panel" id="panel-media" hidden>
+        <div class="adm-module-layout">
+          <form class="u-card adm-create-card" id="media-create-form" novalidate>
+            <h4>Ajouter une photo</h4>
+            <p class="u-note">JPG, PNG ou WebP, 3 Mo maximum. Les nouvelles photos apparaissent automatiquement dans la galerie de l'accueil.</p>
+            <div class="ea-field">
+              <label for="media-image">Fichier image</label>
+              <input id="media-image" type="file" accept="image/jpeg,image/png,image/webp" required>
+            </div>
+            <div class="ea-field">
+              <label for="media-caption">Légende</label>
+              <input id="media-caption" maxlength="180" placeholder="Présence, proximité, mobilisation">
+            </div>
+            <button class="btn btn-primary" type="submit" id="media-create-submit">
+              <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Téléverser
+            </button>
+            <div class="ea-form-status" id="media-status" role="status" aria-live="polite"></div>
+          </form>
+          <div id="media-admin" class="adm-media-grid">
+            <p class="adm-loading">Chargement de la médiathèque…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════ MEMBRES ════════════════════════════════ -->
+      <section class="adm-panel" id="panel-members" hidden>
+        <div class="adm-list-tools" data-dataset="members">
+          <input type="search" id="members-search" placeholder="Rechercher nom, NINU, email ou ville">
+          <button class="btn btn-primary btn-xs list-search" type="button">Rechercher</button>
+          <button class="btn btn-ghost btn-xs list-export" type="button"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+          <button class="btn btn-ghost btn-xs list-prev" type="button">Précédent</button>
+          <span class="list-page">Page 1</span>
+          <button class="btn btn-ghost btn-xs list-next" type="button">Suivant</button>
+        </div>
+        <div class="u-table">
+          <table>
+            <thead>
+              <tr><th>Nom</th><th>NINU</th><th>Email</th><th>Ville</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="tbl-members"><tr><td colspan="7">Chargement…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ════════════════════ DONS ════════════════════════════════════ -->
+      <section class="adm-panel" id="panel-donations" hidden>
+        <div class="adm-list-tools" data-dataset="donations">
+          <input type="search" id="donations-search" placeholder="Rechercher fournisseur, email ou transaction">
+          <button class="btn btn-primary btn-xs list-search" type="button">Rechercher</button>
+          <button class="btn btn-ghost btn-xs list-export" type="button"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+          <button class="btn btn-ghost btn-xs list-prev" type="button">Précédent</button>
+          <span class="list-page">Page 1</span>
+          <button class="btn btn-ghost btn-xs list-next" type="button">Suivant</button>
+        </div>
+        <div class="u-table">
+          <table>
+            <thead>
+              <tr><th>Montant</th><th>Fournisseur</th><th>Email</th><th>Transaction</th><th>Date</th><th>Statut</th></tr>
+            </thead>
+            <tbody id="tbl-donations"><tr><td colspan="6">Chargement…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ════════════════════ LEADS ══════════════════════════════════ -->
+      <section class="adm-panel" id="panel-leads" hidden>
+        <div class="adm-list-tools" data-dataset="leads">
+          <input type="search" id="leads-search" placeholder="Rechercher nom, email ou ville">
+          <button class="btn btn-primary btn-xs list-search" type="button">Rechercher</button>
+          <button class="btn btn-ghost btn-xs list-export" type="button"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+          <button class="btn btn-ghost btn-xs list-prev" type="button">Précédent</button>
+          <span class="list-page">Page 1</span>
+          <button class="btn btn-ghost btn-xs list-next" type="button">Suivant</button>
+        </div>
+        <div class="u-table">
+          <table>
+            <thead>
+              <tr><th>Nom</th><th>Email</th><th>Ville</th><th>Téléchargé le</th></tr>
+            </thead>
+            <tbody id="tbl-leads"><tr><td colspan="4">Chargement…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ════════════════════ TRIVIA IA ══════════════════════════════ -->
+      <section class="adm-panel" id="panel-trivia" hidden>
+        <div class="u-card" style="max-width:720px; margin-bottom:1.2rem;">
+          <h4 style="margin:0 0 0.6rem; color:var(--ink-100);">Générer des questions via Claude</h4>
+          <p style="margin:0 0 1.4rem; color:var(--ink-400); font-size:0.94rem;">
+            La génération lit le Livre blanc depuis le bucket privé <code>documents</code>
+            (<code>livre-blanc.txt</code>). Vous pouvez aussi coller un extrait ci-dessous.
+          </p>
+          <div class="ea-field">
+            <label for="tv-count">Nombre de questions (1–12)</label>
+            <input type="number" id="tv-count" min="1" max="12" value="8">
+          </div>
+          <div class="ea-field">
+            <label for="tv-source">Texte source (optionnel)</label>
+            <textarea id="tv-source" rows="5" placeholder="Coller un extrait du Livre blanc…" style="resize:vertical;"></textarea>
+          </div>
+          <button type="button" class="btn btn-primary" id="tv-generate">
+            <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+            Générer les questions
+          </button>
+          <div class="ea-form-status" id="tv-status" role="status" aria-live="polite"></div>
+          <ul id="tv-result" style="margin:1.2rem 0 0; padding-left:1.2rem; color:var(--ink-300); display:grid; gap:0.5rem;"></ul>
+        </div>
+        <div class="u-card">
+          <div class="adm-record-head">
+            <div>
+              <h4>Banque de questions</h4>
+              <p>Consultez et supprimez les questions disponibles dans le quiz public.</p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-xs" id="trivia-refresh">
+              <i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualiser
+            </button>
+          </div>
+          <div id="trivia-admin" class="adm-record-list">
+            <p class="adm-loading">Chargement des questions…</p>
+          </div>
+        </div>
+        <div class="u-card" style="margin-top:1.2rem;">
+          <div class="adm-record-head">
+            <div>
+              <h4>Scores récents</h4>
+              <p>Surveillez les participations et retirez les entrées inappropriées.</p>
+            </div>
+          </div>
+          <div id="trivia-scores-admin" class="adm-record-list">
+            <p class="adm-loading">Chargement des scores…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════ ÉQUIPE ═════════════════════════════════ -->
+      <section class="adm-panel" id="panel-team" hidden>
+        <div class="u-card" style="margin-bottom:1.2rem;">
+          <h4 style="margin:0 0 0.4rem; color:var(--ink-100);">Organigramme du parti</h4>
+          <p style="margin:0; color:var(--ink-400); font-size:0.94rem;">
+            Modifiez les noms, postes, l'ordre et les photos : la page
+            <a href="/organisation.html" target="_blank" rel="noopener" class="text-link">Organisation</a>
+            reflète vos changements immédiatement. Photos : JPG, PNG ou WebP, 2&nbsp;Mo max, cadrage carré conseillé.
+          </p>
+          <div class="ea-form-status" id="team-status" role="status" aria-live="polite"></div>
+        </div>
+        <div id="team-admin">
+          <p style="color:var(--ink-400);">
+            <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
+            Chargement de l'équipe…
+          </p>
+        </div>
+      </section>
+
+      <!-- ════════════════════ INTÉGRATIONS ═══════════════════════════ -->
+      <section class="adm-panel" id="panel-integrations" hidden>
+        <div class="u-card" style="margin-bottom:1rem;">
+          <div class="adm-record-head">
+            <div>
+              <h4>Services externes</h4>
+              <p>Ce diagnostic confirme seulement la configuration. Aucun secret n'est envoyé au navigateur.</p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-xs" id="integrations-refresh">
+              <i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualiser
+            </button>
+          </div>
+          <p class="u-note" id="integrations-site-url"></p>
+        </div>
+        <div class="adm-integration-grid" id="integrations-admin">
+          <p class="adm-loading">Vérification des services…</p>
+        </div>
+      </section>
+
+      <!-- ════════════════════ SÉCURITÉ ═══════════════════════════════ -->
+      <section class="adm-panel" id="panel-security" hidden>
+
+        <!-- Pseudo -->
+        <div class="u-card" style="max-width:620px; margin-bottom:1.3rem;">
+          <h4 style="margin:0 0 0.6rem; color:var(--ink-100);">Pseudo affiché dans la navigation</h4>
+          <p class="u-note" style="margin:0 0 1.4rem;">
+            <i class="fa-solid fa-circle-user" aria-hidden="true"></i>
+            C'est ce nom qui apparaît dans la barre de navigation lorsque vous êtes connecté.
+          </p>
+          <form id="pseudo-change-form" novalidate>
+            <div class="ea-field">
+              <label for="pseudo-new">Nouveau pseudo</label>
+              <input type="text" id="pseudo-new" maxlength="30" autocomplete="nickname"
+                     placeholder="ex : Jerry, JerryT, SuperAdmin" required>
+              <span class="ea-error">2 à 30 caractères.</span>
+            </div>
+            <button type="submit" class="btn btn-primary" id="pseudo-change-submit">
+              <i class="fa-solid fa-circle-user" aria-hidden="true"></i>
+              Mettre à jour le pseudo
+            </button>
+            <div class="ea-form-status" id="pseudo-change-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <!-- PIN -->
+        <div class="u-card" style="max-width:620px; margin-bottom:1.3rem;">
+          <h4 style="margin:0 0 0.6rem; color:var(--ink-100);">Modifier le PIN SuperAdmin</h4>
+          <p class="u-note" style="margin:0 0 1.4rem;">
+            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+            Choisissez un PIN de 4 à 8 chiffres différent du PIN actuel.
+          </p>
+          <form id="pin-change-form" novalidate>
+            <div class="ea-field">
+              <label for="pin-current">PIN actuel</label>
+              <input type="password" id="pin-current" inputmode="numeric" minlength="4" maxlength="8" autocomplete="current-password" required>
+            </div>
+            <div class="ea-field">
+              <label for="pin-new">Nouveau PIN</label>
+              <input type="password" id="pin-new" inputmode="numeric" minlength="4" maxlength="8" autocomplete="new-password" required>
+            </div>
+            <div class="ea-field">
+              <label for="pin-confirm">Confirmer le nouveau PIN</label>
+              <input type="password" id="pin-confirm" inputmode="numeric" minlength="4" maxlength="8" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="pin-change-submit">
+              <i class="fa-solid fa-key" aria-hidden="true"></i>
+              Modifier le PIN
+            </button>
+            <div class="ea-form-status" id="pin-change-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="u-card" style="max-width:620px;">
+          <h4 style="margin:0 0 0.6rem; color:var(--ink-100);">Changer le mot de passe</h4>
+          <p class="u-note" style="margin:0 0 1.4rem;">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            10 caractères minimum. À faire immédiatement si vous utilisez un mot de passe temporaire.
+          </p>
+          <form id="pwd-change-form" novalidate>
+            <div class="ea-field">
+              <label for="pwd-new">Nouveau mot de passe</label>
+              <input type="password" id="pwd-new" minlength="10" maxlength="200" autocomplete="new-password" required>
+              <span class="ea-error">10 caractères minimum.</span>
+            </div>
+            <div class="ea-field">
+              <label for="pwd-confirm">Confirmer le nouveau mot de passe</label>
+              <input type="password" id="pwd-confirm" minlength="10" maxlength="200" autocomplete="new-password" required>
+              <span class="ea-error">La confirmation ne correspond pas.</span>
+            </div>
+            <button type="submit" class="btn btn-primary" id="pwd-change-submit">
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
+              Changer le mot de passe
+            </button>
+            <div class="ea-form-status" id="pwd-change-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+
+      </section>
+
+    </div><!-- /.adm-content -->
+  </main>
+</div><!-- /#adm-app -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/env.js"></script>
+<script src="/js/premium.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

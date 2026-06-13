@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace membre | En Avant</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#071229">
+
+  <style>
+    .membre-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 6rem 1.25rem 3rem;
+      background: var(--bg-deep, #050b1d);
+    }
+
+    .membre-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .membre-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent, #ff6a2a), #c94a12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 auto 1.25rem;
+      box-shadow: 0 0 0 4px rgba(255,106,42,.2);
+    }
+    .membre-greeting {
+      font-size: clamp(1.4rem, 3vw, 1.9rem);
+      font-weight: 700;
+      margin-bottom: .35rem;
+    }
+    .membre-role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .25rem .85rem;
+      border-radius: 999px;
+      background: rgba(255,106,42,.1);
+      border: 1px solid rgba(255,106,42,.25);
+      color: var(--accent, #ff6a2a);
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .membre-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 820px;
+    }
+
+    .membre-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 1.1rem;
+      padding: 1.5rem 1.6rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      cursor: pointer;
+    }
+    .membre-card:hover {
+      border-color: var(--accent, #ff6a2a);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(0,0,0,.35);
+    }
+    .membre-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: .75rem;
+      background: rgba(255,106,42,.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--accent, #ff6a2a);
+      margin-bottom: .2rem;
+    }
+    .membre-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .membre-card p {
+      font-size: .85rem;
+      color: rgba(255,255,255,.55);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .membre-card--ia .membre-card-icon {
+      background: rgba(139,92,246,.15);
+      color: #a78bfa;
+    }
+    .membre-card--ia {
+      border-color: rgba(139,92,246,.2);
+    }
+    .membre-card--ia:hover {
+      border-color: #a78bfa;
+    }
+
+    .membre-card--admin .membre-card-icon {
+      background: rgba(255,106,42,.15);
+      color: var(--accent, #ff6a2a);
+    }
+    .membre-card--admin {
+      border-color: rgba(255,106,42,.25);
+    }
+    .membre-card--admin:hover {
+      border-color: var(--accent, #ff6a2a);
+      box-shadow: 0 12px 32px rgba(255,106,42,.15);
+    }
+
+    .membre-logout {
+      margin-top: 2.5rem;
+      background: none;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: .5rem;
+      color: rgba(255,255,255,.4);
+      font-size: .85rem;
+      padding: .5rem 1.25rem;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .membre-logout:hover {
+      border-color: rgba(255,255,255,.3);
+      color: rgba(255,255,255,.7);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="membre-wrap">
+    <div class="membre-header reveal-up">
+      <div class="membre-avatar" id="mb-avatar">?</div>
+      <p class="membre-greeting" id="mb-greeting">Bonjour !</p>
+      <span class="membre-role-badge">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+        Membre En Avant
+      </span>
+    </div>
+
+    <div class="membre-grid reveal-up">
+      <a href="/trivia.html" class="membre-card membre-card--ia">
+        <div class="membre-card-icon">
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+        </div>
+        <h3>Trivia IA</h3>
+        <p>Questions générées à la volée par intelligence artificielle depuis le Livre blanc.</p>
+      </a>
+
+      <a href="/livre-blanc.html" class="membre-card">
+        <div class="membre-card-icon">
+          <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+        </div>
+        <h3>Livre blanc</h3>
+        <p>Lisez ou téléchargez le programme complet d'En Avant pour Haïti.</p>
+      </a>
+
+      <a href="/vingt-chantiers.html" class="membre-card">
+        <div class="membre-card-icon">
+          <i class="fa-solid fa-flag" aria-hidden="true"></i>
+        </div>
+        <h3>20 chantiers</h3>
+        <p>Explorez les 20 priorités nationales du projet En Avant.</p>
+      </a>
+
+      <a href="/don.html" class="membre-card">
+        <div class="membre-card-icon">
+          <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i>
+        </div>
+        <h3>Faire un don</h3>
+        <p>Soutenez le parti et accélérez la mise en œuvre du projet national.</p>
+      </a>
+    </div>
+
+    <button class="membre-logout" id="mb-logout">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+      Se déconnecter
+    </button>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/env.js"></script>
+  <script src="/js/premium.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const env = window.EA_ENV || {};
+      if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !window.supabase) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      const client = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+      // Vérifier la session, afficher les infos et détecter le rôle superadmin
+      client.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        const meta    = session.user?.user_metadata || {};
+        const pseudo  = meta.pseudo
+          || meta.nom?.trim().split(/\s+/)[0]
+          || session.user?.email?.split("@")[0]
+          || "Membre";
+        const nom     = meta.nom || pseudo;
+
+        const initial = pseudo.trim()[0]?.toUpperCase() || "M";
+        document.getElementById("mb-avatar").textContent   = initial;
+        document.getElementById("mb-greeting").textContent = `Bonjour, ${pseudo} !`;
+        document.title = `${pseudo} — Espace membre | En Avant`;
+
+        // Vérifier si superadmin → afficher la carte Admin
+        try {
+          const { data: profile } = await client
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          if (profile?.role === "superadmin") {
+            const badge = document.querySelector(".membre-role-badge");
+            if (badge) {
+              badge.innerHTML = '<i class="fa-solid fa-shield-halved" aria-hidden="true"></i> SuperAdmin';
+            }
+
+            const grid = document.querySelector(".membre-grid");
+            if (grid) {
+              const card = document.createElement("a");
+              card.href = "/admin.html";
+              card.className = "membre-card membre-card--admin";
+              card.innerHTML = `
+                <div class="membre-card-icon">
+                  <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
+                </div>
+                <h3>Dashboard Admin</h3>
+                <p>Gérez les articles, l'équipe, le trivia, les médias et la sécurité.</p>`;
+              grid.appendChild(card);
+            }
+          }
+        } catch { /* Silencieux — accès profil indisponible */ }
+      });
+
+      // Déconnexion
+      document.getElementById("mb-logout").addEventListener("click", async () => {
+        await client.auth.signOut();
+        window.location.href = "/index.html";
+      });
+    })();
+  </script>
+</body>
+</html>

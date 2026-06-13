@@ -1,0 +1,23 @@
+{
+  "name": "en-avant-portail",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portail web premium du parti politique En Avant — frontend statique (HTML/CSS/JS vanilla) + API serverless Vercel (Node.js) + Supabase.",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "dev:vercel": "vercel dev",
+    "check": "node scripts/check-project.mjs",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@supabase/supabase-js": "^2.45.0",
+    "raw-body": "^3.0.0",
+    "resend": "^4.0.0",
+    "stripe": "^18.0.0"
+  }
+}

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adhérer | En Avant</title>
+  <meta
+    name="description"
+    content="Rejoignez le parti En Avant : soumettez votre candidature et engagez-vous pour un nouveau leadership en Haïti."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+
+  <link rel="stylesheet" href="/css/ultra.css" />
+  <link rel="stylesheet" href="/css/premium.css" />
+  <meta name="theme-color" content="#071229" />
+</head>
+
+<body>
+  <!-- Navbar pilule flottante -->
+  <header class="u-nav" id="main-header">
+    <div class="u-nav-shell">
+      <a href="/index.html" class="brand" aria-label="En Avant — Accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant" />
+      </a>
+
+      <nav class="u-links" id="main-nav" aria-label="Menu principal">
+        <a href="/index.html">Accueil</a>
+        <a href="/Apropos.html">À propos</a>
+        <a href="/historique.html">Historique</a>
+        <a href="/organisation.html">Organisation</a>
+        <a href="/vingt-chantiers.html">Vingt chantiers</a>
+        <a href="/blog.html">Blog</a>
+        <a href="/livre-blanc.html">Livre blanc</a>
+
+        <div class="u-links-cta">
+          <a href="/login.html" class="u-login"><i class="fa-solid fa-circle-user"></i> Connexion</a>
+          <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+          <a href="/don.html" class="btn btn-primary">Faire un don</a>
+        </div>
+      </nav>
+
+      <div class="u-nav-actions">
+        <a href="/login.html" class="u-login">
+          <i class="fa-solid fa-circle-user"></i>
+          <span>Connexion</span>
+        </a>
+        <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+        <a href="/don.html" class="btn btn-primary">Faire un don</a>
+
+        <button
+          id="btn-mobile-menu"
+          class="menu-toggle"
+          type="button"
+          aria-label="Ouvrir le menu"
+          aria-expanded="false"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ea-page-dark">
+    <div class="ea-shell">
+      <div class="ea-form-layout">
+        <!-- Pitch -->
+        <aside class="ea-form-aside">
+          <span class="eyebrow">Adhésion</span>
+          <h1>Un engagement <span>clair et exigeant.</span></h1>
+          <p>
+            Rejoignez des femmes et des hommes décidés à construire un État crédible,
+            une société plus juste et une économie plus productive. Votre candidature
+            est examinée par notre comité d'éthique.
+          </p>
+
+          <ul class="ea-points">
+            <li>
+              <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
+              <span>Partager nos valeurs de progrès, d'intégrité et de transparence.</span>
+            </li>
+            <li>
+              <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+              <span>Analyse de votre candidature selon la charte du parti.</span>
+            </li>
+            <li>
+              <i class="fa-solid fa-handshake" aria-hidden="true"></i>
+              <span>Intégration à votre coordination départementale ou diaspora.</span>
+            </li>
+          </ul>
+        </aside>
+
+        <!-- Formulaire -->
+        <div class="ea-glass-card">
+          <form id="adhesion-form" novalidate>
+            <div class="ea-form-row">
+              <div class="ea-field">
+                <label for="adh-nom">Nom complet</label>
+                <input
+                  type="text"
+                  id="adh-nom"
+                  name="nom"
+                  autocomplete="name"
+                  placeholder="Ex. Marie-Lourdes Pierre"
+                  required
+                />
+                <span class="ea-error">Veuillez entrer votre nom complet (2 caractères min.).</span>
+              </div>
+
+              <div class="ea-field">
+                <label for="adh-sexe">Sexe</label>
+                <select id="adh-sexe" name="sexe" required>
+                  <option value="" selected disabled>Choisir…</option>
+                  <option value="femme">Femme</option>
+                  <option value="homme">Homme</option>
+                  <option value="autre">Autre / Préfère ne pas dire</option>
+                </select>
+                <span class="ea-error">Veuillez sélectionner une option.</span>
+              </div>
+            </div>
+
+            <div class="ea-field">
+              <label for="adh-ninu">NINU — Numéro d'Identification Nationale Unique</label>
+              <input
+                type="text"
+                id="adh-ninu"
+                name="ninu"
+                inputmode="numeric"
+                autocomplete="off"
+                minlength="10"
+                maxlength="10"
+                pattern="[0-9]{10}"
+                placeholder="10 chiffres (carte d'identification nationale)"
+                aria-describedby="adh-ninu-error adh-ninu-hint"
+                required
+              />
+              <span class="ea-error" id="adh-ninu-error">NINU invalide : 10 chiffres requis.</span>
+              <span class="ea-hint" id="adh-ninu-hint">
+                Figure sur votre carte d'identification nationale (ONI). Requis pour la
+                vérification de votre candidature par le comité d'éthique.
+              </span>
+            </div>
+
+            <div class="ea-field">
+              <label for="adh-email">Adresse email</label>
+              <input
+                type="email"
+                id="adh-email"
+                name="email"
+                autocomplete="email"
+                placeholder="vous@exemple.com"
+                required
+              />
+              <span class="ea-error">Adresse email invalide.</span>
+            </div>
+
+            <div class="ea-form-row">
+              <div class="ea-field">
+                <label for="adh-telephone">Téléphone</label>
+                <input
+                  type="tel"
+                  id="adh-telephone"
+                  name="telephone"
+                  autocomplete="tel"
+                  placeholder="+509 0000-0000"
+                  required
+                />
+                <span class="ea-error">Numéro invalide (8 chiffres min.).</span>
+              </div>
+
+              <div class="ea-field">
+                <label for="adh-ville">Ville</label>
+                <input
+                  type="text"
+                  id="adh-ville"
+                  name="ville"
+                  autocomplete="address-level2"
+                  placeholder="Ex. Pétion-Ville, Boston…"
+                  required
+                />
+                <span class="ea-error">Veuillez indiquer votre ville.</span>
+              </div>
+            </div>
+
+            <!-- Piège anti-spam : doit rester vide -->
+            <input
+              type="text"
+              name="website"
+              class="ea-hp"
+              tabindex="-1"
+              autocomplete="off"
+              aria-hidden="true"
+            />
+
+            <label class="ea-consent">
+              <input type="checkbox" id="adh-consent" name="consent" required />
+              <span>
+                J'accepte que mes données soient traitées par En Avant dans le cadre de ma
+                demande d'adhésion, conformément à la politique de confidentialité.
+              </span>
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-full" id="adh-submit">
+              Soumettre ma candidature
+            </button>
+
+            <div class="ea-form-status" id="adh-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modale de confirmation -->
+  <div class="ea-modal" id="adh-modal" role="dialog" aria-modal="true" aria-labelledby="adh-modal-title">
+    <div class="ea-modal-card">
+      <div class="ea-modal-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></div>
+      <h3 id="adh-modal-title">Candidature envoyée</h3>
+      <p>
+        Merci pour votre engagement. Notre comité d'éthique examinera votre candidature
+        et vous recontactera très vite.
+      </p>
+      <button type="button" class="btn btn-primary btn-full" id="adh-modal-close">Compris</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="u-footer">
+    <div class="u-shell u-footer-grid">
+      <div class="u-footer-brand">
+        <img src="/pictures/logo/logo.png" alt="En Avant" class="footer-logo" />
+        <p>
+          Un nouveau leadership politique, moderne et avant-gardiste pour conduire Haïti
+          sur la voie du progrès.
+        </p>
+        <ul class="u-socials" aria-label="Réseaux sociaux">
+          <li><a href="https://www.instagram.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a></li>
+          <li><a href="https://x.com/EnAvantHT" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a></li>
+          <li><a href="https://www.facebook.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a></li>
+          <li><a href="https://www.youtube.com/@mouvementenavant9694" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Découvrir</h4>
+        <ul>
+          <li><a href="/Apropos.html">Qui sommes-nous ?</a></li>
+          <li><a href="/historique.html">Historique</a></li>
+          <li><a href="/organisation.html">Organisation</a></li>
+          <li><a href="/vingt-chantiers.html">Les 20 chantiers</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Agir</h4>
+        <ul>
+          <li><a href="/adherer.html">Rejoindre le parti</a></li>
+          <li><a href="/don.html">Faire un don</a></li>
+          <li><a href="/livre-blanc.html">Lire le Livre blanc</a></li>
+          <li><a href="/blog.html">Suivre l'actualité</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Contact</h4>
+        <address>
+          <p><i class="fa-solid fa-location-dot"></i> 44, Impasse Lescot, Laboule 12, Pétionville, Haïti</p>
+          <p><i class="fa-solid fa-phone"></i> +509 4621-2121</p>
+          <p><i class="fa-solid fa-envelope"></i> contact@enavant.org</p>
+        </address>
+      </div>
+    </div>
+
+    <div class="u-footer-bottom">
+      <div class="u-shell u-footer-bottom-row">
+        <p>© 2026 Parti Politique En Avant. Tous droits réservés.</p>
+        <ul class="legal-links">
+          <li><a href="#">Mentions légales</a></li>
+          <li><a href="#">Politique de confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
+  </footer>
+
+  <script src="/js/premium.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/adherer.js"></script>
+</body>
+</html>

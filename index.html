@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <!-- Meta de base -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <!-- SEO -->
+  <title>En Avant | Pour changer Haïti ensemble</title>
+  <meta
+    name="description"
+    content="Découvrez le parti politique En Avant. Notre vision, nos 20 chantiers pour Haïti, et comment rejoindre le parti."
+  />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="En Avant | Pour changer Haïti ensemble" />
+  <meta
+    property="og:description"
+    content="Rejoignez le parti pour un nouveau leadership politique, moderne et avant-gardiste."
+  />
+  <meta property="og:image" content="https://enavant.org/assets/images/og-banner.jpg" />
+  <meta property="og:url" content="https://enavant.org" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Fonts / icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+
+  <!-- Design system Ultra-Moderne -->
+  <link rel="stylesheet" href="/css/ultra.css" />
+  <link rel="stylesheet" href="/css/premium.css" />
+  <meta name="theme-color" content="#071229" />
+
+  <!-- Entité politique (SEO / Google Knowledge Graph) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "PoliticalParty",
+    "name": "En Avant",
+    "alternateName": "Parti Politique En Avant",
+    "url": "https://enavant.org",
+    "logo": "https://enavant.org/pictures/logo/logo.png",
+    "email": "contact@enavant.org",
+    "telephone": "+509 4621-2121",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "44, Impasse Lescot, Laboule 12",
+      "addressLocality": "Pétion-Ville",
+      "addressCountry": "HT"
+    },
+    "sameAs": [
+      "https://www.instagram.com/enavant.ht",
+      "https://x.com/EnAvantHT",
+      "https://www.facebook.com/enavant.ht",
+      "https://www.youtube.com/@mouvementenavant9694"
+    ]
+  }
+  </script>
+  <style>
+    /* === Leaderboard Trivia (index) ================================= */
+    .lb-leaderboard {
+      position: relative;
+      background: rgba(10, 20, 60, 0.55);
+      border: 1px solid rgba(96, 165, 250, 0.18);
+      border-radius: 1.25rem;
+      overflow: hidden;
+      min-width: 260px;
+      flex: 1;
+    }
+    .lb-lb-header {
+      display: flex; align-items: center; gap: .6rem;
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid rgba(96, 165, 250, 0.1);
+      font-size: .8rem; font-weight: 700; letter-spacing: .04em;
+      color: rgba(147, 197, 253, 0.75);
+    }
+    .lb-lb-header i { color: #fbbf24; }
+    .lb-lb-rows { filter: blur(4px); pointer-events: none; user-select: none; }
+    .lb-lb-row {
+      display: flex; align-items: center; gap: .875rem;
+      padding: .8rem 1.4rem;
+      border-bottom: 1px solid rgba(96, 165, 250, 0.06);
+    }
+    .lb-lb-row:last-child { border-bottom: none; }
+    .lb-lb-rank {
+      font-size: .72rem; font-weight: 800;
+      color: rgba(147, 197, 253, 0.5);
+      width: 1.25rem; text-align: center; flex-shrink: 0;
+    }
+    .lb-lb-rank.gold   { color: #fbbf24; }
+    .lb-lb-rank.silver { color: #94a3b8; }
+    .lb-lb-rank.bronze { color: #b87333; }
+    .lb-lb-name { flex: 1; font-size: .85rem; color: rgba(186, 230, 253, 0.7); font-weight: 500; }
+    .lb-lb-score { font-size: .78rem; font-weight: 700; color: rgba(147, 197, 253, 0.65); }
+    .lb-lb-overlay {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(5, 11, 29, 0.6);
+      backdrop-filter: blur(3px);
+      gap: .5rem; text-align: center; padding: 1rem;
+    }
+    .lb-lb-overlay i { font-size: 1.4rem; color: rgba(147, 197, 253, 0.55); margin-bottom: .25rem; }
+    .lb-lb-overlay strong { font-size: .95rem; font-weight: 700; color: rgba(186, 230, 253, 0.9); letter-spacing: .06em; text-transform: uppercase; }
+    .lb-lb-overlay small { font-size: .75rem; color: rgba(147, 197, 253, 0.45); line-height: 1.5; }
+  </style>
+</head>
+
+<body>
+  <!-- Loader -->
+  <div id="page-loader" class="page-loader">
+    <div class="loader-inner">
+      <img src="/pictures/logo/logo.png" alt="Chargement En Avant" class="loader-logo" />
+      <div class="loader-line"></div>
+    </div>
+  </div>
+
+  <!-- Navbar pilule flottante -->
+  <header class="u-nav" id="main-header">
+    <div class="u-nav-shell">
+      <a href="/index.html" class="brand" aria-label="En Avant — Accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant" />
+      </a>
+
+      <nav class="u-links" id="main-nav" aria-label="Menu principal">
+        <a href="/index.html" class="active" aria-current="page">Accueil</a>
+        <a href="/Apropos.html">À propos</a>
+        <a href="/historique.html">Historique</a>
+        <a href="/organisation.html">Organisation</a>
+        <a href="/vingt-chantiers.html">Vingt chantiers</a>
+        <a href="/blog.html">Blog</a>
+        <a href="/livre-blanc.html">Livre blanc</a>
+
+        <div class="u-links-cta">
+          <a href="/login.html" class="u-login"><i class="fa-solid fa-circle-user"></i> Connexion</a>
+          <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+          <a href="/don.html" class="btn btn-primary">Faire un don</a>
+        </div>
+      </nav>
+
+      <div class="u-nav-actions">
+        <a href="/login.html" class="u-login">
+          <i class="fa-solid fa-circle-user"></i>
+          <span>Connexion</span>
+        </a>
+        <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+        <a href="/don.html" class="btn btn-primary">Faire un don</a>
+
+        <button
+          id="btn-mobile-menu"
+          class="menu-toggle"
+          type="button"
+          aria-label="Ouvrir le menu"
+          aria-expanded="false"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section id="hero" class="u-hero">
+      <div class="u-shell u-hero-grid">
+        <div class="reveal-up">
+          <span class="eyebrow">Un nouveau leadership pour Haïti</span>
+
+          <h1 class="u-display">
+            Pour changer<br />
+            <span class="u-grad">Haïti</span> ensemble.
+          </h1>
+
+          <p class="u-lead">
+            En Avant porte une vision moderne, intègre et ambitieuse pour construire
+            un pays plus juste, plus stable et plus fort.
+          </p>
+
+          <div class="u-actions">
+            <a href="/adherer.html" class="btn btn-light btn-lg">Adhérer au parti</a>
+            <a href="/don.html" class="btn btn-primary btn-lg">Faire un don</a>
+          </div>
+
+          <div class="u-stats">
+            <div class="u-stat">
+              <strong>20</strong>
+              <span>chantiers prioritaires</span>
+            </div>
+            <div class="u-stat">
+              <strong>2054</strong>
+              <span>cap des 250 ans d'indépendance</span>
+            </div>
+            <div class="u-stat">
+              <strong>1</strong>
+              <span>ambition nationale partagée</span>
+            </div>
+          </div>
+
+          <ul class="u-hero-socials" aria-label="Réseaux sociaux">
+            <li>
+              <a href="https://www.instagram.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <i class="fa-brands fa-instagram"></i>
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/EnAvantHT" target="_blank" rel="noopener noreferrer" aria-label="X">
+                <i class="fa-brands fa-x-twitter"></i>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.facebook.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <i class="fa-brands fa-facebook-f"></i>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.youtube.com/@mouvementenavant9694" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                <i class="fa-brands fa-youtube"></i>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="reveal-right">
+          <div class="u-frame">
+            <img src="/pictures/hero.jpeg" alt="Mobilisation du parti En Avant" />
+            <div class="u-frame-chip">
+              <strong>L'union fait la force.</strong>
+              <span>La reconstruction d'Haïti ne reposera pas sur un homme providentiel, mais sur nous tous.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Marquee -->
+    <div class="u-marquee" aria-hidden="true">
+      <div class="u-marquee-track">
+        <span>Sécurité</span><i></i><span>Justice</span><i></i><span>Production</span><i></i>
+        <span>Jeunesse</span><i></i><span>Institutions</span><i></i><span>Territoires</span><i></i>
+        <span>Diaspora</span><i></i><span>Éducation</span><i></i><span>Énergie</span><i></i>
+        <span>Dignité</span><i></i>
+        <span>Sécurité</span><i></i><span>Justice</span><i></i><span>Production</span><i></i>
+        <span>Jeunesse</span><i></i><span>Institutions</span><i></i><span>Territoires</span><i></i>
+        <span>Diaspora</span><i></i><span>Éducation</span><i></i><span>Énergie</span><i></i>
+        <span>Dignité</span><i></i>
+      </div>
+    </div>
+
+    <!-- Vision : bento -->
+    <section id="vision" class="section">
+      <div class="u-shell">
+        <div class="section-head center reveal-up">
+          <span class="section-kicker">Notre vision</span>
+          <h2 class="section-title">Une vision claire, une ambition affirmée</h2>
+        </div>
+
+        <div class="u-bento">
+          <div class="u-tile u-tile--xl">
+            <span class="section-kicker">La conviction fondatrice</span>
+            <blockquote>
+              Plus d'un pense que le déclin continu de notre pays est inévitable et que
+              le pire est à venir. Les fondateurs du parti En Avant osent prétendre autrement.
+              Un nouveau leadership politique, moderne et avant-gardiste, peut conduire Haïti
+              sur la voie du progrès.
+            </blockquote>
+            <p class="mt-5">
+              <a href="/Apropos.html" class="text-link">
+                Découvrir notre projet <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </p>
+          </div>
+
+          <div class="u-tile u-tile--tall u-tile-video">
+            <iframe
+              src="https://www.youtube.com/embed/DyB86KKDdCI?si=s8EsloqAgnvdMZmQ"
+              title="En Avant — la vision du parti"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+
+          <div class="u-tile u-tile--third">
+            <span class="u-tile-num">20</span>
+            <span class="u-tile-label">chantiers pour relever la nation</span>
+          </div>
+
+          <div class="u-tile u-tile--third">
+            <span class="u-tile-num">10</span>
+            <span class="u-tile-label">coordinations départementales</span>
+          </div>
+
+          <div class="u-tile u-tile--third">
+            <span class="u-tile-num">10</span>
+            <span class="u-tile-label">branches de la diaspora</span>
+          </div>
+
+          <div class="u-tile u-tile--half">
+            <span class="section-kicker">Le cap</span>
+            <h3>Construire un cap, pas commenter le déclin</h3>
+            <p>
+              Sécurité, justice, production, jeunesse, institutions, territoires :
+              chaque chantier répond à une urgence réelle et s'inscrit dans une
+              trajectoire cohérente de redressement national.
+            </p>
+          </div>
+
+          <div class="u-tile u-tile--half u-tile--orange">
+            <span class="section-kicker">Votre rôle</span>
+            <h3>La reconstruction a besoin de vous</h3>
+            <p>
+              La jeunesse, la diaspora, les collectivités, les travailleurs, les
+              entrepreneurs, les enseignants et les artistes ont tous un rôle à jouer.
+            </p>
+            <p class="mt-5">
+              <a href="/adherer.html" class="btn btn-light">Rejoindre le mouvement</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actualités -->
+    <section id="actualites" class="section section-soft">
+      <div class="u-shell">
+        <div class="section-head center reveal-up">
+          <span class="section-kicker">À la une</span>
+          <h2 class="section-title">L'actualité du parti</h2>
+        </div>
+
+        <div class="u-news">
+          <article class="feature-card reveal-left">
+            <div class="feature-media">
+              <img src="/pictures/foule-Assise.jpg" alt="Communiqué En Avant" />
+              <span class="feature-badge">Communiqué de presse</span>
+            </div>
+
+            <div class="feature-body">
+              <div class="meta-row">
+                <span>12 mars 2026</span>
+                <span>Programme</span>
+              </div>
+
+              <h3>Le parti En Avant annonce ses 20 chantiers prioritaires</h3>
+              <p>
+                Découvrez les mesures phares proposées par notre équipe pour inscrire
+                Haïti dans une nouvelle dynamique politique, économique et institutionnelle.
+              </p>
+
+              <a href="/article-details.html" class="text-link">
+                Lire l'article
+                <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </article>
+
+          <aside class="news-stack">
+            <article class="mini-news-card">
+              <div class="mini-news-meta">
+                <span>12 mars 2026</span>
+                <span>Diaspora</span>
+              </div>
+              <h4>Rencontre avec la diaspora à Boston</h4>
+              <a href="/blog.html">Lire plus</a>
+            </article>
+
+            <article class="mini-news-card">
+              <div class="mini-news-meta">
+                <span>10 mars 2026</span>
+                <span>Campagne</span>
+              </div>
+              <h4>Lancement de la campagne nationale</h4>
+              <a href="/blog.html">Lire plus</a>
+            </article>
+
+            <article class="mini-news-card">
+              <div class="mini-news-meta">
+                <span>08 mars 2026</span>
+                <span>Organisation</span>
+              </div>
+              <h4>Renforcement des coordinations régionales</h4>
+              <a href="/blog.html">Lire plus</a>
+            </article>
+
+            <div class="news-cta-box">
+              <a href="/blog.html" class="btn btn-ghost btn-full">Voir tous les articles</a>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rejoindre -->
+    <section id="rejoindre" class="section section-dark">
+      <div class="u-shell">
+        <div class="section-head center reveal-up">
+          <span class="section-kicker">Rejoindre le parti</span>
+          <h2 class="section-title">Un engagement clair, structuré et exigeant</h2>
+          <p class="section-intro">
+            Découvrez le processus pour devenir membre actif d'En Avant et contribuer à
+            la transformation du pays.
+          </p>
+        </div>
+
+        <div class="u-steps">
+          <article class="process-card reveal-up">
+            <span class="process-number">01</span>
+            <div class="process-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+            <h3>Les conditions</h3>
+            <p>
+              Partager nos valeurs de progrès, de justice sociale, d'intégrité et de
+              transparence pour Haïti.
+            </p>
+          </article>
+
+          <article class="process-card reveal-up delay-1">
+            <span class="process-number">02</span>
+            <div class="process-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h3>L'analyse</h3>
+            <p>
+              Soumettre votre candidature. Notre comité d'éthique évalue l'adéquation
+              avec la charte du parti.
+            </p>
+          </article>
+
+          <article class="process-card reveal-up delay-2">
+            <span class="process-number">03</span>
+            <div class="process-icon"><i class="fa-solid fa-handshake"></i></div>
+            <h3>L'engagement</h3>
+            <p>
+              Intégrer votre coordination départementale ou de la diaspora et agir
+              concrètement sur le terrain.
+            </p>
+          </article>
+        </div>
+
+        <div class="text-center mt-5 reveal-up delay-3">
+          <a href="/adherer.html" class="btn btn-primary btn-lg">Soumettre ma candidature</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Galerie -->
+    <section id="galerie" class="section">
+      <div class="u-shell">
+        <div class="section-head center reveal-up">
+          <span class="section-kicker">Galerie</span>
+          <h2 class="section-title">Le parti en images</h2>
+        </div>
+
+        <div class="premium-slider reveal-up" id="gallery-slider">
+          <div class="slider-track">
+            <article class="slide active">
+              <img src="/pictures/home-galerie/galerie-1.jpeg" alt="Photo du mouvement En Avant 1" />
+              <div class="slide-overlay">
+                <span>Terrain</span>
+                <h3>Présence, proximité, mobilisation</h3>
+              </div>
+            </article>
+
+            <article class="slide">
+              <img src="/pictures/home-galerie/galerie-2.jpeg" alt="Photo du mouvement En Avant 2" loading="lazy" />
+              <div class="slide-overlay">
+                <span>Rencontres</span>
+                <h3>Dialoguer avec les forces vives du pays</h3>
+              </div>
+            </article>
+
+            <article class="slide">
+              <img src="/pictures/home-galerie/galerie-3.jpeg" alt="Photo du mouvement En Avant 3" loading="lazy" />
+              <div class="slide-overlay">
+                <span>Organisation</span>
+                <h3>Structurer une action politique durable</h3>
+              </div>
+            </article>
+
+            <article class="slide">
+              <img src="/pictures/home-galerie/galerie-4.jpeg" alt="Photo du mouvement En Avant 4" loading="lazy" />
+              <div class="slide-overlay">
+                <span>Leadership</span>
+                <h3>Porter une vision moderne et ambitieuse</h3>
+              </div>
+            </article>
+
+            <article class="slide">
+              <img src="/pictures/home-galerie/galerie-5.jpeg" alt="Photo du mouvement En Avant 5" loading="lazy" />
+              <div class="slide-overlay">
+                <span>Élan</span>
+                <h3>Créer un parti capable de rassembler</h3>
+              </div>
+            </article>
+          </div>
+
+          <button class="slider-arrow slider-arrow-prev" type="button" aria-label="Image précédente">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <button class="slider-arrow slider-arrow-next" type="button" aria-label="Image suivante">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+
+          <div class="slider-dots" aria-label="Navigation de la galerie"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Le Quiz du Livre blanc -->
+    <section id="quiz" class="section">
+      <div class="u-shell">
+        <div class="lb-quiz reveal-up">
+          <div>
+            <span class="section-kicker">Apprendre en s'amusant</span>
+            <h2 class="section-title">Connaissez-vous vraiment le Livre blanc&nbsp;?</h2>
+            <p style="color:var(--ink-300); max-width:52ch;">
+              Huit questions générées depuis notre vision sur 30 ans pour Haïti.
+              Deux minutes pour tester vos connaissances — et les partager.
+            </p>
+
+            <ul class="lb-quiz-points">
+              <li>
+                <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+                <span>Une question à la fois, réponses expliquées et sourcées.</span>
+              </li>
+              <li>
+                <i class="fa-solid fa-trophy" aria-hidden="true"></i>
+                <span>Un score final à défier en famille, entre amis, en diaspora.</span>
+              </li>
+              <li>
+                <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+                <span>Partage en un clic sur WhatsApp et X.</span>
+              </li>
+            </ul>
+
+            <div class="u-actions">
+              <a href="/trivia.html" class="btn btn-primary btn-lg">
+                <i class="fa-solid fa-play" aria-hidden="true"></i>
+                Jouer au quiz
+              </a>
+              <a href="/livre-blanc.html" class="btn btn-ghost btn-lg">Lire le Livre blanc</a>
+            </div>
+          </div>
+
+          <div class="lb-leaderboard" aria-hidden="true">
+            <div class="lb-lb-header">
+              <i class="fa-solid fa-trophy"></i>
+              <span>Top 5 — Classement global</span>
+            </div>
+            <div class="lb-lb-rows">
+              <div class="lb-lb-row">
+                <span class="lb-lb-rank gold">1</span>
+                <span class="lb-lb-name">Jean-Robert M.</span>
+                <span class="lb-lb-score">8/8</span>
+              </div>
+              <div class="lb-lb-row">
+                <span class="lb-lb-rank silver">2</span>
+                <span class="lb-lb-name">Marie-France D.</span>
+                <span class="lb-lb-score">7/8</span>
+              </div>
+              <div class="lb-lb-row">
+                <span class="lb-lb-rank bronze">3</span>
+                <span class="lb-lb-name">Claudel Pierre</span>
+                <span class="lb-lb-score">7/8</span>
+              </div>
+              <div class="lb-lb-row">
+                <span class="lb-lb-rank">4</span>
+                <span class="lb-lb-name">Nathalie J.</span>
+                <span class="lb-lb-score">6/8</span>
+              </div>
+              <div class="lb-lb-row">
+                <span class="lb-lb-rank">5</span>
+                <span class="lb-lb-name">Frantz Azémar</span>
+                <span class="lb-lb-score">6/8</span>
+              </div>
+            </div>
+            <div class="lb-lb-overlay">
+              <i class="fa-regular fa-clock"></i>
+              <strong>Arrive bientôt</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compte à rebours (rempli depuis /api/events, masqué sinon) -->
+    <section id="agenda" class="section section-soft" hidden>
+      <div class="u-shell">
+        <div class="section-head center reveal-up">
+          <span class="section-kicker">Prochain rendez-vous</span>
+          <h2 class="section-title" id="cd-title">&nbsp;</h2>
+          <p class="section-intro" id="cd-meta"></p>
+        </div>
+
+        <div class="cd-grid" role="timer">
+          <div class="cd-tile"><strong id="cd-j">00</strong><span>jours</span></div>
+          <div class="cd-tile"><strong id="cd-h">00</strong><span>heures</span></div>
+          <div class="cd-tile"><strong id="cd-m">00</strong><span>minutes</span></div>
+          <div class="cd-tile"><strong id="cd-s">00</strong><span>secondes</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA final -->
+    <section class="section u-cta">
+      <div class="u-shell">
+        <div class="u-cta-inner">
+          <span class="eyebrow">Le moment d'agir</span>
+          <h2>Changer Haïti, <span class="u-grad">ensemble</span>.</h2>
+          <p>
+            Le pays a besoin d'une méthode, d'une volonté et d'un horizon partagé.
+            Adhérez, soutenez, partagez : chaque engagement compte.
+          </p>
+          <div class="u-actions">
+            <a href="/adherer.html" class="btn btn-primary btn-lg">Adhérer au parti</a>
+            <a href="/don.html" class="btn btn-ghost btn-lg">Faire un don</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="u-footer">
+    <div class="u-shell u-footer-grid">
+      <div class="u-footer-brand">
+        <img src="/pictures/logo/logo.png" alt="En Avant" class="footer-logo" />
+        <p>
+          Un nouveau leadership politique, moderne et avant-gardiste pour conduire Haïti
+          sur la voie du progrès.
+        </p>
+        <ul class="u-socials" aria-label="Réseaux sociaux">
+          <li><a href="https://www.instagram.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a></li>
+          <li><a href="https://x.com/EnAvantHT" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a></li>
+          <li><a href="https://www.facebook.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a></li>
+          <li><a href="https://www.youtube.com/@mouvementenavant9694" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Découvrir</h4>
+        <ul>
+          <li><a href="/Apropos.html">Qui sommes-nous ?</a></li>
+          <li><a href="/historique.html">Historique</a></li>
+          <li><a href="/organisation.html">Organisation</a></li>
+          <li><a href="/vingt-chantiers.html">Les 20 chantiers</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Agir</h4>
+        <ul>
+          <li><a href="/adherer.html">Rejoindre le parti</a></li>
+          <li><a href="/don.html">Faire un don</a></li>
+          <li><a href="/livre-blanc.html">Lire le Livre blanc</a></li>
+          <li><a href="/trivia.html">Jouer au quiz</a></li>
+          <li><a href="/blog.html">Suivre l'actualité</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Contact</h4>
+        <address>
+          <p><i class="fa-solid fa-location-dot"></i> 44, Impasse Lescot, Laboule 12, Pétionville, Haïti</p>
+          <p><i class="fa-solid fa-phone"></i> +509 4621-2121</p>
+          <p><i class="fa-solid fa-envelope"></i> contact@enavant.org</p>
+        </address>
+      </div>
+    </div>
+
+    <div class="u-footer-bottom">
+      <div class="u-shell u-footer-bottom-row">
+        <p>© 2026 Parti Politique En Avant. Tous droits réservés.</p>
+        <ul class="legal-links">
+          <li><a href="#">Mentions légales</a></li>
+          <li><a href="#">Politique de confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
+  </footer>
+
+  <!-- Retour en haut -->
+  <button id="backToTop" class="back-top" aria-label="Remonter en haut">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <!-- Chatbot -->
+  <button class="chatbot-fab" id="chatbotFab" aria-label="Ouvrir le chat">
+    <span class="chatbot-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5.5C4 4.12 5.12 3 6.5 3h11C18.88 3 20 4.12 20 5.5v7c0 1.38-1.12 2.5-2.5 2.5H11l-4.2 3.4c-.33.27-.8.03-.8-.4V15.8C4.84 15.57 4 14.62 4 13.5v-8z" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="chatbot-dot"></span>
+  </button>
+
+  <script src="/js/premium.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/countdown.js"></script>
+</body>
+</html>

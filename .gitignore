@@ -1,0 +1,26 @@
+# Dépendances
+node_modules/
+
+# Environnement — jamais de clés dans le repo
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
+
+# IDE & outils locaux
+.vscode/
+.claude/
+
+# Fichiers temporaires
+Ctempyt_search.html
+yt_search_results.html
+results1.html
+
+# Divers
+.DS_Store
+Thumbs.db
+*.log
+
+.vercel

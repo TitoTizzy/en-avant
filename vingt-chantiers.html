@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Les 20 Chantiers | En Avant</title>
+  <meta name="description" content="Découvrez les 20 chantiers prioritaires du parti En Avant pour redresser Haïti et construire un nouvel horizon national.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#071229">
+  <style>
+    /* === Section YouTube ============================================ */
+    .yt-section { background: rgba(255,255,255,.02); border-top: 1px solid var(--glass-border,rgba(255,255,255,.08)); }
+    .yt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .yt-embed { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 1rem; overflow: hidden; background: #000; }
+    .yt-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+    /* === Image plein-cadre au survol ================================== */
+    .chantier-card[data-img] {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Image injectée par JS — couvre toute la carte */
+    .card-bg-img {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0;
+      transform: scale(1.06);
+      transition: opacity .38s ease, transform .38s ease;
+      pointer-events: none;
+    }
+    .card-bg-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    /* Gradient léger haut + bas uniquement — milieu transparent pour image nette */
+    .card-bg-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      opacity: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(5,11,29,.72) 0%,
+        rgba(5,11,29,.0)  26%,
+        rgba(5,11,29,.0)  70%,
+        rgba(5,11,29,.80) 100%
+      );
+      transition: opacity .32s ease;
+      pointer-events: none;
+    }
+
+    /* Révèle image + overlay au survol */
+    .chantier-card[data-img]:hover .card-bg-img {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .chantier-card[data-img]:hover .card-bg-overlay {
+      opacity: 1;
+    }
+
+    /* Contenu de la carte — tous au premier plan */
+    .card-top,
+    .chantier-card h3,
+    .chantier-card p,
+    .card-theme {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Titre + description : transition de sortie au survol */
+    .chantier-card h3,
+    .chantier-card p {
+      transition: opacity .22s ease, transform .22s ease;
+    }
+    .chantier-card[data-img]:hover h3,
+    .chantier-card[data-img]:hover p {
+      opacity: 0;
+      transform: translateY(5px);
+      pointer-events: none;
+    }
+
+    /* Numéro, icône et badge : restent visibles, légère ombre pour lisibilité */
+    .chantier-card[data-img]:hover .card-top,
+    .chantier-card[data-img]:hover .card-theme {
+      text-shadow: 0 1px 6px rgba(0,0,0,.6);
+    }
+
+    /* === Modal Chantier ============================================== */
+    .ch-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(5,11,29,.88);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+    }
+    .ch-modal.open { opacity: 1; pointer-events: all; }
+
+    .ch-modal-box {
+      background: #0d1933;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 1.25rem;
+      max-width: 680px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(.93) translateY(14px);
+      transition: transform .22s ease;
+      box-shadow: 0 28px 80px rgba(0,0,0,.65);
+    }
+    .ch-modal.open .ch-modal-box { transform: scale(1) translateY(0); }
+
+    .ch-modal-img {
+      width: 100%;
+      max-height: 52vh;
+      object-fit: contain;
+      object-position: top;
+      border-radius: 1.25rem 1.25rem 0 0;
+      background: #000;
+      display: block;
+    }
+    .ch-modal-body { padding: 1.5rem 1.75rem 1.75rem; }
+
+    .ch-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: .9rem;
+    }
+    .ch-modal-num {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      color: var(--accent, #ff6a2a);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: .25rem;
+    }
+    .ch-modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin: 0;
+    }
+    .ch-modal-close {
+      flex-shrink: 0;
+      background: rgba(255,255,255,.08);
+      border: none;
+      color: #fff;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+    .ch-modal-close:hover { background: rgba(255,255,255,.18); }
+    .ch-modal-desc {
+      color: rgba(255,255,255,.72);
+      font-size: .95rem;
+      line-height: 1.65;
+      margin: 0;
+    }
+    .ch-modal-tag {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: .25rem .75rem;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      background: rgba(255,106,42,.12);
+      color: var(--accent, #ff6a2a);
+      border: 1px solid rgba(255,106,42,.25);
+    }
+    .ch-modal-box::-webkit-scrollbar { width: 5px; }
+    .ch-modal-box::-webkit-scrollbar-track { background: transparent; }
+    .ch-modal-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 99px; }
+  </style>
+</head>
+
+<body>
+  <div class="site-shell">
+    <header class="u-nav" id="main-header">
+      <div class="u-nav-shell">
+        <a href="/index.html" class="brand" aria-label="En Avant — Accueil">
+          <img src="/pictures/logo/logo.png" alt="Logo En Avant">
+        </a>
+
+        <nav class="u-links" id="main-nav" aria-label="Menu principal">
+          <a href="/index.html">Accueil</a>
+          <a href="/Apropos.html">À propos</a>
+          <a href="/historique.html">Historique</a>
+          <a href="/organisation.html">Organisation</a>
+          <a href="/vingt-chantiers.html" class="active" aria-current="page">Vingt chantiers</a>
+          <a href="/blog.html">Blog</a>
+          <a href="/livre-blanc.html">Livre blanc</a>
+
+          <div class="u-links-cta">
+            <a href="/login.html" class="u-login"><i class="fa-solid fa-circle-user"></i> Connexion</a>
+            <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+            <a href="/don.html" class="btn btn-primary">Faire un don</a>
+          </div>
+        </nav>
+
+        <div class="u-nav-actions">
+          <a href="/login.html" class="u-login">
+            <i class="fa-solid fa-circle-user"></i>
+            <span>Connexion</span>
+          </a>
+          <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+          <a href="/don.html" class="btn btn-primary">Faire un don</a>
+          <button class="menu-toggle" id="btn-mobile-menu" aria-label="Ouvrir le menu" aria-expanded="false" type="button">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container hero-grid">
+          <div class="hero-copy reveal-up">
+            <span class="kicker">Projet national • Horizon 2054</span>
+            <h1>20 chantiers pour redresser Haïti, dignement et ensemble.</h1>
+            <p class="hero-lead">
+              Cette page ne présente pas une simple liste. Elle expose une architecture de relèvement national : sécurité,
+              justice, production, jeunesse, institutions, énergie, territoires et dignité collective.
+            </p>
+            <div class="hero-actions-row">
+              <a href="#grille-chantiers" class="btn btn-light">Explorer les chantiers</a>
+              <a href="#vision" class="btn btn-outline-light">Lire la vision</a>
+            </div>
+            <div class="hero-meta">
+              <div>
+                <strong>20</strong>
+                <span>priorités structurantes</span>
+              </div>
+              <div>
+                <strong>2054</strong>
+                <span>cap des 250 ans d’indépendance</span>
+              </div>
+              <div>
+                <strong>1</strong>
+                <span>ambition nationale partagée</span>
+              </div>
+            </div>
+          </div>
+
+          <aside class="hero-panel reveal-up delay-1">
+            <div class="panel-card panel-flag">
+              <span class="mini-label">Fil conducteur</span>
+              <h2>L'union fait la force.</h2>
+              <p>
+                La reconstruction d’Haïti ne peut pas reposer sur un homme providentiel. Elle suppose une alliance entre la jeunesse,
+                l’expérience, la diaspora, les territoires et les forces vives du pays.
+              </p>
+            </div>
+            <div class="panel-card panel-pillars">
+              <span class="mini-label">3 piliers</span>
+              <ul>
+                <li><i class="fa-solid fa-shield-halved"></i> Ordre public et sécurité</li>
+                <li><i class="fa-solid fa-scale-balanced"></i> État de droit et confiance</li>
+                <li><i class="fa-solid fa-seedling"></i> Production et prospérité</li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="intro section" id="vision">
+        <div class="container">
+          <div class="section-heading centered reveal-up">
+            <span class="section-tag">La vision</span>
+            <h2>Une page de chantiers pensée comme une feuille de route pour Haïti</h2>
+            <p>
+              Le slogan <strong>« Pour changer Haïti ensemble »</strong> appelle à une mobilisation large : jeunesse, femmes, diaspora,
+              enseignants, agriculteurs, policiers, artistes, ouvriers, cadres, entrepreneurs et collectivités. Ces 20 chantiers sont présentés ici
+              comme des leviers complémentaires d’un même projet national.
+            </p>
+          </div>
+
+          <div class="manifesto-grid">
+            <article class="manifesto-card reveal-up">
+              <div class="manifesto-icon"><i class="fa-solid fa-people-group"></i></div>
+              <h3>Mobilisation collective</h3>
+              <p>Faire converger toutes les générations et tous les secteurs autour d’un cap politique sérieux, lisible et utile.</p>
+            </article>
+            <article class="manifesto-card reveal-up delay-1">
+              <div class="manifesto-icon"><i class="fa-solid fa-bullseye"></i></div>
+              <h3>Priorités claires</h3>
+              <p>Donner à la nation des objectifs concrets, hiérarchisés et suivis dans la durée plutôt qu’une promesse floue.</p>
+            </article>
+            <article class="manifesto-card reveal-up delay-2">
+              <div class="manifesto-icon"><i class="fa-solid fa-landmark"></i></div>
+              <h3>État crédible</h3>
+              <p>Restaurer la confiance par des institutions plus fortes, transparentes, territorialisées et orientées résultats.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section themes-section">
+        <div class="container">
+          <div class="section-heading reveal-up">
+            <span class="section-tag">Lecture rapide</span>
+            <h2>Les 20 chantiers organisés par grandes familles</h2>
+            <p>Pour que la page respire davantage, les chantiers sont regroupés par logique d’action publique.</p>
+          </div>
+
+          <div class="theme-tabs reveal-up delay-1" id="theme-tabs">
+            <button class="theme-tab is-active" data-filter="all">Tous</button>
+            <button class="theme-tab" data-filter="souverainete">Souveraineté</button>
+            <button class="theme-tab" data-filter="social">Social</button>
+            <button class="theme-tab" data-filter="developpement">Développement</button>
+            <button class="theme-tab" data-filter="gouvernance">Gouvernance</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section chantier-section" id="grille-chantiers">
+        <div class="container">
+          <div class="chantier-grid">
+            <article class="chantier-card reveal-up" data-theme="souverainete" data-img="/pictures/chantiers/chantier-01.jpeg">
+              <div class="card-top"><span class="card-index">01</span><i class="fa-solid fa-shield"></i></div>
+              <h3>Sécurité</h3>
+              <p>Rétablir la sécurité sur l’ensemble du territoire afin de permettre le retour de la paix et la normalisation des activités économiques et sociales.</p>
+              <span class="card-theme">Souveraineté</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-1" data-theme="souverainete" data-img="/pictures/chantiers/chantier-02.jpeg">
+              <div class="card-top"><span class="card-index">02</span><i class="fa-solid fa-helmet-safety"></i></div>
+              <h3>Défense et protection civile</h3>
+              <p>Reconstituer des forces de défense aux missions sécuritaires et civiques clairement encadrées, avec des garde-fous contre les dérives du passé.</p>
+              <span class="card-theme">Souveraineté</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-03.jpeg">
+              <div class="card-top"><span class="card-index">03</span><i class="fa-solid fa-chart-line"></i></div>
+              <h3>Économie et création d’emploi</h3>
+              <p>Relancer l’économie haïtienne pour produire de la croissance, créer des emplois durables et soutenir l’ambition d’une économie émergente en 2054.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-04.jpeg">
+              <div class="card-top"><span class="card-index">04</span><i class="fa-solid fa-school"></i></div>
+              <h3>Éducation</h3>
+              <p>Garantir l’accès gratuit à l’école primaire et améliorer la qualité de l’éducation, de la formation professionnelle et de l’enseignement supérieur sur tout le territoire.</p>
+              <span class="card-theme">Social</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-05.jpeg">
+              <div class="card-top"><span class="card-index">05</span><i class="fa-solid fa-earth-americas"></i></div>
+              <h3>Intégration de la diaspora</h3>
+              <p>Associer la diaspora aux décisions d’avenir et réinscrire la communauté expatriée dans la construction politique, économique et institutionnelle du pays.</p>
+              <span class="card-theme">Gouvernance</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-2" data-theme="social" data-img="/pictures/chantiers/chantier-06.jpeg">
+              <div class="card-top"><span class="card-index">06</span><i class="fa-solid fa-heart-pulse"></i></div>
+              <h3>Santé</h3>
+              <p>Mettre en place une politique nationale de santé garantissant l’accès aux services sanitaires de base, quelles que soient les ressources ou la région d’habitation.</p>
+              <span class="card-theme">Social</span>
+            </article>
+
+            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-07.jpeg">
+              <div class="card-top"><span class="card-index">07</span><i class="fa-solid fa-venus-mars"></i></div>
+              <h3>Égalité femmes-hommes</h3>
+              <p>Promouvoir l’égalité entre les femmes et les hommes dans toutes les sphères de la vie nationale et à tous les niveaux de responsabilité.</p>
+              <span class="card-theme">Social</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-1" data-theme="developpement" data-img="/pictures/chantiers/chantier-08.jpeg">
+              <div class="card-top"><span class="card-index">08</span><i class="fa-solid fa-leaf"></i></div>
+              <h3>Environnement et aménagement du territoire</h3>
+              <p>Réhabiliter l’environnement par des actions concertées sur le foncier, l’agriculture, l’économie locale et la planification territoriale.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-2" data-theme="social" data-img="/pictures/chantiers/chantier-09.jpeg">
+              <div class="card-top"><span class="card-index">09</span><i class="fa-solid fa-masks-theater"></i></div>
+              <h3>Culture</h3>
+              <p>Déployer une politique culturelle capable de soutenir le développement économique, social et le rayonnement d’Haïti dans le monde.</p>
+              <span class="card-theme">Social</span>
+            </article>
+
+            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-10.jpeg">
+              <div class="card-top"><span class="card-index">10</span><i class="fa-solid fa-futbol"></i></div>
+              <h3>Jeunesse, sport et action civique</h3>
+              <p>Favoriser la pratique du sport et offrir à la jeunesse des espaces d’engagement civique en protection civile, environnement, hygiène publique et reboisement.</p>
+              <span class="card-theme">Social</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-11.jpeg">
+              <div class="card-top"><span class="card-index">11</span><i class="fa-solid fa-scale-balanced"></i></div>
+              <h3>Justice</h3>
+              <p>Établir un pouvoir judiciaire fort, indépendant et accessible afin de consolider l’État de droit, la sécurité et la stabilité démocratique.</p>
+              <span class="card-theme">Gouvernance</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-12.jpeg">
+              <div class="card-top"><span class="card-index">12</span><i class="fa-solid fa-umbrella-beach"></i></div>
+              <h3>Tourisme</h3>
+              <p>Faire d’Haïti une destination touristique de référence dans la Caraïbe pour transformer ce secteur en moteur de développement économique.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up" data-theme="developpement" data-img="/pictures/chantiers/chantier-13.jpeg">
+              <div class="card-top"><span class="card-index">13</span><i class="fa-solid fa-road-bridge"></i></div>
+              <h3>Infrastructures</h3>
+              <p>Lancer un plan ambitieux de réhabilitation et de construction : routes, ponts, ports, eau, énergie, télécommunications, transport et gestion des déchets.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-14.jpeg">
+              <div class="card-top"><span class="card-index">14</span><i class="fa-solid fa-handshake-angle"></i></div>
+              <h3>Diplomatie, politique étrangère et coopération externe</h3>
+              <p>Faire de la diplomatie économique un levier de développement et d’amélioration durable de l’image d’Haïti à l’international.</p>
+              <span class="card-theme">Gouvernance</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-15.jpeg">
+              <div class="card-top"><span class="card-index">15</span><i class="fa-solid fa-wheat-awn"></i></div>
+              <h3>Production nationale et agriculture</h3>
+              <p>Construire une agriculture rentable, productive et performante au service de l’autosuffisance alimentaire et du redressement de la production nationale.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-16.jpeg">
+              <div class="card-top"><span class="card-index">16</span><i class="fa-solid fa-file-invoice-dollar"></i></div>
+              <h3>Transparence et reddition des comptes</h3>
+              <p>Combattre la corruption, renforcer les institutions et donner aux citoyens un accès direct à l’information sur l’utilisation des fonds publics.</p>
+              <span class="card-theme">Gouvernance</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-1" data-theme="developpement" data-img="/pictures/chantiers/chantier-17.jpeg">
+              <div class="card-top"><span class="card-index">17</span><i class="fa-solid fa-briefcase"></i></div>
+              <h3>Secteur privé</h3>
+              <p>Prioriser la création de richesse et d’emploi par l’investissement privé local et étranger, des microentreprises aux grandes entreprises.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-18.png">
+              <div class="card-top"><span class="card-index">18</span><i class="fa-solid fa-bolt"></i></div>
+              <h3>Énergie</h3>
+              <p>Moderniser le plan national du secteur énergétique afin d’améliorer la desserte en électricité au moindre coût pour la population et l’économie.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up" data-theme="developpement" data-img="/pictures/chantiers/chantier-19.jpeg">
+              <div class="card-top"><span class="card-index">19</span><i class="fa-solid fa-gem"></i></div>
+              <h3>Mines</h3>
+              <p>Adopter une loi minière avec des procédures claires pour une exploitation moderne, responsable et bénéfique au développement d’Haïti.</p>
+              <span class="card-theme">Développement</span>
+            </article>
+
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-20.jpeg">
+              <div class="card-top"><span class="card-index">20</span><i class="fa-solid fa-map-location-dot"></i></div>
+              <h3>Collectivités territoriales</h3>
+              <p>Mettre en place une véritable décentralisation politique, fiscale et économique, fondée sur des collectivités territoriales effectives.</p>
+              <span class="card-theme">Gouvernance</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- === En vidéo ============================================== -->
+      <section class="section yt-section">
+        <div class="container">
+          <div class="section-heading centered reveal-up">
+            <span class="section-tag">En vidéo</span>
+            <h2>Les 20 chantiers, expliqués</h2>
+            <p>Découvrez notre vision pour Haïti à travers nos présentations vidéo.</p>
+          </div>
+          <div class="yt-grid reveal-up">
+            <div class="yt-embed">
+              <iframe
+                src="https://www.youtube.com/embed/XL8C7lSKhZo"
+                title="Les 20 Chantiers de l'Espoir — Partie 1/2 (D. Alain Menelas, Boston)"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+            <div class="yt-embed">
+              <iframe
+                src="https://www.youtube.com/embed/4i2cMwZtBcw"
+                title="Les 20 Chantiers de l'Espoir — Partie 2/2 (Reginald Siméon, New York)"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="u-footer">
+      <div class="u-shell u-footer-grid">
+        <div class="u-footer-brand">
+          <img src="/pictures/logo/logo.png" alt="En Avant" class="footer-logo">
+          <p>En Avant porte une ambition collective pour Haïti : ordre, justice, production, dignité et relèvement national.</p>
+          <ul class="u-socials" aria-label="Réseaux sociaux">
+            <li><a href="https://www.instagram.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a></li>
+            <li><a href="https://x.com/EnAvantHT" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a></li>
+            <li><a href="https://www.facebook.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a></li>
+            <li><a href="https://www.youtube.com/@mouvementenavant9694" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Découvrir</h4>
+          <ul>
+            <li><a href="/Apropos.html">Qui sommes-nous ?</a></li>
+            <li><a href="/historique.html">Historique</a></li>
+            <li><a href="/organisation.html">Organisation</a></li>
+            <li><a href="/vingt-chantiers.html">Les 20 chantiers</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Agir</h4>
+          <ul>
+            <li><a href="/adherer.html">Rejoindre le parti</a></li>
+            <li><a href="/don.html">Faire un don</a></li>
+            <li><a href="/livre-blanc.html">Lire le Livre blanc</a></li>
+            <li><a href="/blog.html">Suivre l'actualité</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Contact</h4>
+          <address>
+            <p><i class="fa-solid fa-location-dot"></i> 44, Impasse Lescot, Laboule 12, Pétionville, Haïti</p>
+            <p><i class="fa-solid fa-phone"></i> +509 4621-2121</p>
+            <p><i class="fa-solid fa-envelope"></i> contact@enavant.org</p>
+          </address>
+        </div>
+      </div>
+
+      <div class="u-footer-bottom">
+        <div class="u-shell u-footer-bottom-row">
+          <p>© 2026 Parti Politique En Avant. Tous droits réservés.</p>
+          <ul class="legal-links">
+            <li><a href="#">Mentions légales</a></li>
+            <li><a href="#">Politique de confidentialité</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
+    </footer>
+
+    <button class="back-top" id="back-top" aria-label="Retour en haut">
+      <i class="fa-solid fa-arrow-up"></i>
+    </button>
+  </div>
+
+  <!-- Modal chantier -->
+  <div class="ch-modal" id="ch-modal" role="dialog" aria-modal="true" aria-labelledby="ch-modal-title">
+    <div class="ch-modal-box">
+      <img class="ch-modal-img" id="ch-modal-img" src="" alt="">
+      <div class="ch-modal-body">
+        <div class="ch-modal-header">
+          <div>
+            <span class="ch-modal-num" id="ch-modal-num"></span>
+            <h3 class="ch-modal-title" id="ch-modal-title"></h3>
+          </div>
+          <button class="ch-modal-close" id="ch-modal-close" aria-label="Fermer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <p class="ch-modal-desc" id="ch-modal-desc"></p>
+        <span class="ch-modal-tag" id="ch-modal-tag"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chatbot -->
+  <button class="chatbot-fab" id="chatbotFab" aria-label="Ouvrir le chat">
+    <span class="chatbot-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5.5C4 4.12 5.12 3 6.5 3h11C18.88 3 20 4.12 20 5.5v7c0 1.38-1.12 2.5-2.5 2.5H11l-4.2 3.4c-.33.27-.8.03-.8-.4V15.8C4.84 15.57 4 14.62 4 13.5v-8z" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="chatbot-dot"></span>
+  </button>
+
+  <script src="/js/premium.js"></script>
+  <script src="/js/vingt-chantiers-haiti.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const modal      = document.getElementById("ch-modal");
+      const modalImg   = document.getElementById("ch-modal-img");
+      const modalNum   = document.getElementById("ch-modal-num");
+      const modalTitle = document.getElementById("ch-modal-title");
+      const modalDesc  = document.getElementById("ch-modal-desc");
+      const modalTag   = document.getElementById("ch-modal-tag");
+      const closeBtn   = document.getElementById("ch-modal-close");
+
+      // Injecter image + overlay dans chaque carte
+      document.querySelectorAll(".chantier-card[data-img]").forEach(card => {
+        // Couche image
+        const bgDiv = document.createElement("div");
+        bgDiv.className = "card-bg-img";
+        const img = document.createElement("img");
+        img.src = card.dataset.img;
+        img.alt = "";
+        img.setAttribute("aria-hidden", "true");
+        bgDiv.appendChild(img);
+
+        // Couche gradient
+        const overlay = document.createElement("div");
+        overlay.className = "card-bg-overlay";
+
+        card.prepend(overlay);
+        card.prepend(bgDiv);
+
+        // Clic → modal
+        card.addEventListener("click", () => {
+          const num   = card.querySelector(".card-index").textContent;
+          const title = card.querySelector("h3").textContent;
+          const desc  = card.querySelector("p").textContent;
+          const tag   = card.querySelector(".card-theme").textContent;
+
+          modalImg.src           = card.dataset.img;
+          modalImg.alt           = title;
+          modalNum.textContent   = "Chantier " + num;
+          modalTitle.textContent = title;
+          modalDesc.textContent  = desc;
+          modalTag.textContent   = tag;
+
+          modal.classList.add("open");
+          document.body.style.overflow = "hidden";
+          closeBtn.focus();
+        });
+      });
+
+      function closeModal() {
+        modal.classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      closeBtn.addEventListener("click", closeModal);
+      modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+    })();
+  </script>
+</body>
+</html>

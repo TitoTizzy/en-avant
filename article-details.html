@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Article | En Avant</title>
+  <meta name="description" content="Les analyses et communiqués du parti En Avant pour le redressement d'Haïti.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#071229">
+</head>
+
+<body>
+  <!-- Navbar pilule flottante -->
+  <header class="u-nav" id="main-header">
+    <div class="u-nav-shell">
+      <a href="/index.html" class="brand" aria-label="En Avant — Accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant">
+      </a>
+
+      <nav class="u-links" id="main-nav" aria-label="Menu principal">
+        <a href="/index.html">Accueil</a>
+        <a href="/Apropos.html">À propos</a>
+        <a href="/historique.html">Historique</a>
+        <a href="/organisation.html">Organisation</a>
+        <a href="/vingt-chantiers.html">Vingt chantiers</a>
+        <a href="/blog.html" class="active" aria-current="page">Blog</a>
+        <a href="/livre-blanc.html">Livre blanc</a>
+
+        <div class="u-links-cta">
+          <a href="/login.html" class="u-login"><i class="fa-solid fa-circle-user"></i> Connexion</a>
+          <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+          <a href="/don.html" class="btn btn-primary">Faire un don</a>
+        </div>
+      </nav>
+
+      <div class="u-nav-actions">
+        <a href="/login.html" class="u-login">
+          <i class="fa-solid fa-circle-user"></i>
+          <span>Connexion</span>
+        </a>
+        <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+        <a href="/don.html" class="btn btn-primary">Faire un don</a>
+
+        <button id="btn-mobile-menu" class="menu-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- En-tête article -->
+    <section class="art-hero">
+      <div class="u-shell">
+        <span class="eyebrow" id="art-cat">Programme</span>
+        <h1 class="section-title" id="art-title" style="max-width:18ch;">Chargement de l'article…</h1>
+
+        <div class="art-meta">
+          <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> <time id="art-date">—</time></span>
+          <span><i class="fa-regular fa-clock" aria-hidden="true"></i> <span id="art-reading">— min de lecture</span></span>
+          <span class="share-tools">
+            <button class="btn btn-ghost btn-xs" type="button" id="art-copy" title="Copier le lien">
+              <i class="fa-solid fa-link" aria-hidden="true"></i> Copier le lien
+            </button>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Corps + aside -->
+    <div class="u-shell">
+      <div class="art-layout">
+        <article aria-labelledby="art-title">
+          <div class="art-cover" id="art-cover" hidden>
+            <img src="" alt="" id="art-cover-img">
+          </div>
+
+          <!-- Lecteur TTS (ElevenLabs via /api/tts) -->
+          <div class="tts-player" id="tts-player">
+            <button type="button" class="tts-btn" id="tts-btn">
+              <i class="fa-solid fa-headphones" aria-hidden="true"></i>
+              Écouter cet article
+            </button>
+            <audio id="tts-audio" controls hidden></audio>
+            <span class="tts-note" id="tts-note">Version audio générée automatiquement.</span>
+          </div>
+
+          <div class="art-body" id="art-body">
+            <p>Chargement…</p>
+          </div>
+        </article>
+
+        <aside class="art-aside" aria-label="Compléments">
+          <div class="u-card">
+            <h4>Articles récents</h4>
+            <ul id="art-recent">
+              <li><a href="/blog.html">Voir toute l'actualité…</a></li>
+            </ul>
+          </div>
+
+          <div class="u-card">
+            <h4>Rechercher</h4>
+            <p style="margin:0 0 1rem; color:var(--ink-400); font-size:0.93rem;">
+              Explorez nos analyses, communiqués et actions de terrain.
+            </p>
+            <a href="/blog.html" class="btn btn-ghost btn-full">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              Parcourir le blog
+            </a>
+          </div>
+
+          <div class="u-card" style="border-color: rgba(255,138,76,0.35);">
+            <h4>Soutenir le mouvement</h4>
+            <p style="margin:0 0 1rem; color:var(--ink-400); font-size:0.93rem;">
+              Chaque contribution finance l'action de terrain et la diffusion du programme.
+            </p>
+            <a href="/don.html" class="btn btn-primary btn-full">Faire un don</a>
+          </div>
+
+          <!-- Conteneur chatbot (DAT — page article) -->
+          <div id="chatbot-container"></div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="u-footer">
+    <div class="u-shell u-footer-grid">
+      <div class="u-footer-brand">
+        <img src="/pictures/logo/logo.png" alt="En Avant" class="footer-logo">
+        <p>
+          Un nouveau leadership politique, moderne et avant-gardiste pour conduire Haïti
+          sur la voie du progrès.
+        </p>
+        <ul class="u-socials" aria-label="Réseaux sociaux">
+          <li><a href="https://www.instagram.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a></li>
+          <li><a href="https://x.com/EnAvantHT" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a></li>
+          <li><a href="https://www.facebook.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a></li>
+          <li><a href="https://www.youtube.com/@mouvementenavant9694" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Découvrir</h4>
+        <ul>
+          <li><a href="/Apropos.html">Qui sommes-nous ?</a></li>
+          <li><a href="/historique.html">Historique</a></li>
+          <li><a href="/organisation.html">Organisation</a></li>
+          <li><a href="/vingt-chantiers.html">Les 20 chantiers</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Agir</h4>
+        <ul>
+          <li><a href="/adherer.html">Rejoindre le parti</a></li>
+          <li><a href="/don.html">Faire un don</a></li>
+          <li><a href="/livre-blanc.html">Lire le Livre blanc</a></li>
+          <li><a href="/trivia.html">Jouer au quiz</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Contact</h4>
+        <address>
+          <p><i class="fa-solid fa-location-dot"></i> 44, Impasse Lescot, Laboule 12, Pétionville, Haïti</p>
+          <p><i class="fa-solid fa-phone"></i> +509 4621-2121</p>
+          <p><i class="fa-solid fa-envelope"></i> contact@enavant.org</p>
+        </address>
+      </div>
+    </div>
+
+    <div class="u-footer-bottom">
+      <div class="u-shell u-footer-bottom-row">
+        <p>© 2026 Parti Politique En Avant. Tous droits réservés.</p>
+        <ul class="legal-links">
+          <li><a href="#">Mentions légales</a></li>
+          <li><a href="#">Politique de confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
+  </footer>
+
+  <!-- Chatbot -->
+  <button class="chatbot-fab" id="chatbotFab" aria-label="Ouvrir le chat">
+    <span class="chatbot-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5.5C4 4.12 5.12 3 6.5 3h11C18.88 3 20 4.12 20 5.5v7c0 1.38-1.12 2.5-2.5 2.5H11l-4.2 3.4c-.33.27-.8.03-.8-.4V15.8C4.84 15.57 4 14.62 4 13.5v-8z" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="chatbot-dot"></span>
+  </button>
+
+  <script src="/js/premium.js"></script>
+  <script src="/js/article.js"></script>
+</body>
+</html>

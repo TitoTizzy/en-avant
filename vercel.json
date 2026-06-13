@@ -1,0 +1,51 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/tts.js":    { "maxDuration": 60 },
+    "api/trivia.js": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/api/auth/login",        "destination": "/api/auth?action=login" },
+    { "source": "/api/auth/logout",       "destination": "/api/auth?action=logout" },
+    { "source": "/api/auth/register",     "destination": "/api/auth?action=register" },
+    { "source": "/api/auth/verify-pin",   "destination": "/api/auth?action=verify-pin" },
+    { "source": "/api/auth/change-pin",   "destination": "/api/auth?action=change-pin" },
+    { "source": "/api/admin/dashboard",   "destination": "/api/admin?action=dashboard" },
+    { "source": "/api/admin/articles",    "destination": "/api/admin?action=articles" },
+    { "source": "/api/admin/events",      "destination": "/api/admin?action=events" },
+    { "source": "/api/admin/media",       "destination": "/api/admin?action=media" },
+    { "source": "/api/admin/team",        "destination": "/api/admin?action=team" },
+    { "source": "/api/admin/trivia",      "destination": "/api/admin?action=trivia" },
+    { "source": "/api/admin/integrations","destination": "/api/admin?action=integrations" },
+    { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
+    { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
+    { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
+    { "source": "/api/trivia/generate-session", "destination": "/api/trivia?action=generate-session" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+      ]
+    },
+    {
+      "source": "/pictures/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(css|js)/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}
