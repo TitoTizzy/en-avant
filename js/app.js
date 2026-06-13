@@ -94,6 +94,7 @@ function initMobileMenu() {
 async function hydrateNews() {
   const featureCard = document.querySelector(".feature-card");
   const miniCards   = document.querySelectorAll(".mini-news-card");
+  const newsSection = featureCard?.closest("section") || null;
   if (!featureCard && !miniCards.length) return;
 
   const CAT_LABELS = {
@@ -113,13 +114,23 @@ async function hydrateNews() {
   try {
     const res     = await fetch("/api/articles?limit=4", { signal: AbortSignal.timeout(4000) });
     const payload = await res.json().catch(() => ({}));
-    if (!res.ok || !payload.articles?.length) return;
 
-    const arts = payload.articles;
+    // Cacher la section si aucun article publié
+    if (!res.ok || !payload.articles?.length) {
+      if (newsSection) newsSection.hidden = true;
+      return;
+    }
 
-    // Article vedette (le plus récent)
-    if (featureCard && arts[0]) {
-      const a    = arts[0];
+    if (newsSection) newsSection.hidden = false;
+
+    // Featured article: prefer is_featured flag, fallback to most recent
+    const arts    = payload.articles;
+    const featIdx = arts.findIndex((a) => a.is_featured);
+    const ordered = featIdx > 0 ? [arts[featIdx], ...arts.filter((_, i) => i !== featIdx)] : arts;
+
+    // Article vedette
+    if (featureCard && ordered[0]) {
+      const a    = ordered[0];
       const cat  = CAT_LABELS[a.categorie] || a.categorie || "Actualité";
       const href = `/article-details.html?slug=${encodeURIComponent(a.slug)}`;
 
@@ -141,7 +152,7 @@ async function hydrateNews() {
 
     // Cartes secondaires (articles 2, 3, 4)
     miniCards.forEach((card, i) => {
-      const a = arts[i + 1];
+      const a = ordered[i + 1];
       if (!a) return;
       const cat  = CAT_LABELS[a.categorie] || a.categorie || "Actualité";
       const href = `/article-details.html?slug=${encodeURIComponent(a.slug)}`;

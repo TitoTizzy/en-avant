@@ -25,6 +25,7 @@ document.documentElement.classList.add("js-ready");
     initLanguage();
     initChatbot();
     initAuthNav();
+    initFirstVisitIntro();
   });
 
   /* Organigramme : initiales en placeholder dans chaque pastille photo.
@@ -496,6 +497,27 @@ document.documentElement.classList.add("js-ready");
     fab.addEventListener("click", () => {
       alert("Le module de chat sera bientôt disponible.");
     });
+  }
+
+  /* Intro logo plein écran : seulement à la toute première visite du site */
+  function initFirstVisitIntro() {
+    const intro = document.getElementById("ea-intro");
+    if (!intro) return;
+
+    if (localStorage.getItem("ea-visited")) {
+      intro.remove();
+      return;
+    }
+
+    localStorage.setItem("ea-visited", "1");
+
+    const dismiss = () => {
+      intro.classList.add("ea-intro-out");
+      intro.addEventListener("transitionend", () => intro.remove(), { once: true });
+    };
+    // Affiche 2,6 s puis fondu de sortie — ou clic/tap pour passer
+    setTimeout(dismiss, 2600);
+    intro.addEventListener("click", dismiss, { once: true });
   }
 
   /* Navigation auth-aware : "Connexion" → prénom du membre si session active */

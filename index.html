@@ -583,10 +583,23 @@
               </div>
             </div>
             <div class="lb-lb-overlay">
-              <i class="fa-regular fa-clock"></i>
-              <strong>Arrive bientôt</strong>
+              <i class="fa-solid fa-trophy"></i>
+              <strong>Leaderboard</strong>
+              <small>Classement global — arrive bientôt</small>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dernier événement passé (masqué si aucun) -->
+    <section id="last-event-section" class="section section-dark" hidden>
+      <div class="u-shell">
+        <div class="section-head center reveal-up">
+          <span class="section-kicker">Retour sur…</span>
+          <h2 class="section-title" id="le-title"></h2>
+          <p class="section-intro" id="le-meta"></p>
+          <p class="section-intro" id="le-desc" hidden style="opacity:.75; font-style:italic;"></p>
         </div>
       </div>
     </section>
@@ -688,6 +701,11 @@
 
     <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
   </footer>
+
+  <!-- Intro logo (1ère visite uniquement — géré par premium.js) -->
+  <div id="ea-intro" class="ea-intro-screen" aria-hidden="true">
+    <img src="/pictures/logo/logo.png" alt="En Avant" class="ea-intro-logo" draggable="false">
+  </div>
 
   <!-- Retour en haut -->
   <button id="backToTop" class="back-top" aria-label="Remonter en haut">

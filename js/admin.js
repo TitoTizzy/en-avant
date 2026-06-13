@@ -77,17 +77,21 @@
   }
 
   const PANEL_TITLES = {
-    "panel-home": "Tableau de bord",
-    "panel-articles": "Articles",
-    "panel-events": "Événements",
-    "panel-media": "Médiathèque",
-    "panel-members": "Membres",
-    "panel-donations": "Dons",
-    "panel-leads": "Leads",
-    "panel-trivia": "Trivia IA",
-    "panel-team": "Équipe",
+    "panel-home":         "Tableau de bord",
+    "panel-articles":     "Articles",
+    "panel-events":       "Événements",
+    "panel-media":        "Médiathèque",
+    "panel-gallery":      "Galerie",
+    "panel-organisation": "Organisation",
+    "panel-members":      "Membres",
+    "panel-donations":    "Dons",
+    "panel-leads":        "Leads",
+    "panel-trivia":       "Trivia IA",
     "panel-integrations": "Intégrations",
-    "panel-security": "Sécurité",
+    "panel-equipe":       "Équipe (staff)",
+    "panel-security":     "Sécurité",
+    "panel-settings":     "Paramètres",
+    "panel-logs":         "Journal d'activité",
   };
 
   function switchPanel(panelId) {
@@ -354,6 +358,7 @@
           <span class="badge ${article.published ? "approved" : "pending"}">
             ${article.published ? "Publié" : "Brouillon"}
           </span>
+          ${article.is_featured ? '<span class="badge" style="background:rgba(255,165,0,.18);color:#ffa500;"><i class="fa-solid fa-star" style="font-size:.7em;"></i> À la une</span>' : ""}
           <small>${fmtDate(article.updated_at)}</small>
         </div>
         <div class="adm-record-actions">
@@ -361,6 +366,9 @@
             <i class="fa-solid fa-image" aria-hidden="true"></i>
             <input class="article-image" type="file" accept="image/jpeg,image/png,image/webp" hidden>
           </label>
+          <button class="btn btn-ghost btn-xs article-feature" type="button" title="${article.is_featured ? "Retirer de la une" : "Mettre à la une"}">
+            <i class="fa-${article.is_featured ? "solid" : "regular"} fa-star" aria-hidden="true"></i>
+          </button>
           <button class="btn btn-ghost btn-xs article-publish" type="button">
             ${article.published ? "Dépublier" : "Publier"}
           </button>
@@ -416,10 +424,36 @@
     const host = document.getElementById("articles-admin");
     if (!form || !host) return;
 
+    // Quill rich text editor
+    let quill = null;
+    try {
+      quill = new Quill("#article-content-editor", {
+        theme: "snow",
+        placeholder: "Rédigez votre article ici…",
+        modules: {
+          toolbar: [
+            [{ font: [] }, { size: ["small", false, "large", "huge"] }],
+            ["bold", "italic", "underline", "strike"],
+            [{ color: [] }, { background: [] }],
+            [{ list: "ordered" }, { list: "bullet" }],
+            [{ align: [] }],
+            ["link", "image"],
+            ["clean"],
+          ],
+        },
+      });
+    } catch (_) {}
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = document.getElementById("article-create-submit");
       button.classList.add("btn-loading");
+      const contenu = quill ? quill.root.innerHTML : "";
+      if (quill && quill.getText().trim().length === 0) {
+        setModuleStatus("article-status", "error", "Le contenu de l'article est vide.");
+        button.classList.remove("btn-loading");
+        return;
+      }
       try {
         await api("/api/admin/articles", {
           method: "POST",
@@ -427,10 +461,12 @@
             titre: document.getElementById("article-title").value,
             categorie: document.getElementById("article-category").value,
             excerpt: document.getElementById("article-excerpt").value,
-            contenu: document.getElementById("article-content").value,
+            contenu,
+            is_featured: document.getElementById("article-featured")?.checked || false,
           }),
         });
         form.reset();
+        if (quill) quill.setContents([]);
         setModuleStatus("article-status", "success", "Brouillon créé.");
         await loadArticles();
         document.getElementById("st-articles").textContent =
@@ -445,12 +481,24 @@
     host.addEventListener("click", async (event) => {
       const card = event.target.closest(".adm-record");
       if (!card) return;
-      const save = event.target.closest(".article-save");
+      const save    = event.target.closest(".article-save");
       const publish = event.target.closest(".article-publish");
-      const remove = event.target.closest(".article-delete");
-      if (!save && !publish && !remove) return;
+      const remove  = event.target.closest(".article-delete");
+      const feature = event.target.closest(".article-feature");
+      if (!save && !publish && !remove && !feature) return;
 
       try {
+        if (feature) {
+          const currentlyFeatured = feature.querySelector(".fa-solid") !== null;
+          await api("/api/admin/articles", {
+            method: "PATCH",
+            body: JSON.stringify({ id: card.dataset.id, is_featured: !currentlyFeatured }),
+          });
+          setModuleStatus("article-status", "success", currentlyFeatured ? "Retiré de la une." : "Article mis à la une.");
+          await loadArticles();
+          return;
+        }
+
         if (remove) {
           if (!window.confirm("Supprimer définitivement cet article ?")) return;
           await api("/api/admin/articles", {
@@ -1147,6 +1195,18 @@
     return row;
   }
 
+  // Sections stockées en localStorage pour permettre renommage/ajout sans DB
+  function getSections() {
+    try {
+      const stored = localStorage.getItem("ea-org-sections");
+      if (stored) return JSON.parse(stored);
+    } catch (_) {}
+    return TEAM_SECTIONS.map(([k, l]) => ({ key: k, label: l }));
+  }
+  function saveSections(sections) {
+    localStorage.setItem("ea-org-sections", JSON.stringify(sections));
+  }
+
   async function loadTeam() {
     const host = document.getElementById("team-admin");
     if (!host) return;
@@ -1155,18 +1215,33 @@
       const { members } = await api("/api/admin/team");
       host.innerHTML = "";
 
-      TEAM_SECTIONS.forEach(([key, label]) => {
+      const sections = getSections();
+      // Sections déduites de la DB qui n'existent pas encore dans la liste locale
+      const knownKeys = new Set(sections.map((s) => s.key));
+      members.forEach((m) => {
+        if (m.section && !knownKeys.has(m.section)) {
+          sections.push({ key: m.section, label: m.section });
+          knownKeys.add(m.section);
+        }
+      });
+
+      sections.forEach((sec) => {
         const block = document.createElement("div");
         block.className = "adm-team-section";
+        block.dataset.sectionKey = sec.key;
         block.innerHTML = `
-          <div class="adm-team-head">
-            <h5>${label}</h5>
-            <button type="button" class="btn btn-ghost btn-xs ti-add" data-section="${key}">
+          <div class="adm-team-head" style="align-items:center; gap:.5rem;">
+            <input type="text" class="adm-section-title-edit" value="${sec.label}"
+                   title="Cliquez pour renommer la section" data-orig="${sec.key}">
+            <button type="button" class="btn btn-ghost btn-xs ti-rename-section" data-section="${sec.key}" title="Renommer">
+              <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs ti-add" data-section="${sec.key}" style="margin-left:auto;">
               <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter une carte
             </button>
           </div>`;
         members
-          .filter((member) => member.section === key)
+          .filter((member) => member.section === sec.key)
           .forEach((member) => block.appendChild(teamRow(member)));
         host.appendChild(block);
       });
@@ -1358,6 +1433,10 @@
     bindPinChange();
     bindPasswordChange();
     bindTeam();
+    bindOrgSections();
+    bindSettings();
+    bindStaffPanel();
+    bindLogsPanel();
 
     // Chargement des données API (optionnel — silencieux si API indisponible)
     try {
@@ -1383,4 +1462,155 @@
     loadTriviaBank();
     loadTeam();
   })();
+
+  /* ─── Organigramme : sections éditables ──────────────────────────── */
+  function bindOrgSections() {
+    // Bouton "Nouvelle section"
+    const addSectionBtn = document.getElementById("org-add-section");
+    if (addSectionBtn) {
+      addSectionBtn.addEventListener("click", async () => {
+        const name = prompt("Nom de la nouvelle section :");
+        if (!name?.trim()) return;
+        const key = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+        const sections = getSections();
+        if (sections.find((s) => s.key === key)) {
+          teamNote("error", "Une section avec ce nom existe déjà.");
+          return;
+        }
+        sections.push({ key, label: name.trim() });
+        saveSections(sections);
+        await loadTeam();
+        teamNote("success", `Section « ${name.trim()} » ajoutée.`);
+      });
+    }
+
+    // Renommage inline : délégation sur team-admin
+    const host = document.getElementById("team-admin");
+    if (!host) return;
+
+    host.addEventListener("click", async (event) => {
+      const renameBtn = event.target.closest(".ti-rename-section");
+      if (!renameBtn) return;
+      const sectionKey = renameBtn.dataset.section;
+      const block = renameBtn.closest(".adm-team-section");
+      const input = block?.querySelector(".adm-section-title-edit");
+      const newLabel = input?.value?.trim();
+      if (!newLabel || !sectionKey) return;
+
+      const sections = getSections();
+      const sec = sections.find((s) => s.key === sectionKey);
+      if (sec) {
+        const oldLabel = sec.label;
+        sec.label = newLabel;
+        saveSections(sections);
+        teamNote("success", `Section renommée « ${newLabel} ».`);
+        // Mettre à jour le data-orig pour cohérence
+        if (input) input.dataset.orig = sectionKey;
+        if (newLabel !== oldLabel) {
+          renameBtn.classList.add("btn-loading");
+          try { await loadTeam(); } finally { renameBtn.classList.remove("btn-loading"); }
+        }
+      }
+    });
+  }
+
+  /* ─── Panel Paramètres (contact + clés API) ──────────────────────── */
+  function bindSettings() {
+    // Pré-remplir depuis localStorage
+    const stored = (() => { try { return JSON.parse(localStorage.getItem("ea-contact-info") || "{}"); } catch { return {}; } })();
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    setVal("set-address", stored.address || "44, Impasse Lescot, Laboule 12, Pétionville, Haïti");
+    setVal("set-phone",   stored.phone   || "+509 4621-2121");
+    setVal("set-email",   stored.email   || "contact@enavant.org");
+
+    const form = document.getElementById("settings-contact-form");
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const info = {
+          address: document.getElementById("set-address")?.value.trim(),
+          phone:   document.getElementById("set-phone")?.value.trim(),
+          email:   document.getElementById("set-email")?.value.trim(),
+        };
+        localStorage.setItem("ea-contact-info", JSON.stringify(info));
+        const st = document.getElementById("settings-contact-status");
+        if (st) { st.className = "ea-form-status success"; st.textContent = "Informations sauvegardées (table settings à connecter côté API)."; }
+      });
+    }
+
+    const apiForm = document.getElementById("settings-apikeys-form");
+    if (apiForm) {
+      apiForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const st = document.getElementById("settings-apikeys-status");
+        if (st) { st.className = "ea-form-status info"; st.textContent = "La mise à jour des clés API se fait via les variables d'environnement Vercel (Settings > Environment Variables)."; }
+      });
+    }
+  }
+
+  /* ─── Panel Équipe staff ──────────────────────────────────────────── */
+  function bindStaffPanel() {
+    const host = document.getElementById("staff-list");
+    if (!host) return;
+
+    // S'affiche quand on arrive sur le panel
+    document.querySelector("[data-panel='panel-equipe']")?.addEventListener("click", loadStaff);
+
+    async function loadStaff() {
+      if (host.dataset.loaded) return;
+      try {
+        const { members } = await api("/api/admin/dashboard?dataset=members&limit=100");
+        const admins = (members || []).filter((m) => m.role === "superadmin" || m.role === "editor");
+        if (!admins.length) { host.innerHTML = '<p class="adm-empty">Aucun membre staff pour l\'instant.</p>'; return; }
+        host.innerHTML = `<div class="u-card">${admins.map((m) => `
+          <div class="adm-staff-row">
+            <div class="adm-staff-avatar">${(m.pseudo || m.email || "?")[0].toUpperCase()}</div>
+            <div class="adm-staff-info">
+              <strong>${m.pseudo || m.email}</strong>
+              <span>${m.email} · <span class="badge ${m.role === "superadmin" ? "approved" : "pending"}">${m.role}</span></span>
+            </div>
+          </div>`).join("")}</div>`;
+        host.dataset.loaded = "1";
+      } catch (_) {
+        host.innerHTML = '<p class="adm-empty">Données non disponibles localement.</p>';
+      }
+    }
+  }
+
+  /* ─── Panel Journal d'activité ───────────────────────────────────── */
+  function bindLogsPanel() {
+    const host = document.getElementById("logs-list");
+    const refreshBtn = document.getElementById("logs-refresh");
+    const applyBtn  = document.getElementById("logs-filter-apply");
+    if (!host) return;
+
+    const render = (logs) => {
+      if (!logs?.length) { host.innerHTML = '<p class="adm-empty">Aucune entrée dans le journal.</p>'; return; }
+      host.innerHTML = `<div class="u-card">${logs.map((l) => `
+        <div class="adm-log-row">
+          <span class="adm-log-cat">${l.categorie || "—"}</span>
+          <span class="adm-log-msg">${l.message || ""}</span>
+          <span class="adm-log-meta">${l.username ? l.username + " · " : ""}${l.created_at ? new Date(l.created_at).toLocaleString("fr-FR") : ""}</span>
+        </div>`).join("")}</div>`;
+    };
+
+    const load = async () => {
+      host.innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…</p>';
+      try {
+        const cat  = document.getElementById("logs-filter-cat")?.value  || "";
+        const user = document.getElementById("logs-filter-user")?.value || "";
+        const from = document.getElementById("logs-filter-from")?.value || "";
+        const to   = document.getElementById("logs-filter-to")?.value   || "";
+        const params = new URLSearchParams({ ...(cat && { cat }), ...(user && { user }), ...(from && { from }), ...(to && { to }) });
+        const { logs } = await api(`/api/admin/dashboard?dataset=logs&${params}`);
+        render(logs);
+      } catch (_) {
+        host.innerHTML = '<p class="adm-empty">Journal non disponible (table activity_logs à créer côté DB).</p>';
+      }
+    };
+
+    refreshBtn?.addEventListener("click", load);
+    applyBtn?.addEventListener("click", load);
+    document.querySelector("[data-panel='panel-logs']")?.addEventListener("click", () => { if (!host.dataset.loaded) { load(); host.dataset.loaded = "1"; } });
+  }
 })();

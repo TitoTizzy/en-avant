@@ -59,8 +59,29 @@
     try {
       const response = await fetch("/api/events", { signal: AbortSignal.timeout(4000) });
       const payload = await response.json();
+      if (!response.ok) return;
       const next = payload.events?.[0];
-      if (response.ok && next?.date_cible) start(next);
+      if (next?.date_cible) start(next);
+
+      // Dernier événement passé
+      const last = payload.last;
+      if (last) {
+        const lastSec = document.getElementById("last-event-section");
+        if (lastSec) {
+          const fmtDate = (iso) => new Date(iso).toLocaleDateString("fr-FR", {
+            weekday: "long", day: "numeric", month: "long", year: "numeric",
+          });
+          const titleEl = document.getElementById("le-title");
+          const metaEl  = document.getElementById("le-meta");
+          if (titleEl) titleEl.textContent = last.titre;
+          if (metaEl)  metaEl.textContent  = [last.lieu, fmtDate(last.date_cible)].filter(Boolean).join(" · ");
+          if (last.description) {
+            const descEl = document.getElementById("le-desc");
+            if (descEl) { descEl.textContent = last.description; descEl.hidden = false; }
+          }
+          lastSec.hidden = false;
+        }
+      }
     } catch {
       /* API absente (ex. préviews statiques) : section masquée, aucune erreur. */
     }

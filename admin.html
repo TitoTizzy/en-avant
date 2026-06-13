@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
   <link rel="stylesheet" href="/css/ultra.css">
   <link rel="stylesheet" href="/css/premium.css">
   <meta name="theme-color" content="#040b1b">
@@ -77,8 +78,11 @@
       <button class="adm-nav-item" data-panel="panel-media" type="button">
         <i class="fa-solid fa-photo-film" aria-hidden="true"></i> Médiathèque
       </button>
-      <button class="adm-nav-item" data-panel="panel-team" type="button">
-        <i class="fa-solid fa-people-group" aria-hidden="true"></i> Équipe
+      <button class="adm-nav-item" data-panel="panel-gallery" type="button">
+        <i class="fa-solid fa-images" aria-hidden="true"></i> Galerie
+      </button>
+      <button class="adm-nav-item" data-panel="panel-organisation" type="button">
+        <i class="fa-solid fa-sitemap" aria-hidden="true"></i> Organisation
       </button>
 
       <p class="adm-nav-section">Membres &amp; Dons</p>
@@ -101,8 +105,17 @@
       </button>
 
       <p class="adm-nav-section">SuperAdmin</p>
+      <button class="adm-nav-item" data-panel="panel-equipe" type="button">
+        <i class="fa-solid fa-users-gear" aria-hidden="true"></i> Équipe (staff)
+      </button>
       <button class="adm-nav-item" data-panel="panel-security" type="button">
         <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Sécurité
+      </button>
+      <button class="adm-nav-item" data-panel="panel-settings" type="button">
+        <i class="fa-solid fa-sliders" aria-hidden="true"></i> Paramètres
+      </button>
+      <button class="adm-nav-item" data-panel="panel-logs" type="button">
+        <i class="fa-solid fa-scroll" aria-hidden="true"></i> Journal d'activité
       </button>
     </nav>
 
@@ -192,8 +205,8 @@
               <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-members" type="button">
                 <i class="fa-solid fa-users" aria-hidden="true"></i> Gérer les membres
               </button>
-              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-team" type="button">
-                <i class="fa-solid fa-people-group" aria-hidden="true"></i> Modifier l'équipe
+              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-organisation" type="button">
+                <i class="fa-solid fa-sitemap" aria-hidden="true"></i> Organigramme
               </button>
               <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-trivia" type="button">
                 <i class="fa-solid fa-brain" aria-hidden="true"></i> Générer des questions Trivia
@@ -255,9 +268,13 @@
               <textarea id="article-excerpt" rows="3" maxlength="300"></textarea>
             </div>
             <div class="ea-field">
-              <label for="article-content">Contenu</label>
-              <textarea id="article-content" rows="9" required></textarea>
+              <label>Contenu</label>
+              <div id="article-content-editor"></div>
             </div>
+            <label class="ea-checkbox-row">
+              <input type="checkbox" id="article-featured">
+              <span>Mettre à la une sur l'accueil</span>
+            </label>
             <button class="btn btn-primary" type="submit" id="article-create-submit">
               <i class="fa-solid fa-plus" aria-hidden="true"></i> Créer le brouillon
             </button>
@@ -436,21 +453,28 @@
         </div>
       </section>
 
-      <!-- ════════════════════ ÉQUIPE ═════════════════════════════════ -->
-      <section class="adm-panel" id="panel-team" hidden>
+      <!-- ════════════════════ ORGANISATION ══════════════════════════ -->
+      <section class="adm-panel" id="panel-organisation" hidden>
         <div class="u-card" style="margin-bottom:1.2rem;">
-          <h4 style="margin:0 0 0.4rem; color:var(--ink-100);">Organigramme du parti</h4>
-          <p style="margin:0; color:var(--ink-400); font-size:0.94rem;">
-            Modifiez les noms, postes, l'ordre et les photos : la page
-            <a href="/organisation.html" target="_blank" rel="noopener" class="text-link">Organisation</a>
-            reflète vos changements immédiatement. Photos : JPG, PNG ou WebP, 2&nbsp;Mo max, cadrage carré conseillé.
-          </p>
+          <div class="adm-record-head">
+            <div>
+              <h4 style="margin:0 0 0.4rem; color:var(--ink-100);">Organigramme du parti</h4>
+              <p style="margin:0; color:var(--ink-400); font-size:0.94rem;">
+                Modifiez les noms, postes, l'ordre et les photos : la page
+                <a href="/organisation.html" target="_blank" rel="noopener" class="text-link">Organisation</a>
+                reflète vos changements immédiatement. Photos : JPG, PNG ou WebP, 2&nbsp;Mo max, cadrage carré conseillé.
+              </p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-xs" id="org-add-section">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle section
+            </button>
+          </div>
           <div class="ea-form-status" id="team-status" role="status" aria-live="polite"></div>
         </div>
         <div id="team-admin">
           <p style="color:var(--ink-400);">
             <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
-            Chargement de l'équipe…
+            Chargement de l'organigramme…
           </p>
         </div>
       </section>
@@ -555,11 +579,156 @@
 
       </section>
 
+      <!-- ════════════════════ GALERIE ════════════════════════════════ -->
+      <section class="adm-panel" id="panel-gallery" hidden>
+        <div class="u-card" style="margin-bottom:1.2rem;">
+          <div class="adm-record-head">
+            <div>
+              <h4>Galerie photo</h4>
+              <p>Organisez vos photos par albums. Les visiteurs peuvent filtrer par catégorie.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="gallery-new-album">
+              <i class="fa-solid fa-folder-plus" aria-hidden="true"></i> Nouvel album
+            </button>
+          </div>
+          <div class="ea-form-status" id="gallery-status" role="status" aria-live="polite"></div>
+        </div>
+        <!-- Zone upload dans album sélectionné -->
+        <div id="gallery-upload-zone" class="u-card" style="margin-bottom:1.2rem; display:none;">
+          <h5 id="gallery-current-album-title" style="margin:0 0 1rem; color:var(--ink-100);">Album : —</h5>
+          <div class="adm-gallery-drop" id="gallery-dropzone">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size:2rem; opacity:.4;"></i>
+            <p style="margin:.6rem 0 0; color:var(--ink-400);">Glissez des photos ici ou cliquez pour choisir</p>
+            <input type="file" id="gallery-file-input" accept="image/*" multiple style="display:none;">
+          </div>
+          <!-- Prévisualisation avant upload -->
+          <div id="gallery-preview-grid" class="adm-gallery-preview" style="margin-top:1rem;"></div>
+          <div style="margin-top:1rem; display:flex; gap:.6rem;">
+            <button type="button" class="btn btn-primary btn-sm" id="gallery-upload-btn" disabled>
+              <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Envoyer les photos
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" id="gallery-cancel-btn">Annuler</button>
+          </div>
+        </div>
+        <!-- Liste des albums -->
+        <div id="gallery-albums-list">
+          <p style="color:var(--ink-400);"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…</p>
+        </div>
+      </section>
+
+      <!-- ════════════════════ ÉQUIPE STAFF ══════════════════════════ -->
+      <section class="adm-panel" id="panel-equipe" hidden>
+        <div class="u-card" style="margin-bottom:1.2rem;">
+          <div class="adm-record-head">
+            <div>
+              <h4>Équipe d'administration</h4>
+              <p>Gérez les comptes ayant accès au dashboard. Seul le SuperAdmin peut ajouter ou retirer des droits.</p>
+            </div>
+          </div>
+        </div>
+        <div id="staff-list">
+          <p style="color:var(--ink-400);"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…</p>
+        </div>
+      </section>
+
+      <!-- ════════════════════ PARAMÈTRES ══════════════════════════════ -->
+      <section class="adm-panel" id="panel-settings" hidden>
+        <div class="u-card" style="max-width:680px; margin-bottom:1.3rem;">
+          <h4 style="margin:0 0 .6rem; color:var(--ink-100);">Informations de contact du parti</h4>
+          <p class="u-note" style="margin:0 0 1.4rem;">Ces informations apparaissent dans le pied de page du site public.</p>
+          <form id="settings-contact-form" novalidate>
+            <div class="ea-field">
+              <label for="set-address">Adresse</label>
+              <input type="text" id="set-address" maxlength="200" placeholder="44, Impasse Lescot, Laboule 12, Pétionville">
+            </div>
+            <div class="ea-field">
+              <label for="set-phone">Téléphone</label>
+              <input type="tel" id="set-phone" maxlength="30" placeholder="+509 4621-2121">
+            </div>
+            <div class="ea-field">
+              <label for="set-email">Email de contact</label>
+              <input type="email" id="set-email" maxlength="100" placeholder="contact@enavant.org">
+            </div>
+            <button type="submit" class="btn btn-primary" id="settings-contact-submit">
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Enregistrer
+            </button>
+            <div class="ea-form-status" id="settings-contact-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <div class="u-card" style="max-width:680px;">
+          <h4 style="margin:0 0 .6rem; color:var(--ink-100);">Clés API</h4>
+          <p class="u-note" style="margin:0 0 1.4rem;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>
+            Ces clés sont stockées côté serveur uniquement. Ne les partagez jamais.
+          </p>
+          <form id="settings-apikeys-form" novalidate>
+            <div class="ea-field">
+              <label for="set-anthropic">Anthropic API Key (Trivia IA)</label>
+              <input type="password" id="set-anthropic" maxlength="200" placeholder="sk-ant-…" autocomplete="off">
+            </div>
+            <div class="ea-field">
+              <label for="set-elevenlabs">ElevenLabs API Key (chatbot TTS)</label>
+              <input type="password" id="set-elevenlabs" maxlength="200" placeholder="…" autocomplete="off">
+            </div>
+            <div class="ea-field">
+              <label for="set-resend">Resend API Key (emails)</label>
+              <input type="password" id="set-resend" maxlength="200" placeholder="re_…" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary" id="settings-apikeys-submit">
+              <i class="fa-solid fa-key" aria-hidden="true"></i> Mettre à jour les clés
+            </button>
+            <div class="ea-form-status" id="settings-apikeys-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ════════════════════ JOURNAL D'ACTIVITÉ ══════════════════════ -->
+      <section class="adm-panel" id="panel-logs" hidden>
+        <div class="u-card" style="margin-bottom:1.2rem;">
+          <div class="adm-record-head">
+            <div>
+              <h4>Journal d'activité</h4>
+              <p>Toutes les actions effectuées sur la plateforme, filtrables par catégorie, heure et utilisateur.</p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-xs" id="logs-refresh">
+              <i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualiser
+            </button>
+          </div>
+          <!-- Filtres -->
+          <div style="display:flex; gap:.6rem; flex-wrap:wrap; margin-top:1rem;">
+            <select id="logs-filter-cat" class="ea-select-sm">
+              <option value="">Toutes catégories</option>
+              <option value="article">Articles</option>
+              <option value="event">Événements</option>
+              <option value="media">Médias</option>
+              <option value="team">Organisation</option>
+              <option value="member">Membres</option>
+              <option value="security">Sécurité</option>
+              <option value="settings">Paramètres</option>
+            </select>
+            <input type="text" id="logs-filter-user" class="ea-input-sm" placeholder="Filtrer par utilisateur…" maxlength="40">
+            <input type="datetime-local" id="logs-filter-from" class="ea-input-sm" title="Depuis">
+            <input type="datetime-local" id="logs-filter-to" class="ea-input-sm" title="Jusqu'à">
+            <button type="button" class="btn btn-ghost btn-xs" id="logs-filter-apply">
+              <i class="fa-solid fa-filter" aria-hidden="true"></i> Filtrer
+            </button>
+          </div>
+        </div>
+        <div id="logs-list">
+          <p style="color:var(--ink-400);">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            Chargement du journal…
+          </p>
+        </div>
+      </section>
+
     </div><!-- /.adm-content -->
   </main>
 </div><!-- /#adm-app -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script src="/js/env.js"></script>
 <script src="/js/premium.js"></script>
 <script src="/js/admin.js"></script>

@@ -1,9 +1,10 @@
 // /api/admin/articles — CRUD des articles du blog (SuperAdmin + PIN requis).
 // GET    : liste complète (publiés + brouillons, contenu inclus)
-// POST   : { titre, categorie, contenu, excerpt? }                → crée un brouillon
+// POST   : { titre, categorie, contenu, excerpt?, is_featured? }  → crée un brouillon
 // PATCH  : { id, titre?, categorie?, contenu?, excerpt?, published?,
-//            image_base64?, image_ext? }                         → met à jour
+//            is_featured?, image_base64?, image_ext? }           → met à jour
 //          · publication → published_at posé automatiquement
+//          · is_featured:true → retire is_featured des autres articles
 //          · contenu modifié → audio_url remis à zéro (le MP3 TTS est obsolète)
 // DELETE : { id }
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
@@ -39,7 +40,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from('articles')
-        .select('id, titre, slug, categorie, excerpt, contenu, image_url, audio_url, published, published_at, updated_at')
+        .select('id, titre, slug, categorie, excerpt, contenu, image_url, audio_url, published, published_at, updated_at, is_featured')
         .order('updated_at', { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -56,6 +57,13 @@ export default async function handler(req, res) {
       if (!CATEGORIES.includes(categorie)) return json(res, 422, { error: 'Catégorie inconnue.' });
       if (contenu.length < 20) return json(res, 422, { error: 'Contenu trop court.' });
 
+      const isFeatured = body.is_featured === true;
+
+      // Si cet article sera à la une, retirer le flag des autres
+      if (isFeatured) {
+        await supabase.from('articles').update({ is_featured: false }).eq('is_featured', true);
+      }
+
       // Slug unique : base + suffixe numérique en cas de collision.
       const base = slugify(titre);
       let lastError = null;
@@ -63,7 +71,7 @@ export default async function handler(req, res) {
         const slug = i === 0 ? base : `${base}-${i + 1}`;
         const { data, error } = await supabase
           .from('articles')
-          .insert({ titre, slug, categorie, contenu, excerpt, published: false })
+          .insert({ titre, slug, categorie, contenu, excerpt, published: false, is_featured: isFeatured })
           .select()
           .single();
 
@@ -106,6 +114,14 @@ export default async function handler(req, res) {
             .eq('id', body.id)
             .single();
           if (!current?.published_at) updates.published_at = new Date().toISOString();
+        }
+      }
+
+      if ('is_featured' in body) {
+        updates.is_featured = body.is_featured === true;
+        if (updates.is_featured) {
+          // Retirer le flag à la une des autres articles
+          await supabase.from('articles').update({ is_featured: false }).neq('id', body.id).eq('is_featured', true);
         }
       }
 

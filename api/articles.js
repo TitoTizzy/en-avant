@@ -32,8 +32,9 @@ export default async function handler(req, res) {
     }
     let query = supabase
       .from('articles')
-      .select('id, titre, slug, categorie, excerpt, image_url, audio_url, published_at', { count: 'exact' })
+      .select('id, titre, slug, categorie, excerpt, image_url, audio_url, published_at, is_featured', { count: 'exact' })
       .eq('published', true)
+      .order('is_featured', { ascending: false })
       .order('published_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
