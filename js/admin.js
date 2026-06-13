@@ -1514,38 +1514,103 @@
     });
   }
 
-  /* ─── Panel Paramètres (contact + clés API) ──────────────────────── */
+  /* ─── Panel Paramètres (popups + contact + clés API) ─────────────── */
   function bindSettings() {
-    // Pré-remplir depuis localStorage
-    const stored = (() => { try { return JSON.parse(localStorage.getItem("ea-contact-info") || "{}"); } catch { return {}; } })();
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-    setVal("set-address", stored.address || "44, Impasse Lescot, Laboule 12, Pétionville, Haïti");
-    setVal("set-phone",   stored.phone   || "+509 4621-2121");
-    setVal("set-email",   stored.email   || "contact@enavant.org");
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+    const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val === true; };
+    const status = (id, type, msg) => {
+      const el = document.getElementById(id);
+      if (el) { el.className = `ea-form-status ${type}`; el.textContent = msg; }
+    };
 
-    const form = document.getElementById("settings-contact-form");
-    if (form) {
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const info = {
-          address: document.getElementById("set-address")?.value.trim(),
-          phone:   document.getElementById("set-phone")?.value.trim(),
-          email:   document.getElementById("set-email")?.value.trim(),
-        };
-        localStorage.setItem("ea-contact-info", JSON.stringify(info));
-        const st = document.getElementById("settings-contact-status");
-        if (st) { st.className = "ea-form-status success"; st.textContent = "Informations sauvegardées (table settings à connecter côté API)."; }
-      });
-    }
+    // Charge les réglages depuis l'API (une fois, puis à chaque ouverture du panel).
+    let loaded = false;
+    async function loadSettings() {
+      try {
+        const { settings } = await api("/api/admin/settings");
+        const v = settings?.popup_video || {};
+        setChk("popup-video-enabled", v.enabled);
+        setVal("popup-video-url", v.url || "");
+        setVal("popup-video-headline", v.headline || "");
+        setVal("popup-video-subtext", v.subtext || "");
 
-    const apiForm = document.getElementById("settings-apikeys-form");
-    if (apiForm) {
-      apiForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const st = document.getElementById("settings-apikeys-status");
-        if (st) { st.className = "ea-form-status info"; st.textContent = "La mise à jour des clés API se fait via les variables d'environnement Vercel (Settings > Environment Variables)."; }
-      });
+        const f = settings?.popup_football || {};
+        setChk("popup-football-enabled", f.enabled !== false);
+        setVal("popup-football-interval", f.intervalSec || 60);
+
+        const c = settings?.contact || {};
+        setVal("set-address", c.address || "44, Impasse Lescot, Laboule 12, Pétionville, Haïti");
+        setVal("set-phone",   c.phone   || "+509 4621-2121");
+        setVal("set-email",   c.email   || "contact@enavant.org");
+        loaded = true;
+      } catch (error) {
+        status("popup-video-status", "error",
+          error.status === 404 || /site_settings|relation/i.test(error.message)
+            ? "Table site_settings absente — exécutez supabase/site-settings.sql."
+            : error.message);
+      }
     }
+    document.querySelector("[data-panel='panel-settings']")?.addEventListener("click", () => { if (!loaded) loadSettings(); });
+    loadSettings();
+
+    const saveSetting = (key, value) => api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ key, value }) });
+
+    // Popup vidéo
+    document.getElementById("settings-video-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("popup-video-submit");
+      btn.classList.add("btn-loading");
+      try {
+        await saveSetting("popup_video", {
+          enabled:  document.getElementById("popup-video-enabled").checked,
+          url:      document.getElementById("popup-video-url").value.trim(),
+          headline: document.getElementById("popup-video-headline").value.trim(),
+          subtext:  document.getElementById("popup-video-subtext").value.trim(),
+        });
+        status("popup-video-status", "success", "Popup vidéo enregistrée.");
+      } catch (error) {
+        status("popup-video-status", "error", error.message);
+      } finally { btn.classList.remove("btn-loading"); }
+    });
+
+    // Popup Grenadiers
+    document.getElementById("settings-football-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("popup-football-submit");
+      btn.classList.add("btn-loading");
+      try {
+        await saveSetting("popup_football", {
+          enabled:     document.getElementById("popup-football-enabled").checked,
+          intervalSec: parseInt(document.getElementById("popup-football-interval").value, 10) || 60,
+        });
+        status("popup-football-status", "success", "Popup Grenadiers enregistrée.");
+      } catch (error) {
+        status("popup-football-status", "error", error.message);
+      } finally { btn.classList.remove("btn-loading"); }
+    });
+
+    // Infos de contact
+    document.getElementById("settings-contact-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("settings-contact-submit");
+      btn.classList.add("btn-loading");
+      try {
+        await saveSetting("contact", {
+          address: document.getElementById("set-address").value.trim(),
+          phone:   document.getElementById("set-phone").value.trim(),
+          email:   document.getElementById("set-email").value.trim(),
+        });
+        status("settings-contact-status", "success", "Informations de contact enregistrées.");
+      } catch (error) {
+        status("settings-contact-status", "error", error.message);
+      } finally { btn.classList.remove("btn-loading"); }
+    });
+
+    // Clés API : gérées via les variables d'environnement Vercel.
+    document.getElementById("settings-apikeys-form")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      status("settings-apikeys-status", "info", "Les clés API se modifient dans Vercel → Settings → Environment Variables (jamais exposées au navigateur).");
+    });
   }
 
   /* ─── Panel Équipe staff ──────────────────────────────────────────── */

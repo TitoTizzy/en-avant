@@ -19,6 +19,7 @@
     { "source": "/api/admin/team",        "destination": "/api/admin?action=team" },
     { "source": "/api/admin/trivia",      "destination": "/api/admin?action=trivia" },
     { "source": "/api/admin/integrations","destination": "/api/admin?action=integrations" },
+    { "source": "/api/admin/settings",    "destination": "/api/admin?action=settings" },
     { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
