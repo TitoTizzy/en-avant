@@ -192,7 +192,7 @@ document.documentElement.classList.add("js-ready");
     });
 
     const targets = document.querySelectorAll(
-      ".reveal-up, .reveal-left, .reveal-right, [data-ea-reveal]"
+      ".reveal-up, .reveal-left, .reveal-right, .reveal-hidden, [data-ea-reveal]"
     );
     if (!targets.length) return;
 
