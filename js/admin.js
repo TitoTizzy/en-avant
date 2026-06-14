@@ -109,10 +109,16 @@
   }
 
   document.querySelectorAll(".adm-nav-item[data-panel]").forEach((item) => {
-    item.addEventListener("click", () => switchPanel(item.dataset.panel));
+    item.addEventListener("click", () => {
+      switchPanel(item.dataset.panel);
+      if (item.dataset.panel === "panel-articles") showArticleList();
+    });
   });
   document.querySelectorAll(".adm-quick-btn[data-panel]").forEach((btn) => {
-    btn.addEventListener("click", () => switchPanel(btn.dataset.panel));
+    btn.addEventListener("click", () => {
+      switchPanel(btn.dataset.panel);
+      if (btn.hasAttribute("data-article-new")) openArticleEditor();
+    });
   });
 
   function renderMembers(members) {
@@ -560,6 +566,294 @@
         }
       };
       reader.readAsDataURL(file);
+    });
+  }
+
+  const ARTICLE_CATEGORIES = {
+    actualite: "Actualité",
+    politique: "Politique",
+    economie: "Économie",
+    societe: "Société",
+    diaspora: "Diaspora",
+    programme: "Programme",
+    communique: "Communiqué",
+  };
+
+  let articlesCache = [];
+  let articleQuill = null;
+
+  function articleLibraryCard(article) {
+    const card = document.createElement("article");
+    card.className = "u-card adm-record adm-article-card";
+    card.dataset.id = article.id;
+    const cover = article.image_url
+      ? `<img class="adm-article-card-cover" src="${esc(article.image_url)}" alt="">`
+      : '<div class="adm-article-card-cover adm-article-cover-empty"><i class="fa-regular fa-newspaper" aria-hidden="true"></i></div>';
+    card.innerHTML = `
+      ${cover}
+      <div class="adm-article-card-body">
+        <div class="adm-article-card-meta">
+          <span class="badge ${article.published ? "approved" : "pending"}">${article.published ? "Publié" : "Brouillon"}</span>
+          ${article.is_featured ? '<span class="badge adm-featured-badge"><i class="fa-solid fa-star" aria-hidden="true"></i> À la une</span>' : ""}
+          <span>${esc(ARTICLE_CATEGORIES[article.categorie] || article.categorie)}</span>
+          <span>${fmtDate(article.updated_at)}</span>
+        </div>
+        <h4>${esc(article.titre)}</h4>
+        <p>${esc(article.excerpt || "Aucun résumé pour cet article.")}</p>
+        <div class="adm-record-actions adm-article-card-actions">
+          <button class="btn btn-primary btn-xs article-edit" type="button">
+            <i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier
+          </button>
+          <button class="btn btn-ghost btn-xs article-feature" type="button" title="${article.is_featured ? "Retirer de la une" : "Mettre à la une"}">
+            <i class="fa-${article.is_featured ? "solid" : "regular"} fa-star" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn-ghost btn-xs article-publish" type="button">${article.published ? "Dépublier" : "Publier"}</button>
+          <button class="btn btn-ghost btn-xs article-delete" type="button" title="Supprimer">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>`;
+    return card;
+  }
+
+  function getFilteredArticles() {
+    const search = document.getElementById("article-filter-search")?.value.trim().toLocaleLowerCase("fr") || "";
+    const category = document.getElementById("article-filter-category")?.value || "";
+    const fromValue = document.getElementById("article-filter-from")?.value;
+    const toValue = document.getElementById("article-filter-to")?.value;
+    const from = fromValue ? new Date(`${fromValue}T00:00:00`) : null;
+    const to = toValue ? new Date(`${toValue}T23:59:59.999`) : null;
+
+    return articlesCache.filter((article) => {
+      const text = `${article.titre || ""} ${article.excerpt || ""}`.toLocaleLowerCase("fr");
+      const date = new Date(article.updated_at || article.published_at || 0);
+      return (!search || text.includes(search))
+        && (!category || article.categorie === category)
+        && (!from || date >= from)
+        && (!to || date <= to);
+    });
+  }
+
+  function renderArticleLibrary() {
+    const host = document.getElementById("articles-admin");
+    const count = document.getElementById("article-results-count");
+    if (!host) return;
+    const articles = getFilteredArticles();
+    host.innerHTML = "";
+    if (count) count.textContent = `${articles.length} article${articles.length > 1 ? "s" : ""} affiché${articles.length > 1 ? "s" : ""}`;
+    if (!articles.length) {
+      host.innerHTML = '<div class="u-card adm-empty">Aucun article ne correspond à ces filtres.</div>';
+      return;
+    }
+    articles.forEach((article) => host.appendChild(articleLibraryCard(article)));
+  }
+
+  async function loadArticleLibrary() {
+    const host = document.getElementById("articles-admin");
+    if (!host) return;
+    try {
+      const payload = await api("/api/admin/articles");
+      articlesCache = payload.articles || [];
+      renderArticleLibrary();
+    } catch (error) {
+      host.innerHTML = `<div class="u-card adm-empty">${esc(error.message)}</div>`;
+    }
+  }
+
+  function showArticleList() {
+    document.getElementById("articles-list-view").hidden = false;
+    document.getElementById("article-editor-view").hidden = true;
+    setModuleStatus("article-status", "", "");
+  }
+
+  function openArticleEditor(articleId = "") {
+    const article = articleId ? articlesCache.find((item) => item.id === articleId) : null;
+    const form = document.getElementById("article-editor-form");
+    if (!form) return;
+
+    form.reset();
+    document.getElementById("article-id").value = article?.id || "";
+    document.getElementById("article-title").value = article?.titre || "";
+    document.getElementById("article-category").value = article?.categorie || "actualite";
+    document.getElementById("article-excerpt").value = article?.excerpt || "";
+    document.getElementById("article-featured").checked = article?.is_featured === true;
+    document.getElementById("article-editor-title").textContent = article ? "Modifier l'article" : "Nouvel article";
+    document.getElementById("article-editor-subtitle").textContent = article
+      ? "Mettez à jour le contenu, l'image et les informations de publication."
+      : "Créez un brouillon avant sa publication.";
+    document.getElementById("article-save-label").textContent = article ? "Enregistrer les modifications" : "Créer le brouillon";
+
+    const preview = document.getElementById("article-image-preview");
+    preview.src = article?.image_url || "";
+    preview.hidden = !article?.image_url;
+    if (articleQuill) {
+      articleQuill.setContents([]);
+      if (article?.contenu) articleQuill.clipboard.dangerouslyPasteHTML(article.contenu);
+    }
+
+    document.getElementById("articles-list-view").hidden = true;
+    document.getElementById("article-editor-view").hidden = false;
+    setModuleStatus("article-status", "", "");
+    document.getElementById("article-title").focus();
+    document.querySelector(".adm-main")?.scrollTo?.({ top: 0, behavior: "smooth" });
+  }
+
+  async function readArticleImage(input) {
+    const file = input?.files?.[0];
+    if (!file) return {};
+    const ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[file.type];
+    if (!ext || file.size > 2 * 1024 * 1024) {
+      throw new Error("Image JPG, PNG ou WebP de 2 Mo maximum.");
+    }
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("Image illisible."));
+      reader.readAsDataURL(file);
+    });
+    return { image_base64: dataUrl.split(",")[1], image_ext: ext };
+  }
+
+  function bindArticleLibrary() {
+    const form = document.getElementById("article-editor-form");
+    const host = document.getElementById("articles-admin");
+    if (!form || !host) return;
+
+    try {
+      articleQuill = new Quill("#article-content-editor", {
+        theme: "snow",
+        placeholder: "Rédigez votre article ici…",
+        modules: {
+          toolbar: [
+            [{ font: [] }, { size: ["small", false, "large", "huge"] }],
+            ["bold", "italic", "underline", "strike"],
+            [{ color: [] }, { background: [] }],
+            [{ list: "ordered" }, { list: "bullet" }],
+            [{ align: [] }],
+            ["link", "image"],
+            ["clean"],
+          ],
+        },
+      });
+    } catch (_) {}
+
+    document.getElementById("article-new-button")?.addEventListener("click", () => openArticleEditor());
+    document.getElementById("article-editor-back")?.addEventListener("click", showArticleList);
+    document.getElementById("article-editor-cancel")?.addEventListener("click", showArticleList);
+
+    ["article-filter-search", "article-filter-category", "article-filter-from", "article-filter-to"].forEach((id) => {
+      const input = document.getElementById(id);
+      input?.addEventListener(id === "article-filter-search" ? "input" : "change", renderArticleLibrary);
+    });
+    document.getElementById("article-filter-reset")?.addEventListener("click", () => {
+      ["article-filter-search", "article-filter-category", "article-filter-from", "article-filter-to"].forEach((id) => {
+        document.getElementById(id).value = "";
+      });
+      renderArticleLibrary();
+    });
+
+    document.getElementById("article-image")?.addEventListener("change", (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const preview = document.getElementById("article-image-preview");
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = document.getElementById("article-save-submit");
+      const content = articleQuill?.root.innerHTML || "";
+      if (articleQuill && articleQuill.getText().trim().length === 0) {
+        setModuleStatus("article-status", "error", "Le contenu de l'article est vide.");
+        return;
+      }
+
+      button.classList.add("btn-loading");
+      try {
+        const id = document.getElementById("article-id").value;
+        const articleBody = {
+          titre: document.getElementById("article-title").value,
+          categorie: document.getElementById("article-category").value,
+          excerpt: document.getElementById("article-excerpt").value,
+          contenu: content,
+          is_featured: document.getElementById("article-featured").checked,
+        };
+        const imageBody = await readArticleImage(document.getElementById("article-image"));
+
+        if (id) {
+          await api("/api/admin/articles", {
+            method: "PATCH",
+            body: JSON.stringify({ id, ...articleBody, ...imageBody }),
+          });
+        } else {
+          const created = await api("/api/admin/articles", {
+            method: "POST",
+            body: JSON.stringify(articleBody),
+          });
+          if (imageBody.image_base64) {
+            await api("/api/admin/articles", {
+              method: "PATCH",
+              body: JSON.stringify({ id: created.article.id, ...imageBody }),
+            });
+          }
+          const counter = document.getElementById("st-articles");
+          counter.textContent = String((Number.parseInt(counter.textContent, 10) || articlesCache.length) + 1);
+        }
+
+        await loadArticleLibrary();
+        showArticleList();
+        setModuleStatus("article-list-status", "success", id ? "Article modifié." : "Brouillon créé.");
+      } catch (error) {
+        setModuleStatus("article-status", "error", error.message);
+      } finally {
+        button.classList.remove("btn-loading");
+      }
+    });
+
+    host.addEventListener("click", async (event) => {
+      const card = event.target.closest(".adm-article-card");
+      if (!card) return;
+      const edit = event.target.closest(".article-edit");
+      const publish = event.target.closest(".article-publish");
+      const remove = event.target.closest(".article-delete");
+      const feature = event.target.closest(".article-feature");
+      if (!edit && !publish && !remove && !feature) return;
+
+      if (edit) {
+        openArticleEditor(card.dataset.id);
+        return;
+      }
+
+      try {
+        if (feature) {
+          const article = articlesCache.find((item) => item.id === card.dataset.id);
+          await api("/api/admin/articles", {
+            method: "PATCH",
+            body: JSON.stringify({ id: card.dataset.id, is_featured: !article?.is_featured }),
+          });
+          setModuleStatus("article-list-status", "success", article?.is_featured ? "Retiré de la une." : "Article mis à la une.");
+        } else if (remove) {
+          if (!window.confirm("Supprimer définitivement cet article ?")) return;
+          await api("/api/admin/articles", {
+            method: "DELETE",
+            body: JSON.stringify({ id: card.dataset.id }),
+          });
+          const counter = document.getElementById("st-articles");
+          counter.textContent = String(Math.max(0, (Number.parseInt(counter.textContent, 10) || articlesCache.length) - 1));
+          setModuleStatus("article-list-status", "success", "Article supprimé.");
+        } else if (publish) {
+          const article = articlesCache.find((item) => item.id === card.dataset.id);
+          await api("/api/admin/articles", {
+            method: "PATCH",
+            body: JSON.stringify({ id: card.dataset.id, published: !article?.published }),
+          });
+          setModuleStatus("article-list-status", "success", "Statut de publication mis à jour.");
+        }
+        await loadArticleLibrary();
+      } catch (error) {
+        setModuleStatus("article-list-status", "error", error.message);
+      }
     });
   }
 
@@ -1423,7 +1717,7 @@
 
     // Wire des interactions UI
     bindListTools();
-    bindArticles();
+    bindArticleLibrary();
     bindEvents();
     bindMedia();
     bindIntegrations();
@@ -1455,7 +1749,7 @@
       if (payload.leads) renderLeads(payload.leads);
     } catch (_) { /* API indisponible localement — statistiques vides */ }
 
-    loadArticles();
+    loadArticleLibrary();
     loadEvents();
     loadMedia();
     loadIntegrations();

@@ -196,7 +196,7 @@
           <div class="adm-home-box">
             <h3 class="adm-box-title">Actions rapides</h3>
             <div class="adm-quick-actions">
-              <button class="adm-quick-btn" data-panel="panel-articles" type="button">
+              <button class="adm-quick-btn" data-panel="panel-articles" data-article-new type="button">
                 <i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Rédiger un article
               </button>
               <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-events" type="button">
@@ -244,16 +244,26 @@
 
       <!-- ════════════════════ ARTICLES ═══════════════════════════════ -->
       <section class="adm-panel" id="panel-articles" hidden>
-        <div class="adm-module-layout">
-          <form class="u-card adm-create-card" id="article-create-form" novalidate>
-            <h4>Nouvel article</h4>
+        <div id="articles-list-view">
+          <div class="adm-articles-heading">
+            <div>
+              <h3>Bibliothèque des articles</h3>
+              <p>Filtrez, consultez et modifiez les publications du site.</p>
+            </div>
+            <button class="btn btn-primary" type="button" id="article-new-button">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvel article
+            </button>
+          </div>
+
+          <div class="u-card adm-article-filters">
             <div class="ea-field">
-              <label for="article-title">Titre</label>
-              <input id="article-title" maxlength="200" required>
+              <label for="article-filter-search">Rechercher</label>
+              <input id="article-filter-search" type="search" placeholder="Titre ou résumé">
             </div>
             <div class="ea-field">
-              <label for="article-category">Catégorie</label>
-              <select id="article-category">
+              <label for="article-filter-category">Catégorie</label>
+              <select id="article-filter-category">
+                <option value="">Toutes les catégories</option>
                 <option value="actualite">Actualité</option>
                 <option value="politique">Politique</option>
                 <option value="economie">Économie</option>
@@ -264,25 +274,90 @@
               </select>
             </div>
             <div class="ea-field">
-              <label for="article-excerpt">Résumé</label>
-              <textarea id="article-excerpt" rows="3" maxlength="300"></textarea>
+              <label for="article-filter-from">Du</label>
+              <input id="article-filter-from" type="date">
             </div>
             <div class="ea-field">
+              <label for="article-filter-to">Au</label>
+              <input id="article-filter-to" type="date">
+            </div>
+            <button class="btn btn-ghost" type="button" id="article-filter-reset">
+              <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Réinitialiser
+            </button>
+          </div>
+
+          <div class="adm-article-results">
+            <p id="article-results-count">Chargement des articles…</p>
+            <div class="ea-form-status" id="article-list-status" role="status" aria-live="polite"></div>
+          </div>
+
+          <div id="articles-admin" class="adm-record-list">
+            <p class="adm-loading">Chargement des articles…</p>
+          </div>
+        </div>
+
+        <div id="article-editor-view" hidden>
+          <div class="adm-articles-heading">
+            <div>
+              <button class="adm-back-button" type="button" id="article-editor-back">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux articles
+              </button>
+              <h3 id="article-editor-title">Nouvel article</h3>
+              <p id="article-editor-subtitle">Créez un brouillon avant sa publication.</p>
+            </div>
+          </div>
+
+          <form class="u-card adm-article-editor" id="article-editor-form" novalidate>
+            <input type="hidden" id="article-id">
+            <div class="adm-article-editor-grid">
+              <div class="ea-field adm-editor-title-field">
+                <label for="article-title">Titre</label>
+                <input id="article-title" maxlength="200" required>
+              </div>
+              <div class="ea-field">
+                <label for="article-category">Catégorie</label>
+                <select id="article-category">
+                  <option value="actualite">Actualité</option>
+                  <option value="politique">Politique</option>
+                  <option value="economie">Économie</option>
+                  <option value="societe">Société</option>
+                  <option value="diaspora">Diaspora</option>
+                  <option value="programme">Programme</option>
+                  <option value="communique">Communiqué</option>
+                </select>
+              </div>
+              <div class="ea-field">
+                <label for="article-image">Image de couverture</label>
+                <input id="article-image" type="file" accept="image/jpeg,image/png,image/webp">
+                <small>JPG, PNG ou WebP, 2 Mo maximum.</small>
+              </div>
+            </div>
+
+            <img id="article-image-preview" class="adm-article-editor-cover" alt="" hidden>
+
+            <div class="ea-field">
+              <label for="article-excerpt">Résumé</label>
+              <textarea id="article-excerpt" rows="4" maxlength="300"></textarea>
+            </div>
+            <div class="ea-field adm-content-field">
               <label>Contenu</label>
-              <div id="article-content-editor"></div>
+              <div class="article-editor-surface">
+                <div id="article-content-editor"></div>
+              </div>
             </div>
             <label class="ea-checkbox-row">
               <input type="checkbox" id="article-featured">
               <span>Mettre à la une sur l'accueil</span>
             </label>
-            <button class="btn btn-primary" type="submit" id="article-create-submit">
-              <i class="fa-solid fa-plus" aria-hidden="true"></i> Créer le brouillon
-            </button>
+            <div class="adm-editor-actions">
+              <button class="btn btn-ghost" type="button" id="article-editor-cancel">Annuler</button>
+              <button class="btn btn-primary" type="submit" id="article-save-submit">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                <span id="article-save-label">Créer le brouillon</span>
+              </button>
+            </div>
             <div class="ea-form-status" id="article-status" role="status" aria-live="polite"></div>
           </form>
-          <div id="articles-admin" class="adm-record-list">
-            <p class="adm-loading">Chargement des articles…</p>
-          </div>
         </div>
       </section>
 
