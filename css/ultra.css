@@ -1176,8 +1176,19 @@ html.js-ready .reveal-hidden.visible, html.js-ready .reveal-hidden.is-visible, h
 }
 
 .page-loader.hidden { opacity: 0; visibility: hidden; }
+/* Visiteur déjà venu : pas d'intro logo (masqué dès le <head>, zéro flash). */
+html.ea-returning .page-loader { display: none !important; }
 .loader-inner { text-align: center; }
-.loader-logo { width: 96px; margin: 0 auto 1.4rem; }
+.loader-logo {
+  width: min(420px, 72vw);
+  margin: 0 auto 2rem;
+  animation: loaderLogoIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes loaderLogoIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .loader-logo { animation: none; } }
 
 .loader-line {
   width: 150px;

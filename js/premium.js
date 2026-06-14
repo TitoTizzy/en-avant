@@ -18,14 +18,12 @@ document.documentElement.classList.add("js-ready");
     initRevealEngine();
     initGlowCards();
     initBackToTop();
-    initPageVeil();
     initBrandFallback();
     initCounters();
     initTeamAvatars();
     initLanguage();
     initChatbot();
     initAuthNav();
-    initFirstVisitIntro();
   });
 
   /* Organigramme : initiales en placeholder dans chaque pastille photo.
@@ -269,48 +267,6 @@ document.documentElement.classList.add("js-ready");
     });
   }
 
-  /* Rideau bleu nuit entre les pages internes */
-  function initPageVeil() {
-    if (reduceMotion) return;
-
-    const veil = document.createElement("div");
-    veil.className = "ea-veil";
-    veil.setAttribute("aria-hidden", "true");
-    veil.innerHTML = '<span class="ea-veil-mark">EN AVANT<i>.</i></span>';
-    document.body.appendChild(veil);
-
-    // Sortie de rideau si on arrive d'une navigation interne
-    if (sessionStorage.getItem("ea-veil") === "1") {
-      sessionStorage.removeItem("ea-veil");
-      veil.classList.add("out");
-      veil.addEventListener("animationend", () => veil.classList.remove("out"), { once: true });
-    }
-
-    document.addEventListener("click", (event) => {
-      const link = event.target.closest("a[href]");
-      if (!link) return;
-
-      const href = link.getAttribute("href") || "";
-      const isInternalPage =
-        /\.html(\?|#|$)/.test(href) &&
-        !href.startsWith("http") &&
-        link.target !== "_blank" &&
-        !event.metaKey && !event.ctrlKey && !event.shiftKey;
-
-      if (!isInternalPage) return;
-
-      event.preventDefault();
-      sessionStorage.setItem("ea-veil", "1");
-      veil.classList.add("in");
-      setTimeout(() => { window.location.href = href; }, 430);
-    });
-
-    // bfcache (bouton retour) : ne jamais rester bloqué sous le rideau
-    window.addEventListener("pageshow", (event) => {
-      if (event.persisted) veil.classList.remove("in", "out");
-    });
-  }
-
   /* Logo absent → bascule élégante en wordmark typographié */
   function initBrandFallback() {
     document
@@ -497,27 +453,6 @@ document.documentElement.classList.add("js-ready");
     fab.addEventListener("click", () => {
       alert("Le module de chat sera bientôt disponible.");
     });
-  }
-
-  /* Intro logo plein écran : seulement à la toute première visite du site */
-  function initFirstVisitIntro() {
-    const intro = document.getElementById("ea-intro");
-    if (!intro) return;
-
-    if (localStorage.getItem("ea-visited")) {
-      intro.remove();
-      return;
-    }
-
-    localStorage.setItem("ea-visited", "1");
-
-    const dismiss = () => {
-      intro.classList.add("ea-intro-out");
-      intro.addEventListener("transitionend", () => intro.remove(), { once: true });
-    };
-    // Affiche 2,6 s puis fondu de sortie — ou clic/tap pour passer
-    setTimeout(dismiss, 2600);
-    intro.addEventListener("click", dismiss, { once: true });
   }
 
   /* Navigation auth-aware : "Connexion" → prénom du membre si session active */

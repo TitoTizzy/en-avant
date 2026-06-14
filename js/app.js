@@ -57,14 +57,19 @@ function initLoader() {
   const loader = document.getElementById("page-loader");
   if (!loader) return;
 
-  const hide = () => loader.classList.add("hidden");
+  // Intro logo : uniquement à la TOUTE PREMIÈRE visite du site (accueil).
+  // Les visites suivantes (classe ea-returning posée dès le <head>) : aucun loader.
+  if (document.documentElement.classList.contains("ea-returning")) {
+    loader.remove();
+    return;
+  }
+  try { localStorage.setItem("ea-visited", "1"); } catch (e) {}
 
-  window.addEventListener("load", () => {
-    setTimeout(hide, 450);
-  });
+  const hide = () => loader.classList.add("hidden");
+  window.addEventListener("load", () => setTimeout(hide, 750));
 
   // Filet de sécurité : ne jamais bloquer la page derrière le loader
-  setTimeout(hide, 3500);
+  setTimeout(hide, 4000);
 }
 
 function initMobileMenu() {

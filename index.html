@@ -39,6 +39,8 @@
   <link rel="stylesheet" href="/css/ultra.css" />
   <link rel="stylesheet" href="/css/premium.css" />
   <meta name="theme-color" content="#071229" />
+  <!-- Intro logo : 1ère visite uniquement. On masque le loader d'emblée si déjà venu. -->
+  <script>try{if(localStorage.getItem('ea-visited'))document.documentElement.classList.add('ea-returning');}catch(e){}</script>
 
   <!-- Entité politique (SEO / Google Knowledge Graph) -->
   <script type="application/ld+json">
@@ -700,10 +702,6 @@
     <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
   </footer>
 
-  <!-- Intro logo (1ère visite uniquement — géré par premium.js) -->
-  <div id="ea-intro" class="ea-intro-screen" aria-hidden="true">
-    <img src="/pictures/logo/logo.png" alt="En Avant" class="ea-intro-logo" draggable="false">
-  </div>
 
   <!-- Retour en haut -->
   <button id="backToTop" class="back-top" aria-label="Remonter en haut">
