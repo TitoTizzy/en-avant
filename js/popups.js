@@ -290,11 +290,13 @@
       }
 
       // Ouverture (autoplay muet pour le MP4 ; le TikTok gère son propre autoplay).
-      requestAnimationFrame(() => {
+      // setTimeout plutôt que requestAnimationFrame : rAF est suspendu quand l'onglet
+      // n'est pas visible (page ouverte en arrière-plan) → la popup ne s'afficherait jamais.
+      setTimeout(() => {
         overlay.classList.add("is-open");
         document.body.style.overflow = "hidden";
         if (video) video.play().catch(() => {});
-      });
+      }, 40);
     });
   }
 
@@ -352,7 +354,14 @@
     injectStyles();
     const settings = await loadSettings();
     // Défauts : vidéo OFF (tant qu'aucune URL), Grenadiers ON par fierté.
-    const video    = settings.popup_video    || { enabled: false };
+    // Défauts utilisés tant que la table site_settings n'existe pas / est vide.
+    // Dès que l'admin enregistre un réglage, la valeur de la base prend le relais.
+    const video    = settings.popup_video    || {
+      enabled: true,
+      url: "https://www.tiktok.com/@jerrytardieu/video/7650257755273563412",
+      headline: "En Avant — Pour changer Haïti ensemble",
+      subtext: "Découvrez notre vision en 15 secondes.",
+    };
     const football  = settings.popup_football || { enabled: true, intervalSec: 60 };
 
     // La vidéo passe en premier ; le toast Grenadiers démarre ensuite.
