@@ -2,7 +2,7 @@
    EN AVANT — CONFIG FRONTEND PUBLIQUE
    Seules les clés PUBLIQUES sont autorisées ici (DAT — règle absolue) :
    l'anon key Supabase est conçue pour être exposée (RLS activée côté base).
-   JAMAIS de service_role, Stripe secret, Anthropic ou ElevenLabs ici.
+   JAMAIS de service_role, Stripe secret ou Anthropic ici.
    ========================================================================== */
 
 window.EA_ENV = {

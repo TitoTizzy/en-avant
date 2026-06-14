@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     if (slug) {
       const { data: article, error } = await supabase
         .from('articles')
-        .select('id, titre, slug, categorie, contenu, excerpt, image_url, audio_url, published_at')
+        .select('id, titre, slug, categorie, contenu, excerpt, image_url, published_at')
         .eq('published', true)
         .eq('slug', slug)
         .single();
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     }
     let query = supabase
       .from('articles')
-      .select('id, titre, slug, categorie, excerpt, image_url, audio_url, published_at, is_featured', { count: 'exact' })
+      .select('id, titre, slug, categorie, excerpt, image_url, published_at, is_featured', { count: 'exact' })
       .eq('published', true)
       .order('is_featured', { ascending: false })
       .order('published_at', { ascending: false })

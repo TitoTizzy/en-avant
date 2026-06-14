@@ -5,7 +5,6 @@
 //            is_featured?, image_base64?, image_ext? }           → met à jour
 //          · publication → published_at posé automatiquement
 //          · is_featured:true → retire is_featured des autres articles
-//          · contenu modifié → audio_url remis à zéro (le MP3 TTS est obsolète)
 // DELETE : { id }
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
@@ -40,7 +39,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from('articles')
-        .select('id, titre, slug, categorie, excerpt, contenu, image_url, audio_url, published, published_at, updated_at, is_featured')
+        .select('id, titre, slug, categorie, excerpt, contenu, image_url, published, published_at, updated_at, is_featured')
         .order('updated_at', { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -102,7 +101,6 @@ export default async function handler(req, res) {
         const contenu = String(body.contenu || '').trim();
         if (contenu.length < 20) return json(res, 422, { error: 'Contenu trop court.' });
         updates.contenu = contenu;
-        updates.audio_url = null; // le MP3 TTS ne correspond plus au texte
       }
 
       if ('published' in body) {

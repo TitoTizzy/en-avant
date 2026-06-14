@@ -2,7 +2,6 @@
    EN AVANT — PAGE ARTICLE
    · Charge l'article via /api/articles?slug=… (Supabase, contenu publié)
    · Fallback hors API : communiqué de démonstration (contenu du site)
-   · Lecteur TTS : POST /api/tts { article_id } → MP3 ElevenLabs (avec cache)
    ========================================================================== */
 
 (() => {
@@ -18,9 +17,6 @@
   const coverEl = document.getElementById("art-cover");
   const coverImg = document.getElementById("art-cover-img");
   const recentEl = document.getElementById("art-recent");
-  const ttsBtn = document.getElementById("tts-btn");
-  const ttsAudio = document.getElementById("tts-audio");
-  const ttsNote = document.getElementById("tts-note");
 
   /* Démonstration (statique / API absente) — texte issu des pages du site. */
   const FALLBACK_ARTICLE = {
@@ -70,52 +66,6 @@
       coverEl.hidden = false;
     }
 
-    setupTts(article);
-  }
-
-  function setupTts(article) {
-    // Audio déjà généré (cache Supabase) : lecture immédiate.
-    if (article.audio_url) {
-      ttsAudio.src = article.audio_url;
-      ttsAudio.hidden = false;
-      ttsBtn.hidden = true;
-      return;
-    }
-
-    // Pas d'identifiant réel (mode démo) : le service audio nécessite l'API.
-    if (!article.id) {
-      ttsNote.textContent = "Version audio disponible une fois le site déployé (ElevenLabs).";
-      ttsBtn.disabled = true;
-      return;
-    }
-
-    ttsBtn.addEventListener("click", async () => {
-      ttsBtn.disabled = true;
-      ttsBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Génération audio…';
-
-      try {
-        const response = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ article_id: article.id }),
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.url) throw new Error(payload.error || "TTS indisponible");
-
-        ttsAudio.src = payload.url;
-        ttsAudio.hidden = false;
-        ttsBtn.hidden = true;
-        ttsNote.textContent = payload.cached
-          ? "Version audio (depuis le cache)."
-          : "Version audio générée à l'instant.";
-        ttsAudio.play().catch(() => {});
-      } catch (error) {
-        console.error(error);
-        ttsBtn.disabled = false;
-        ttsBtn.innerHTML = '<i class="fa-solid fa-headphones" aria-hidden="true"></i> Écouter cet article';
-        ttsNote.textContent = "Le service audio est momentanément indisponible.";
-      }
-    });
   }
 
   async function loadRecent() {
@@ -161,17 +111,33 @@
     render(FALLBACK_ARTICLE);
   }
 
-  document.getElementById("art-copy").addEventListener("click", async (event) => {
-    const btn = event.currentTarget;
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      btn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Lien copié !';
-      setTimeout(() => {
-        btn.innerHTML = '<i class="fa-solid fa-link" aria-hidden="true"></i> Copier le lien';
-      }, 2200);
-    } catch { /* clipboard refusé */ }
-  });
+  function setupShare() {
+    const url = window.location.href;
+    const text = titleEl.textContent;
+    const copyButton = document.getElementById("share-copy");
+    const whatsapp = document.getElementById("share-whatsapp");
+    const facebook = document.getElementById("share-facebook");
+    const x = document.getElementById("share-x");
 
-  load();
+    whatsapp.href = `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
+    facebook.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    x.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+
+    copyButton.addEventListener("click", async () => {
+      const icon = copyButton.innerHTML;
+      copyButton.classList.remove("is-copied");
+      try {
+        await navigator.clipboard.writeText(url);
+        copyButton.classList.add("is-copied");
+        copyButton.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+        setTimeout(() => {
+          copyButton.classList.remove("is-copied");
+          copyButton.innerHTML = icon;
+        }, 2200);
+      } catch { /* clipboard refusé */ }
+    });
+  }
+
+  load().finally(setupShare);
   loadRecent();
 })();

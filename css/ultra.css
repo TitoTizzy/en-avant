@@ -1072,6 +1072,11 @@ html.js-ready .reveal-hidden.visible, html.js-ready .reveal-hidden.is-visible, h
 .slide-overlay {
   position: absolute;
   inset: auto 0 0 0;
+  z-index: 3;
+  display: flex;
+  min-height: 34%;
+  flex-direction: column;
+  justify-content: flex-end;
   padding: 2.2rem;
   background: linear-gradient(180deg, transparent, rgba(4, 7, 13, 0.92));
 }
@@ -1476,11 +1481,18 @@ html.ea-returning .page-loader { display: none !important; }
   gap: 1.2rem;
 }
 
+.page-blog .blog-archive {
+  background: #f8fafc;
+}
+
 .premium-blog-card {
   display: flex;
   flex-direction: column;
   padding: 0;
   overflow: hidden;
+  background: #fff;
+  border-color: #e5e7eb;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
 }
 
 .card-image-box { position: relative; height: 215px; overflow: hidden; }
@@ -1514,10 +1526,19 @@ html.ea-returning .page-loader { display: none !important; }
 }
 
 .card-title { font-size: 1.16rem; line-height: 1.4; margin-bottom: 0.7rem; }
-.card-title a { color: var(--ink-100); transition: color var(--t-fast); }
+.page-blog .card-title a { color: #111827; transition: color var(--t-fast); }
 .card-title a:hover { color: var(--peach); }
 
-.card-excerpt { color: var(--ink-300); font-size: 0.95rem; margin-bottom: 1.3rem; }
+.page-blog .card-excerpt {
+  color: #4b5563;
+  font-size: 0.95rem;
+  margin-bottom: 1.3rem;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.page-blog .card-meta { color: #6b7280; }
+.page-blog .card-actions-bar { border-top-color: #e5e7eb; }
 
 .card-actions-bar {
   margin-top: auto;
@@ -2388,6 +2409,7 @@ html.ea-returning .page-loader { display: none !important; }
 }
 
 .tq-share-row { display: flex; gap: 0.9rem; flex-wrap: wrap; justify-content: center; margin-top: 1.8rem; }
+.tq-note { font-size: 0.85rem; color: var(--ink-500); }
 
 .tq-ranking-submit,
 .tq-leaderboard {
@@ -2458,7 +2480,7 @@ html.ea-returning .page-loader { display: none !important; }
 }
 
 /* ----------------------------------------------------------------------------
-   27 · PAGE ARTICLE + LECTEUR TTS
+   27 · PAGE ARTICLE
 ---------------------------------------------------------------------------- */
 .art-hero { padding: 10.5rem 0 3rem; position: relative; }
 
@@ -2480,6 +2502,13 @@ html.ea-returning .page-loader { display: none !important; }
   padding-bottom: 5rem;
 }
 
+.art-layout > article {
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  border-radius: var(--r-xl);
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(2, 8, 23, 0.22);
+}
+
 .art-cover {
   border-radius: var(--r-xl);
   overflow: hidden;
@@ -2489,12 +2518,12 @@ html.ea-returning .page-loader { display: none !important; }
 }
 .art-cover img { width: 100%; max-height: 460px; object-fit: cover; display: block; }
 
-.art-body { font-size: 1.08rem; line-height: 1.85; color: var(--ink-300); }
-.art-body p { margin: 0 0 1.4rem; }
-.art-body p:first-of-type { font-size: 1.22rem; color: var(--ink-200); }
+.art-body { font-size: 1.08rem; line-height: 1.85; color: #374151; }
+.art-body p { margin: 0 0 1.4rem; text-align: justify; text-justify: inter-word; }
+.art-body p:first-of-type { font-size: 1.22rem; color: #1f2937; }
 .art-body h2, .art-body h3 {
   font-family: var(--font-display);
-  color: var(--ink-100);
+  color: #111827;
   letter-spacing: -0.02em;
   margin: 2.4rem 0 1rem;
 }
@@ -2503,10 +2532,11 @@ html.ea-returning .page-loader { display: none !important; }
   padding: 1.4rem 1.6rem;
   border-left: 3px solid var(--orange);
   border-radius: 0 var(--r-md) var(--r-md) 0;
-  background: rgba(255, 106, 42, 0.06);
+  background: #fff4ed;
   font-family: var(--font-display);
   font-size: 1.2rem;
-  color: var(--ink-100);
+  color: #1f2937;
+  text-align: justify;
 }
 
 .art-aside { position: sticky; top: 110px; display: grid; gap: 1.3rem; }
@@ -2515,38 +2545,36 @@ html.ea-returning .page-loader { display: none !important; }
 .art-aside ul a { color: var(--ink-300); font-weight: 600; font-size: 0.95rem; line-height: 1.45; }
 .art-aside ul a:hover { color: var(--peach); }
 
-.tts-player {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin: 0 0 2.2rem;
-  padding: 1rem 1.2rem;
-  border-radius: var(--r-pill);
-  background: rgba(16, 26, 44, 0.6);
-  border: 1px solid var(--line-1);
-}
-
-.tts-btn {
+.art-share {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  border: 0;
-  border-radius: var(--r-pill);
-  padding: 0.75rem 1.3rem;
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 100%);
-  color: #fff;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 12px 30px rgba(255, 106, 42, 0.35);
-  transition: transform 0.2s ease;
+  gap: 0.45rem;
+  flex-wrap: wrap;
 }
-.tts-btn:hover { transform: translateY(-2px); }
-.tts-btn:disabled { opacity: 0.6; pointer-events: none; }
 
-.tts-player audio { flex: 1; min-width: 220px; height: 40px; }
-.tts-note { font-size: 0.85rem; color: var(--ink-500); }
+.art-share-label { margin-right: 0.15rem; }
+.art-share-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: rgba(16, 26, 44, 0.62);
+  color: var(--ink-200);
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.art-share-btn:hover,
+.art-share-btn.is-copied {
+  transform: translateY(-2px);
+  color: #fff;
+  border-color: var(--orange);
+}
+.art-share-btn.wa:hover { background: #25d366; border-color: #25d366; }
+.art-share-btn.fb:hover { background: #1877f2; border-color: #1877f2; }
+.art-share-btn.x:hover { background: #000; border-color: #000; }
+.art-share-btn.is-copied { background: #10b981; border-color: #10b981; }
 
 /* ----------------------------------------------------------------------------
    28 · AUTH (login) + DASHBOARD ADMIN
@@ -3285,33 +3313,56 @@ body { top: 0 !important; }
   color: var(--ink-100);
 }
 
-/* ─── Quill dark overrides ───────────────────────────────────────────── */
+/* ─── Quill : zone de rédaction blanche ──────────────────────────────── */
 .ql-toolbar.ql-snow {
-  background: rgba(255,255,255,.04);
-  border-color: rgba(255,255,255,.1);
+  background: #f8fafc;
+  border-color: #d1d5db;
   border-radius: 8px 8px 0 0;
 }
 .ql-container.ql-snow {
-  background: rgba(255,255,255,.03);
-  border-color: rgba(255,255,255,.1);
+  background: #fff;
+  border-color: #d1d5db;
   border-radius: 0 0 8px 8px;
   min-height: 200px;
-  color: var(--ink-100, #f1f5f9);
+  color: #111827;
   font-family: inherit;
   font-size: .95rem;
 }
-.ql-toolbar .ql-stroke { stroke: var(--ink-400, #9ca3af); }
-.ql-toolbar .ql-fill  { fill:   var(--ink-400, #9ca3af); }
+.ql-toolbar .ql-stroke { stroke: #4b5563; }
+.ql-toolbar .ql-fill  { fill: #4b5563; }
 .ql-toolbar .ql-picker,
-.ql-toolbar .ql-picker-options { color: var(--ink-300, #d1d5db); background: #1a2235; border-color: rgba(255,255,255,.1); }
+.ql-toolbar .ql-picker-options { color: #1f2937; background: #fff; border-color: #d1d5db; }
 .ql-toolbar button:hover .ql-stroke,
 .ql-toolbar button.ql-active .ql-stroke { stroke: var(--ea-orange, #ff6a2a); }
 .ql-toolbar button:hover .ql-fill,
 .ql-toolbar button.ql-active .ql-fill   { fill: var(--ea-orange, #ff6a2a); }
 .ql-toolbar .ql-picker-label:hover,
 .ql-toolbar .ql-picker-label.ql-active  { color: var(--ea-orange, #ff6a2a); }
-.ql-editor.ql-blank::before { color: var(--ink-500, #6b7280); font-style: normal; }
-.ql-editor { min-height: 200px; }
+.ql-editor.ql-blank::before { color: #6b7280; font-style: normal; }
+.ql-editor {
+  min-height: 200px;
+  color: #111827;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.article-content {
+  background: #fff !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+  text-align: justify;
+}
+
+/* Paragraphes éditoriaux justifiés sur l'ensemble du site. */
+:where(main, footer) p {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+:where(.section-head.center, .text-center, .blog-hero, .tq-head, .tq-stage, .adm-guard-page) p,
+p.text-center {
+  text-align: center;
+}
 
 /* ─── Checkbox row ───────────────────────────────────────────────────── */
 .ea-checkbox-row {

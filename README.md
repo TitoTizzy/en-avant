@@ -1,7 +1,7 @@
 # En Avant — Portail Web Premium
 
 Portail officiel du parti politique **En Avant**.
-Stack (conforme au DAT) : **HTML/CSS/JS vanilla** (zéro framework) · **Vercel Serverless Functions** (Node.js, `/api`) · **Supabase** (PostgreSQL + Auth + Storage) · **Stripe** (dons) · **Anthropic** (quiz) · **ElevenLabs** (TTS) · **Resend** (emails).
+Stack : **HTML/CSS/JS vanilla** (zéro framework) · **Vercel Serverless Functions** (Node.js, `/api`) · **Supabase** (PostgreSQL + Auth + Storage) · **Stripe** (dons) · **Anthropic** (quiz) · **Resend** (emails).
 
 ## Structure
 
@@ -17,7 +17,7 @@ Stack (conforme au DAT) : **HTML/CSS/JS vanilla** (zéro framework) · **Vercel 
 │   ├── app.js              Loader / menu mobile / slider
 │   ├── adherer.js, don.js, livre-blanc.js   Formulaires branchés sur /api
 │   ├── trivia.js           Quiz façon Duolingo (questions API + secours hors ligne)
-│   ├── article.js          Page article + lecteur TTS (/api/tts)
+│   ├── article.js          Page article et outils de partage
 │   ├── countdown.js        Compte à rebours (/api/events)
 │   └── login.js, admin.js  SuperAdmin : identifiant/email, mot de passe et PIN
 ├── api/                    Vercel Serverless Functions (Node.js, ESM)
@@ -28,7 +28,6 @@ Stack (conforme au DAT) : **HTML/CSS/JS vanilla** (zéro framework) · **Vercel 
 │   ├── trivia/generate.js  Anthropic → trivia_questions (SuperAdmin, token vérifié)
 │   ├── trivia/questions.js GET questions mélangées (jeu public)
 │   ├── trivia/score.js     POST score (classement & viralité)
-│   ├── tts.js              ElevenLabs → MP3 → Storage tts-articles
 │   ├── articles.js, events.js  Lectures publiques (blog AJAX, ?slug= article, countdown)
 │   ├── media.js            Galerie publique dynamique
 │   ├── admin/*             CRUD SuperAdmin : contenus, équipe, médias et diagnostics
@@ -80,7 +79,7 @@ npm run check    # contrôle local avant déploiement
 
 - Le frontend n'utilise **que** `SUPABASE_ANON_KEY` (RLS active) et, au besoin,
   `STRIPE_PUBLISHABLE_KEY`.
-- **Aucune clé secrète** (Stripe, Anthropic, ElevenLabs, `service_role`) ne doit
+- **Aucune clé secrète** (Stripe, Anthropic, `service_role`) ne doit
   apparaître dans le HTML/CSS/JS : tout passe par `/api/*`.
 - `members`, `donations`, `leads_livreblanc` : zéro accès anon direct — écriture
   via les fonctions serveur uniquement, lecture réservée au SuperAdmin.

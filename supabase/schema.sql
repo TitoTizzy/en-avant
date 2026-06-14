@@ -11,8 +11,8 @@
 --     arbitrage sécurité → l'INSERT public se fait via /api/members (validation
 --     serveur), jamais via la clé anon, ce qui satisfait aussi la règle
 --     "zéro accès anon direct" du même document.
---   · 4 buckets Storage : assets (public), tts-articles (public lecture),
---     documents (privé), uploads-admin (privé).
+--   · 3 buckets Storage : assets (public), documents (privé),
+--     uploads-admin (privé).
 -- ============================================================================
 
 create schema if not exists extensions;
@@ -182,7 +182,6 @@ create table if not exists public.articles (
   excerpt       text,
   categorie     text not null default 'actualite',
   image_url     text,
-  audio_url     text,            -- cache TTS : MP3 généré par /api/tts (ElevenLabs)
   published     boolean not null default false,
   published_at  timestamptz,
   created_at    timestamptz not null default now(),
@@ -421,9 +420,8 @@ alter table public.leads_livreblanc enable row level security;
 drop policy if exists "leads: lecture superadmin" on public.leads_livreblanc;
 
 -- ============================================================================
--- 9. STORAGE — 4 BUCKETS (DAT Branche 4 §4)
+-- 9. STORAGE — BUCKETS
 --    · assets        (public)  : images articles, photos galerie
---    · tts-articles  (public)  : MP3 générés par ElevenLabs (lecture seule)
 --    · documents     (privé)   : Livre Blanc source (PDF + TXT pour le Trivia)
 --    · uploads-admin (privé)   : médias uploadés par les éditeurs
 -- ============================================================================
@@ -431,17 +429,17 @@ drop policy if exists "leads: lecture superadmin" on public.leads_livreblanc;
 insert into storage.buckets (id, name, public)
 values
   ('assets', 'assets', true),
-  ('tts-articles', 'tts-articles', true),
   ('documents', 'documents', false),
   ('uploads-admin', 'uploads-admin', false)
 on conflict (id) do nothing;
 
--- Lecture publique des buckets publics (URLs servies par le CDN Supabase).
+-- Lecture publique du bucket d'assets (URLs servies par le CDN Supabase).
 drop policy if exists "storage: lecture publique assets+tts" on storage.objects;
-create policy "storage: lecture publique assets+tts"
+drop policy if exists "storage: lecture publique assets" on storage.objects;
+create policy "storage: lecture publique assets"
   on storage.objects for select
   to anon, authenticated
-  using (bucket_id in ('assets', 'tts-articles'));
+  using (bucket_id = 'assets');
 
 -- Les éditeurs/admins peuvent gérer les médias depuis le Dashboard Admin.
 drop policy if exists "storage: upload editor/admin" on storage.objects;
@@ -450,7 +448,6 @@ drop policy if exists "storage: suppression editor/admin" on storage.objects;
 
 -- Le bucket `documents` (Livre Blanc) : lecture superadmin côté Dashboard.
 -- (Les routes /api y accèdent via service_role, qui bypasse la RLS.
---  Le MP3 TTS est écrit dans `tts-articles` par service_role uniquement.)
 drop policy if exists "storage: documents superadmin" on storage.objects;
 
 -- ============================================================================

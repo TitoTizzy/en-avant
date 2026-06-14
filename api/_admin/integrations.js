@@ -50,14 +50,6 @@ export default async function handler(req, res) {
             : names.has(textPath) ? 'Clé et Livre blanc texte disponibles' : `${textPath} absent du bucket documents`,
         },
         {
-          id: 'elevenlabs',
-          label: 'ElevenLabs',
-          configured: present('ELEVENLABS_API_KEY') && present('ELEVENLABS_VOICE_ID'),
-          detail: !present('ELEVENLABS_API_KEY')
-            ? 'ELEVENLABS_API_KEY manquante'
-            : !present('ELEVENLABS_VOICE_ID') ? 'ELEVENLABS_VOICE_ID manquante' : 'Clé et voix configurées',
-        },
-        {
           id: 'documents',
           label: 'Documents Supabase',
           configured: !documentsError && names.has(pdfPath) && names.has(textPath),

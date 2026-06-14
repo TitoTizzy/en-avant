@@ -17,7 +17,8 @@ async function exists(path) {
 
 const requiredFiles = [
   'index.html', 'admin.html', 'login.html', 'vercel.json', 'package.json',
-  'api/_lib/supabase.js', 'api/auth/login.js', 'api/admin/dashboard.js',
+  'api/_lib/supabase.js', 'api/auth.js', 'api/admin.js',
+  'api/_auth/login.js', 'api/_admin/dashboard.js',
   'supabase/schema.sql', 'supabase/verify.sql',
 ];
 
@@ -51,7 +52,7 @@ check('Variable SITE_URL', siteUrlValid, siteUrlValid ? '' : env.SITE_URL ? 'for
 const cookieSecretValid = String(env.ADMIN_PIN_COOKIE_SECRET || '').length >= 32;
 check('ADMIN_PIN_COOKIE_SECRET robuste', cookieSecretValid, cookieSecretValid ? '' : '32 caractères minimum');
 
-for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'RESEND_API_KEY', 'ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'ELEVENLABS_VOICE_ID']) {
+for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'RESEND_API_KEY', 'ANTHROPIC_API_KEY']) {
   check(`Intégration ${name}`, Boolean(env[name]), env[name] ? '' : 'à configurer avant le test du service');
 }
 
@@ -63,7 +64,7 @@ const publicContent = (await Promise.all(
   publicFiles.map((file) => readFile(resolve(root, file), 'utf8').catch(() => ''))
 )).join('\n');
 
-for (const name of ['SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY', 'ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'RESEND_API_KEY']) {
+for (const name of ['SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY', 'ANTHROPIC_API_KEY', 'RESEND_API_KEY']) {
   const value = env[name];
   check(`Secret ${name} absent du frontend`, !value || !publicContent.includes(value));
 }

@@ -119,14 +119,14 @@ async function main() {
     } catch (e) { ko('RPC ea_change_pin', e.message); }
   }
 
-  /* 7 · Les 4 buckets Storage */
+  /* 7 · Les buckets Storage */
   try {
     const r = await fetch(`${URL_}/storage/v1/bucket`, { headers: headers(SERVICE) });
     const buckets = r.ok ? (await r.json()).map((b) => b.id) : [];
-    const attendus = ['assets', 'tts-articles', 'documents', 'uploads-admin'];
+    const attendus = ['assets', 'documents', 'uploads-admin'];
     const manquants = attendus.filter((b) => !buckets.includes(b));
     manquants.length === 0
-      ? ok('Buckets Storage (4/4)', buckets.filter((b) => attendus.includes(b)).join(', '))
+      ? ok('Buckets Storage (3/3)', buckets.filter((b) => attendus.includes(b)).join(', '))
       : ko('Buckets Storage', `manquants : ${manquants.join(', ')}`);
   } catch (e) { ko('Buckets Storage', e.message); }
 

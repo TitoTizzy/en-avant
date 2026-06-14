@@ -77,7 +77,6 @@ select
 from (
   values
     ('assets'),
-    ('tts-articles'),
     ('documents'),
     ('uploads-admin')
 ) as expected(name)

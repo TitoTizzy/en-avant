@@ -93,6 +93,9 @@
             <button class="btn-share-direct btn-share-whatsapp" type="button" title="Partager sur WhatsApp" data-url="${share}">
               <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
             </button>
+            <button class="btn-share-direct btn-share-facebook" type="button" title="Partager sur Facebook" data-url="${share}">
+              <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+            </button>
             <button class="btn-share-direct btn-share-x" type="button" title="Partager sur X" data-url="${share}">
               <i class="fa-brands fa-x-twitter" aria-hidden="true"></i>
             </button>
@@ -106,10 +109,12 @@
 
   // ── Partage (réutilisé pour cartes dynamiques et statiques) ────────────
   function wireShareButtons(container) {
+    const absoluteUrl = (value) => new URL(value || "/blog.html", window.location.origin).href;
+
     container.querySelectorAll(".btn-copy-link").forEach((btn) => {
       btn.addEventListener("click", async () => {
         try {
-          await navigator.clipboard.writeText(btn.dataset.url);
+          await navigator.clipboard.writeText(absoluteUrl(btn.dataset.url));
           const saved = btn.innerHTML;
           btn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
           btn.classList.add("is-copied");
@@ -119,12 +124,17 @@
     });
     container.querySelectorAll(".btn-share-whatsapp").forEach((btn) => {
       btn.addEventListener("click", () => {
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent("Lisez ceci ! " + btn.dataset.url)}`, "_blank", "noopener");
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent("Lisez ceci ! " + absoluteUrl(btn.dataset.url))}`, "_blank", "noopener");
+      });
+    });
+    container.querySelectorAll(".btn-share-facebook").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(absoluteUrl(btn.dataset.url))}`, "_blank", "noopener");
       });
     });
     container.querySelectorAll(".btn-share-x").forEach((btn) => {
       btn.addEventListener("click", () => {
-        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(btn.dataset.url)}`, "_blank", "noopener");
+        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl(btn.dataset.url))}`, "_blank", "noopener");
       });
     });
   }
