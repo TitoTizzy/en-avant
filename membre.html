@@ -474,18 +474,26 @@
         document.getElementById("mb-greeting").textContent = `Bonjour, ${pseudo} !`;
         document.title = `${pseudo} — Espace membre | En Avant`;
 
-        // Vérifier si superadmin → afficher la carte Admin
+        // Vérifier rôle + permissions → afficher la carte Dashboard si autorisé
         try {
           const { data: profile } = await client
             .from("profiles")
-            .select("role")
+            .select("role, permissions")
             .eq("id", session.user.id)
             .maybeSingle();
 
-          if (profile?.role === "superadmin") {
+          const isSuperAdmin = profile?.role === "superadmin";
+          const perms = Array.isArray(profile?.permissions) ? profile.permissions : [];
+          const hasAdminAccess = isSuperAdmin || perms.includes("acces_dashboard");
+
+          if (hasAdminAccess) {
             const badge = document.querySelector(".membre-role-badge");
             if (badge) {
-              badge.innerHTML = '<i class="fa-solid fa-shield-halved" aria-hidden="true"></i> SuperAdmin';
+              if (isSuperAdmin) {
+                badge.innerHTML = '<i class="fa-solid fa-shield-halved" aria-hidden="true"></i> SuperAdmin';
+              } else {
+                badge.innerHTML = '<i class="fa-solid fa-user-shield" aria-hidden="true"></i> Administrateur';
+              }
             }
 
             const grid = document.querySelector(".membre-grid");
