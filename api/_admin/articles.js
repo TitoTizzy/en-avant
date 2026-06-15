@@ -9,7 +9,7 @@
 //          · review_status:"approved" → publie automatiquement
 //          · remove_image:true → efface image_url
 // DELETE : { id }
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
 
 const CATEGORIES = [
@@ -34,7 +34,7 @@ const slugify = (titre) =>
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requireRole(req, ['superadmin']);
+    await requirePermission(req, 'gerer_articles');
 
     const supabase = getServiceClient();
     const body = getBody(req);

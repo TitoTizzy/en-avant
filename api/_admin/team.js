@@ -4,7 +4,7 @@
 // PATCH  : { id, nom?, poste?, ordre?, section?, photo_base64?, photo_ext? } → met à jour
 // PUT    : { sections: [{key, label}] }                 → enregistre l'ordre des sections
 // DELETE : { id }                                       → supprime la carte
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 
 
@@ -16,7 +16,7 @@ const isUuid = (value) => /^[0-9a-f-]{36}$/i.test(String(value || ''));
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requireRole(req, ['superadmin']);
+    await requirePermission(req, 'gerer_organigramme');
 
     const supabase = getServiceClient();
     const body = getBody(req);

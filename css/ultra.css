@@ -3211,6 +3211,15 @@ html.ea-returning .page-loader { display: none !important; }
   color: #111827 !important;
   background: #fff !important;
 }
+/* Force le texte sombre sur tous les blocs Quill (héritages du thème sombre) */
+.article-editor-surface .ql-editor p,
+.article-editor-surface .ql-editor h1,
+.article-editor-surface .ql-editor h2,
+.article-editor-surface .ql-editor h3,
+.article-editor-surface .ql-editor li,
+.article-editor-surface .ql-editor blockquote {
+  color: #111827;
+}
 
 .adm-article-editor > .ea-field,
 .adm-article-editor .ea-field input,

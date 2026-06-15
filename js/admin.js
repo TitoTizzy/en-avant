@@ -2352,19 +2352,23 @@
       window.location.href = "/login.html";
     });
 
-    // Vérifie le rôle directement via Supabase (fonctionne sans API Vercel)
+    // Vérifie le rôle et les permissions via Supabase
     const { data: profileRow, error: profileErr } = await client
       .from("profiles")
-      .select("role")
+      .select("role, permissions")
       .eq("id", session.user.id)
       .maybeSingle();
 
-    if (profileErr || profileRow?.role !== "superadmin") {
-      deny("Accès réservé aux administrateurs.", false);
+    const isSuperAdmin = profileRow?.role === "superadmin";
+    const userPerms = Array.isArray(profileRow?.permissions) ? profileRow.permissions : [];
+    const canDo = (perm) => isSuperAdmin || userPerms.includes(perm);
+
+    if (profileErr || (!isSuperAdmin && !userPerms.includes("acces_dashboard"))) {
+      deny("Accès réservé aux administrateurs. Demandez à un SuperAdmin de vous accorder la permission «Accès au dashboard».", false);
       return;
     }
 
-    // Affichage immédiat — rôle confirmé par Supabase
+    // Affichage immédiat — accès confirmé
     const meta = session.user.user_metadata || {};
     const display =
       meta.pseudo ||
@@ -2378,7 +2382,35 @@
     if (emailTopEl) emailTopEl.textContent = display;
 
     const roleBadge = document.getElementById("adm-role");
-    if (roleBadge) { roleBadge.textContent = "superadmin"; roleBadge.hidden = false; }
+    if (roleBadge) {
+      roleBadge.textContent = profileRow?.role || "admin";
+      roleBadge.hidden = false;
+    }
+
+    // Masquer les panneaux non autorisés pour les non-superadmins
+    if (!isSuperAdmin) {
+      const panelPerms = {
+        "panel-articles":     "gerer_articles",
+        "panel-events":       "gerer_evenements",
+        "panel-gallery":      "gerer_galerie",
+        "panel-organisation": "gerer_organigramme",
+        "panel-trivia":       "gerer_trivia",
+        "panel-settings":     "gerer_parametres",
+        "panel-members":      "voir_membres",
+        "panel-donations":    "voir_dons",
+        "panel-leads":        "voir_membres",
+        "panel-equipe":       "gerer_utilisateurs",
+      };
+      Object.entries(panelPerms).forEach(([panel, perm]) => {
+        if (!canDo(perm)) {
+          document.querySelector(`[data-panel="${panel}"]`)?.style.setProperty("display", "none");
+        }
+      });
+      // Panneaux strictement superadmin (gestion clés API, sécurité, logs)
+      ["panel-integrations", "panel-security", "panel-logs"].forEach((panel) => {
+        document.querySelector(`[data-panel="${panel}"]`)?.style.setProperty("display", "none");
+      });
+    }
 
     // Initiales pour avatar
     const nameWords = (meta.nom || meta.pseudo || display).trim().split(/\s+/).filter(Boolean);
@@ -2397,7 +2429,11 @@
 
     guard.hidden = true;
     app.hidden = false;
-    startPinSecurity();
+
+    // PIN de sécurité uniquement pour superadmin
+    if (isSuperAdmin) {
+      startPinSecurity();
+    }
 
     // Wire des interactions UI
     bindListTools();

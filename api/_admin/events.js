@@ -3,7 +3,7 @@
 // POST   : { titre, date_cible, lieu?, description? }
 // PATCH  : { id, titre?, date_cible?, lieu?, description? }
 // DELETE : { id }
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
 
 const isUuid = (value) => /^[0-9a-f-]{36}$/i.test(String(value || ''));
@@ -16,7 +16,7 @@ const parseDate = (value) => {
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requireRole(req, ['superadmin']);
+    await requirePermission(req, 'gerer_evenements');
 
     const supabase = getServiceClient();
     const body = getBody(req);

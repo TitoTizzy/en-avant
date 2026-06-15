@@ -1,4 +1,4 @@
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 
 const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
@@ -6,7 +6,7 @@ const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    const identity = await requireRole(req, ['superadmin']);
+    const identity = await requirePermission(req, 'acces_dashboard');
     const supabase = getServiceClient();
 
     if (req.method === 'PATCH') {

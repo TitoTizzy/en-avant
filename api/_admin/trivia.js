@@ -1,7 +1,7 @@
 // /api/admin/trivia — Banque de questions du quiz (SuperAdmin + PIN).
 // GET    : liste des questions (récentes en premier)
 // DELETE : { id, kind? } → retire une question ou un score
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError } from '../_lib/http.js';
 
 const isUuid = (value) => /^[0-9a-f-]{36}$/i.test(String(value || ''));
@@ -9,7 +9,7 @@ const isUuid = (value) => /^[0-9a-f-]{36}$/i.test(String(value || ''));
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requireRole(req, ['superadmin']);
+    await requirePermission(req, 'gerer_trivia');
 
     const supabase = getServiceClient();
 

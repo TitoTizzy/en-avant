@@ -1,7 +1,7 @@
 // /api/admin/settings — Réglages globaux du site (SuperAdmin + PIN requis).
 // GET  : { settings: { popup_video, popup_football, ... } }
 // PUT  : { key, value }  → upsert d'un réglage (validé selon la clé)
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 
 // Clés autorisées + normalisation de chaque valeur (anti-injection).
@@ -38,7 +38,7 @@ const NORMALIZERS = {
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requireRole(req, ['superadmin']);
+    await requirePermission(req, 'gerer_parametres');
     const supabase = getServiceClient();
 
     if (req.method === 'GET') {
