@@ -3912,6 +3912,17 @@ p.text-center {
   text-align: center;
 }
 
+/* Blocs-carte : alignement gauche naturel, sans justification. */
+.u-card p, .u-tile p, .about-card p, .value-card p, .order-card p,
+.statement-box p, .christophe-panel p, .history-highlight p,
+.manifesto-card p, .chantier-card p, .panel-card p,
+.premium-blog-card p, .orga-card p,
+.mini-news-card p, .news-cta-box p, .feature-card p, .process-card p,
+.membre-card p, .ea-glass-card p {
+  text-align: left;
+  text-justify: unset;
+}
+
 /* ─── Checkbox row ───────────────────────────────────────────────────── */
 .ea-checkbox-row {
   display: flex;
