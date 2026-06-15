@@ -3242,6 +3242,44 @@ html.ea-returning .page-loader { display: none !important; }
   margin-bottom: 0.65rem;
 }
 
+/* Permission checkboxes dans les cartes utilisateur */
+.adm-perm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .75rem;
+}
+.adm-perm-header strong {
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-200);
+}
+.adm-perm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: .3rem .8rem;
+}
+.adm-perm-check {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  cursor: pointer;
+  font-size: .84rem;
+  color: var(--ink-400);
+  padding: .15rem 0;
+  user-select: none;
+}
+.adm-perm-check input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--ea-orange, #ff6a2a);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.adm-perm-check input:checked + span { color: var(--ink-100); }
+
 .adm-empty,
 .adm-loading {
   color: var(--ink-400);

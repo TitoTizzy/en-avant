@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, username, nom, role, created_at')
+        .select('id, email, username, nom, role, permissions, created_at')
         .order('created_at', { ascending: true })
         .limit(500);
       if (error) throw error;
@@ -65,18 +65,32 @@ export default async function handler(req, res) {
 
     if (req.method === 'PATCH') {
       if (!isUuid(body.id)) return json(res, 422, { error: 'Identifiant invalide.' });
-      const role = clean(body.role);
-      if (!ROLES.includes(role)) return json(res, 422, { error: 'Rôle inconnu.' });
 
-      // Garde-fou : ne pas se retirer le rôle SuperAdmin si on est le dernier.
-      if (body.id === identity.user.id && role !== 'superadmin') {
-        const { count } = await supabase
-          .from('profiles').select('id', { count: 'exact', head: true })
-          .eq('role', 'superadmin');
-        if ((count || 0) <= 1) return json(res, 409, { error: 'Impossible : vous êtes le dernier SuperAdmin.' });
+      const updates = {};
+
+      if ('role' in body) {
+        const role = clean(body.role);
+        if (!ROLES.includes(role)) return json(res, 422, { error: 'Rôle inconnu.' });
+        // Garde-fou : ne pas se retirer le rôle SuperAdmin si on est le dernier.
+        if (body.id === identity.user.id && role !== 'superadmin') {
+          const { count } = await supabase
+            .from('profiles').select('id', { count: 'exact', head: true })
+            .eq('role', 'superadmin');
+          if ((count || 0) <= 1) return json(res, 409, { error: 'Impossible : vous êtes le dernier SuperAdmin.' });
+        }
+        updates.role = role;
       }
 
-      const { error } = await supabase.from('profiles').update({ role }).eq('id', body.id);
+      if ('permissions' in body) {
+        if (!Array.isArray(body.permissions)) return json(res, 422, { error: 'permissions doit être un tableau.' });
+        updates.permissions = body.permissions
+          .filter((p) => typeof p === 'string' && p.length <= 60)
+          .slice(0, 50);
+      }
+
+      if (Object.keys(updates).length === 0) return json(res, 422, { error: 'Aucune modification fournie.' });
+
+      const { error } = await supabase.from('profiles').update(updates).eq('id', body.id);
       if (error) throw error;
       return json(res, 200, { ok: true });
     }

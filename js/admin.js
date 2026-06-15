@@ -2373,42 +2373,55 @@
 
     const ROLE_LABELS = { superadmin: "SuperAdmin", editor: "Éditeur", readonly: "Lecture seule", member: "Membre" };
     const ROLE_KEYS = ["editor", "readonly", "member", "superadmin"];
-    const PERMISSIONS = {
-      superadmin: [
-        "Accès complet au dashboard", "Créer et gérer les utilisateurs", "Gérer les articles",
-        "Gérer les événements", "Gérer la galerie", "Gérer l'organigramme",
-        "Gérer le Trivia", "Voir et traiter les membres", "Voir les dons et les leads",
-        "Gérer les paramètres et la sécurité",
-      ],
-      editor: [
-        "Accès à l'espace membre", "Consulter les contenus publics",
-        "Aucun accès au dashboard administratif actuellement",
-      ],
-      readonly: [
-        "Accès à l'espace membre", "Consulter les contenus publics",
-        "Aucun accès au dashboard administratif actuellement",
-      ],
-      member: [
-        "Accès à l'espace membre", "Participer au Trivia",
-        "Consulter les contenus réservés aux membres",
-      ],
+    const ALL_PERMISSIONS = [
+      { key: "acces_dashboard",    label: "Accès au dashboard admin" },
+      { key: "gerer_utilisateurs", label: "Créer et gérer les utilisateurs" },
+      { key: "gerer_articles",     label: "Gérer les articles" },
+      { key: "gerer_evenements",   label: "Gérer les événements" },
+      { key: "gerer_galerie",      label: "Gérer la galerie" },
+      { key: "gerer_organigramme", label: "Gérer l'organigramme" },
+      { key: "gerer_trivia",       label: "Gérer le Trivia" },
+      { key: "voir_membres",       label: "Voir et traiter les membres" },
+      { key: "voir_dons",          label: "Voir les dons et les leads" },
+      { key: "gerer_parametres",   label: "Gérer les paramètres et la sécurité" },
+      { key: "espace_membre",      label: "Accès à l'espace membre" },
+      { key: "jouer_trivia",       label: "Participer au Trivia" },
+      { key: "voir_public",        label: "Consulter les contenus publics" },
+      { key: "voir_reserves",      label: "Contenus réservés aux membres" },
+    ];
+    const ROLE_DEFAULTS = {
+      superadmin: ["acces_dashboard","gerer_utilisateurs","gerer_articles","gerer_evenements","gerer_galerie","gerer_organigramme","gerer_trivia","voir_membres","voir_dons","gerer_parametres","espace_membre","jouer_trivia","voir_public","voir_reserves"],
+      editor:    ["espace_membre","voir_public"],
+      readonly:  ["espace_membre","voir_public"],
+      member:    ["espace_membre","jouer_trivia","voir_reserves"],
     };
     let meId = null;
 
-    const status = (type, msg) => setModuleStatus("user-status", type, msg);
+    const status    = (type, msg) => setModuleStatus("user-status",      type, msg);
     const listStatus = (type, msg) => setModuleStatus("user-list-status", type, msg);
 
-    function permissionMarkup(role) {
-      return (PERMISSIONS[role] || []).map((permission) => `
-        <span class="adm-permission-chip">
-          <i class="fa-solid fa-check" aria-hidden="true"></i> ${esc(permission)}
-        </span>`).join("");
+    function userEffectivePerms(u) {
+      return Array.isArray(u.permissions) ? u.permissions : (ROLE_DEFAULTS[u.role] || []);
+    }
+
+    function previewMarkup(role) {
+      const defaults = ROLE_DEFAULTS[role] || [];
+      return ALL_PERMISSIONS
+        .filter((p) => defaults.includes(p.key))
+        .map((p) => `<span class="adm-permission-chip"><i class="fa-solid fa-check" aria-hidden="true"></i> ${esc(p.label)}</span>`)
+        .join("");
     }
 
     function userRow(u) {
       const name = u.nom || u.username || u.email || "?";
       const isMe = u.id === meId;
-      return `<article class="u-card adm-user-card" data-id="${esc(u.id)}">
+      const activePerms = userEffectivePerms(u);
+      const checksHtml = ALL_PERMISSIONS.map((p) => `
+        <label class="adm-perm-check">
+          <input type="checkbox" class="perm-check" data-key="${p.key}" ${activePerms.includes(p.key) ? "checked" : ""}>
+          <span>${esc(p.label)}</span>
+        </label>`).join("");
+      return `<article class="u-card adm-user-card" data-id="${esc(u.id)}" data-role="${esc(u.role)}">
         <div class="adm-staff-row">
           <div class="adm-staff-avatar">${esc(String(name)[0].toUpperCase())}</div>
           <div class="adm-staff-info">
@@ -2423,8 +2436,13 @@
           </button>
         </div>
         <div class="adm-user-permissions">
-          <strong>Permissions</strong>
-          <div class="adm-permission-list">${permissionMarkup(u.role)}</div>
+          <div class="adm-perm-header">
+            <strong>Permissions</strong>
+            <button class="btn btn-primary btn-xs adm-perm-save" type="button" data-id="${esc(u.id)}">
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Sauvegarder
+            </button>
+          </div>
+          <div class="adm-perm-grid">${checksHtml}</div>
         </div>
       </article>`;
     }
@@ -2444,7 +2462,7 @@
     function renderPermissionPreview() {
       const role = document.getElementById("user-role")?.value || "editor";
       const preview = document.getElementById("user-permissions-preview");
-      if (preview) preview.innerHTML = permissionMarkup(role);
+      if (preview) preview.innerHTML = previewMarkup(role);
     }
 
     function showEditor() {
@@ -2497,17 +2515,41 @@
       field.focus();
     });
 
-    // Changement de rôle (délégation)
+    // Changement de rôle → sauvegarde + reset des cases à cocher aux défauts du rôle
     host.addEventListener("change", async (event) => {
       const select = event.target.closest(".user-role-select");
       if (!select) return;
+      const newRole = select.value;
+      const card = select.closest(".adm-user-card");
       try {
-        await api("/api/admin/users", { method: "PATCH", body: JSON.stringify({ id: select.dataset.id, role: select.value }) });
-        listStatus("success", "Rôle et permissions mis à jour.");
-        await loadUsers();
+        await api("/api/admin/users", { method: "PATCH", body: JSON.stringify({ id: select.dataset.id, role: newRole }) });
+        listStatus("success", "Rôle mis à jour — personnalisez les permissions ci-dessous puis sauvegardez.");
+        if (card) {
+          const defaults = ROLE_DEFAULTS[newRole] || [];
+          card.querySelectorAll(".perm-check").forEach((cb) => { cb.checked = defaults.includes(cb.dataset.key); });
+          card.dataset.role = newRole;
+        }
       } catch (error) {
         listStatus("error", error.message);
         await loadUsers();
+      }
+    });
+
+    // Sauvegarde des permissions individuelles
+    host.addEventListener("click", async (event) => {
+      const saveBtn = event.target.closest(".adm-perm-save");
+      if (!saveBtn) return;
+      const card = saveBtn.closest(".adm-user-card");
+      const id = saveBtn.dataset.id;
+      const permissions = [...card.querySelectorAll(".perm-check:checked")].map((cb) => cb.dataset.key);
+      saveBtn.classList.add("btn-loading");
+      try {
+        await api("/api/admin/users", { method: "PATCH", body: JSON.stringify({ id, permissions }) });
+        listStatus("success", "Permissions sauvegardées.");
+      } catch (error) {
+        listStatus("error", error.message);
+      } finally {
+        saveBtn.classList.remove("btn-loading");
       }
     });
 
