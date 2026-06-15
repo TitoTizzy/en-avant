@@ -14,7 +14,7 @@ node_modules/
 .claude/
 
 # Fichiers temporaires
-Ctempyt_search.html
+*tempyt_search.html
 yt_search_results.html
 results1.html
 
