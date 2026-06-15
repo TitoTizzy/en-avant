@@ -80,7 +80,6 @@
     "panel-home":         "Tableau de bord",
     "panel-articles":     "Articles",
     "panel-events":       "Événements",
-    "panel-media":        "Médiathèque",
     "panel-gallery":      "Galerie",
     "panel-organisation": "Organisation",
     "panel-members":      "Membres",
@@ -112,12 +111,16 @@
     item.addEventListener("click", () => {
       switchPanel(item.dataset.panel);
       if (item.dataset.panel === "panel-articles") showArticleList();
+      if (item.dataset.panel === "panel-events") showEventList();
+      if (item.dataset.panel === "panel-gallery") showGalleryList();
+      if (item.dataset.panel === "panel-equipe") showUserList();
     });
   });
   document.querySelectorAll(".adm-quick-btn[data-panel]").forEach((btn) => {
     btn.addEventListener("click", () => {
       switchPanel(btn.dataset.panel);
       if (btn.hasAttribute("data-article-new")) openArticleEditor();
+      if (btn.hasAttribute("data-event-new")) openEventEditor();
     });
   });
 
@@ -961,6 +964,135 @@
     });
   }
 
+  let eventsCache = [];
+
+  function eventLibraryCard(item) {
+    const card = document.createElement("article");
+    card.className = "u-card adm-record adm-entity-card";
+    card.dataset.id = item.id;
+    const target = new Date(item.date_cible);
+    const isPast = target.getTime() < Date.now();
+    card.innerHTML = `
+      <div class="adm-entity-icon"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i></div>
+      <div class="adm-entity-card-body">
+        <div class="adm-article-card-meta">
+          <span class="badge ${isPast ? "pending" : "approved"}">${isPast ? "Passé" : "À venir"}</span>
+          <span>${fmtDate(item.date_cible)}</span>
+        </div>
+        <h4>${esc(item.titre)}</h4>
+        <p>${esc(item.description || "Aucune description.")}</p>
+        ${item.lieu ? `<small><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${esc(item.lieu)}</small>` : ""}
+        <div class="adm-record-actions adm-article-card-actions">
+          <button class="btn btn-primary btn-xs event-edit" type="button">
+            <i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier
+          </button>
+          <button class="btn btn-ghost btn-xs event-delete" type="button" title="Supprimer">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>`;
+    return card;
+  }
+
+  async function loadEventLibrary() {
+    const host = document.getElementById("events-admin");
+    if (!host) return;
+    try {
+      const payload = await api("/api/admin/events");
+      eventsCache = payload.events || [];
+      host.innerHTML = "";
+      if (!eventsCache.length) {
+        host.innerHTML = '<div class="u-card adm-empty">Aucun événement planifié.</div>';
+        return;
+      }
+      eventsCache.forEach((item) => host.appendChild(eventLibraryCard(item)));
+    } catch (error) {
+      host.innerHTML = `<div class="u-card adm-empty">${esc(error.message)}</div>`;
+    }
+  }
+
+  function showEventList() {
+    document.getElementById("events-list-view").hidden = false;
+    document.getElementById("event-editor-view").hidden = true;
+    setModuleStatus("event-status", "", "");
+  }
+
+  function openEventEditor(eventId = "") {
+    const item = eventId ? eventsCache.find((event) => event.id === eventId) : null;
+    const form = document.getElementById("event-editor-form");
+    if (!form) return;
+    form.reset();
+    document.getElementById("event-id").value = item?.id || "";
+    document.getElementById("event-title").value = item?.titre || "";
+    document.getElementById("event-date").value = item ? toLocalDateTime(item.date_cible) : "";
+    document.getElementById("event-place").value = item?.lieu || "";
+    document.getElementById("event-description").value = item?.description || "";
+    document.getElementById("event-editor-title").textContent = item ? "Modifier l'événement" : "Nouvel événement";
+    document.getElementById("event-editor-subtitle").textContent = item
+      ? "Mettez à jour les informations de cet événement."
+      : "Ajoutez un événement au calendrier public.";
+    document.getElementById("event-save-label").textContent = item ? "Enregistrer les modifications" : "Créer l'événement";
+    document.getElementById("events-list-view").hidden = true;
+    document.getElementById("event-editor-view").hidden = false;
+    document.getElementById("event-title").focus();
+  }
+
+  function bindEventLibrary() {
+    const form = document.getElementById("event-editor-form");
+    const host = document.getElementById("events-admin");
+    if (!form || !host) return;
+    document.getElementById("event-new-button")?.addEventListener("click", () => openEventEditor());
+    document.getElementById("event-editor-back")?.addEventListener("click", showEventList);
+    document.getElementById("event-editor-cancel")?.addEventListener("click", showEventList);
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = document.getElementById("event-save-submit");
+      button.classList.add("btn-loading");
+      try {
+        const id = document.getElementById("event-id").value;
+        const body = {
+          titre: document.getElementById("event-title").value,
+          date_cible: fromLocalDateTime(document.getElementById("event-date").value),
+          lieu: document.getElementById("event-place").value,
+          description: document.getElementById("event-description").value,
+        };
+        await api("/api/admin/events", {
+          method: id ? "PATCH" : "POST",
+          body: JSON.stringify(id ? { id, ...body } : body),
+        });
+        await loadEventLibrary();
+        showEventList();
+        setModuleStatus("event-list-status", "success", id ? "Événement modifié." : "Événement créé.");
+      } catch (error) {
+        setModuleStatus("event-status", "error", error.message);
+      } finally {
+        button.classList.remove("btn-loading");
+      }
+    });
+
+    host.addEventListener("click", async (event) => {
+      const card = event.target.closest(".adm-entity-card");
+      if (!card) return;
+      if (event.target.closest(".event-edit")) {
+        openEventEditor(card.dataset.id);
+        return;
+      }
+      if (!event.target.closest(".event-delete")) return;
+      if (!window.confirm("Supprimer cet événement ?")) return;
+      try {
+        await api("/api/admin/events", {
+          method: "DELETE",
+          body: JSON.stringify({ id: card.dataset.id }),
+        });
+        await loadEventLibrary();
+        setModuleStatus("event-list-status", "success", "Événement supprimé.");
+      } catch (error) {
+        setModuleStatus("event-list-status", "error", error.message);
+      }
+    });
+  }
+
   async function loadTriviaBank() {
     const host = document.getElementById("trivia-admin");
     const scoresHost = document.getElementById("trivia-scores-admin");
@@ -1167,6 +1299,156 @@
         setModuleStatus("media-status", "success", "Légende enregistrée.");
       } catch (error) {
         setModuleStatus("media-status", "error", error.message);
+      }
+    });
+  }
+
+  let galleryCache = [];
+
+  function galleryCard(item) {
+    const card = document.createElement("article");
+    card.className = "u-card adm-media-card adm-gallery-card";
+    card.dataset.id = item.id;
+    card.innerHTML = `
+      <img src="${esc(item.url)}" alt="${esc(item.caption || "")}">
+      <div class="adm-gallery-card-body">
+        <p>${esc(item.caption || "Sans légende")}</p>
+        <div class="adm-record-actions">
+          <button class="btn btn-primary btn-xs gallery-edit" type="button">
+            <i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier
+          </button>
+          <button class="btn btn-ghost btn-xs gallery-delete" type="button">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i> Supprimer
+          </button>
+        </div>
+      </div>`;
+    return card;
+  }
+
+  async function loadGallery() {
+    const host = document.getElementById("gallery-admin");
+    if (!host) return;
+    try {
+      const payload = await api("/api/admin/media");
+      galleryCache = payload.media || [];
+      host.innerHTML = "";
+      if (!galleryCache.length) {
+        host.innerHTML = '<div class="u-card adm-empty">Aucune photo enregistrée.</div>';
+        return;
+      }
+      galleryCache.forEach((item) => host.appendChild(galleryCard(item)));
+    } catch (error) {
+      host.innerHTML = `<div class="u-card adm-empty">${esc(error.message)}</div>`;
+    }
+  }
+
+  function showGalleryList() {
+    document.getElementById("gallery-list-view").hidden = false;
+    document.getElementById("gallery-editor-view").hidden = true;
+    setModuleStatus("gallery-editor-status", "", "");
+  }
+
+  function openGalleryEditor(mediaId = "") {
+    const item = mediaId ? galleryCache.find((media) => media.id === mediaId) : null;
+    const form = document.getElementById("gallery-editor-form");
+    if (!form) return;
+    form.reset();
+    document.getElementById("gallery-id").value = item?.id || "";
+    document.getElementById("gallery-caption").value = item?.caption || "";
+    document.getElementById("gallery-editor-title").textContent = item ? "Modifier la photo" : "Ajouter une photo";
+    document.getElementById("gallery-editor-subtitle").textContent = item
+      ? "Modifiez la légende de cette photo."
+      : "JPG, PNG ou WebP, 3 Mo maximum.";
+    document.getElementById("gallery-save-label").textContent = item ? "Enregistrer les modifications" : "Ajouter la photo";
+    document.getElementById("gallery-image-field").hidden = Boolean(item);
+    const preview = document.getElementById("gallery-image-preview");
+    preview.src = item?.url || "";
+    preview.hidden = !item?.url;
+    document.getElementById("gallery-list-view").hidden = true;
+    document.getElementById("gallery-editor-view").hidden = false;
+    (item ? document.getElementById("gallery-caption") : document.getElementById("gallery-image")).focus();
+  }
+
+  function bindGallery() {
+    const form = document.getElementById("gallery-editor-form");
+    const host = document.getElementById("gallery-admin");
+    const imageInput = document.getElementById("gallery-image");
+    if (!form || !host || !imageInput) return;
+
+    document.getElementById("gallery-new-button")?.addEventListener("click", () => openGalleryEditor());
+    document.getElementById("gallery-editor-back")?.addEventListener("click", showGalleryList);
+    document.getElementById("gallery-editor-cancel")?.addEventListener("click", showGalleryList);
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files?.[0];
+      if (!file) return;
+      const preview = document.getElementById("gallery-image-preview");
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = document.getElementById("gallery-save-submit");
+      const id = document.getElementById("gallery-id").value;
+      button.classList.add("btn-loading");
+      try {
+        if (id) {
+          await api("/api/admin/media", {
+            method: "PATCH",
+            body: JSON.stringify({
+              id,
+              caption: document.getElementById("gallery-caption").value,
+            }),
+          });
+        } else {
+          const file = imageInput.files?.[0];
+          const ext = file && { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[file.type];
+          if (!file || !ext || file.size > 3 * 1024 * 1024) {
+            throw new Error("Sélectionnez une image JPG, PNG ou WebP de 3 Mo maximum.");
+          }
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
+            reader.readAsDataURL(file);
+          });
+          await api("/api/admin/media", {
+            method: "POST",
+            body: JSON.stringify({
+              caption: document.getElementById("gallery-caption").value,
+              image_base64: dataUrl.split(",")[1],
+              image_ext: ext,
+            }),
+          });
+        }
+        await loadGallery();
+        showGalleryList();
+        setModuleStatus("gallery-status", "success", id ? "Photo modifiée." : "Photo ajoutée.");
+      } catch (error) {
+        setModuleStatus("gallery-editor-status", "error", error.message);
+      } finally {
+        button.classList.remove("btn-loading");
+      }
+    });
+
+    host.addEventListener("click", async (event) => {
+      const card = event.target.closest(".adm-gallery-card");
+      if (!card) return;
+      if (event.target.closest(".gallery-edit")) {
+        openGalleryEditor(card.dataset.id);
+        return;
+      }
+      if (!event.target.closest(".gallery-delete")) return;
+      if (!window.confirm("Supprimer définitivement cette photo ?")) return;
+      try {
+        await api("/api/admin/media", {
+          method: "DELETE",
+          body: JSON.stringify({ id: card.dataset.id }),
+        });
+        await loadGallery();
+        setModuleStatus("gallery-status", "success", "Photo supprimée.");
+      } catch (error) {
+        setModuleStatus("gallery-status", "error", error.message);
       }
     });
   }
@@ -1718,8 +2000,8 @@
     // Wire des interactions UI
     bindListTools();
     bindArticleLibrary();
-    bindEvents();
-    bindMedia();
+    bindEventLibrary();
+    bindGallery();
     bindIntegrations();
     bindTrivia();
     bindTriviaBank();
@@ -1750,8 +2032,8 @@
     } catch (_) { /* API indisponible localement — statistiques vides */ }
 
     loadArticleLibrary();
-    loadEvents();
-    loadMedia();
+    loadEventLibrary();
+    loadGallery();
     loadIntegrations();
     loadTriviaBank();
     loadTeam();
@@ -1915,26 +2197,60 @@
 
     const ROLE_LABELS = { superadmin: "SuperAdmin", editor: "Éditeur", readonly: "Lecture seule", member: "Membre" };
     const ROLE_KEYS = ["editor", "readonly", "member", "superadmin"];
+    const PERMISSIONS = {
+      superadmin: [
+        "Accès complet au dashboard", "Créer et gérer les utilisateurs", "Gérer les articles",
+        "Gérer les événements", "Gérer la galerie", "Gérer l'organigramme",
+        "Gérer le Trivia", "Voir et traiter les membres", "Voir les dons et les leads",
+        "Gérer les paramètres et la sécurité",
+      ],
+      editor: [
+        "Accès à l'espace membre", "Consulter les contenus publics",
+        "Aucun accès au dashboard administratif actuellement",
+      ],
+      readonly: [
+        "Accès à l'espace membre", "Consulter les contenus publics",
+        "Aucun accès au dashboard administratif actuellement",
+      ],
+      member: [
+        "Accès à l'espace membre", "Participer au Trivia",
+        "Consulter les contenus réservés aux membres",
+      ],
+    };
     let meId = null;
 
     const status = (type, msg) => setModuleStatus("user-status", type, msg);
+    const listStatus = (type, msg) => setModuleStatus("user-list-status", type, msg);
+
+    function permissionMarkup(role) {
+      return (PERMISSIONS[role] || []).map((permission) => `
+        <span class="adm-permission-chip">
+          <i class="fa-solid fa-check" aria-hidden="true"></i> ${esc(permission)}
+        </span>`).join("");
+    }
 
     function userRow(u) {
       const name = u.nom || u.username || u.email || "?";
       const isMe = u.id === meId;
-      return `<div class="adm-staff-row" data-id="${esc(u.id)}">
-        <div class="adm-staff-avatar">${esc(String(name)[0].toUpperCase())}</div>
-        <div class="adm-staff-info">
-          <strong>${esc(name)}${isMe ? ' <span class="badge approved">vous</span>' : ""}</strong>
-          <span>${esc(u.email || "")}</span>
+      return `<article class="u-card adm-user-card" data-id="${esc(u.id)}">
+        <div class="adm-staff-row">
+          <div class="adm-staff-avatar">${esc(String(name)[0].toUpperCase())}</div>
+          <div class="adm-staff-info">
+            <strong>${esc(name)}${isMe ? ' <span class="badge approved">vous</span>' : ""}</strong>
+            <span>${esc(u.email || "")}</span>
+          </div>
+          <select class="ea-select-sm user-role-select" data-id="${esc(u.id)}" aria-label="Rôle">
+            ${ROLE_KEYS.map((r) => `<option value="${r}" ${u.role === r ? "selected" : ""}>${ROLE_LABELS[r]}</option>`).join("")}
+          </select>
+          <button class="btn btn-ghost btn-xs user-delete" data-id="${esc(u.id)}" title="Supprimer le compte" ${isMe ? "disabled" : ""}>
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
         </div>
-        <select class="ea-select-sm user-role-select" data-id="${esc(u.id)}" aria-label="Rôle">
-          ${ROLE_KEYS.map((r) => `<option value="${r}" ${u.role === r ? "selected" : ""}>${ROLE_LABELS[r]}</option>`).join("")}
-        </select>
-        <button class="btn btn-ghost btn-xs user-delete" data-id="${esc(u.id)}" title="Supprimer le compte" ${isMe ? "disabled" : ""}>
-          <i class="fa-solid fa-trash" aria-hidden="true"></i>
-        </button>
-      </div>`;
+        <div class="adm-user-permissions">
+          <strong>Permissions</strong>
+          <div class="adm-permission-list">${permissionMarkup(u.role)}</div>
+        </div>
+      </article>`;
     }
 
     async function loadUsers() {
@@ -1943,11 +2259,30 @@
         const { users, me } = await api("/api/admin/users");
         meId = me;
         if (!users?.length) { host.innerHTML = '<p class="adm-empty">Aucun utilisateur.</p>'; return; }
-        host.innerHTML = `<div class="u-card adm-users-card">${users.map(userRow).join("")}</div>`;
+        host.innerHTML = users.map(userRow).join("");
       } catch (error) {
         host.innerHTML = `<p class="adm-empty">${esc(error.message)}</p>`;
       }
     }
+
+    function renderPermissionPreview() {
+      const role = document.getElementById("user-role")?.value || "editor";
+      const preview = document.getElementById("user-permissions-preview");
+      if (preview) preview.innerHTML = permissionMarkup(role);
+    }
+
+    function showEditor() {
+      form?.reset();
+      renderPermissionPreview();
+      document.getElementById("users-list-view").hidden = true;
+      document.getElementById("user-editor-view").hidden = false;
+      document.getElementById("user-nom")?.focus();
+    }
+
+    document.getElementById("user-new-button")?.addEventListener("click", showEditor);
+    document.getElementById("user-editor-back")?.addEventListener("click", showUserList);
+    document.getElementById("user-editor-cancel")?.addEventListener("click", showUserList);
+    document.getElementById("user-role")?.addEventListener("change", renderPermissionPreview);
 
     // Création d'un utilisateur
     form?.addEventListener("submit", async (event) => {
@@ -1966,8 +2301,9 @@
           }),
         });
         form.reset();
-        status("success", "Utilisateur créé.");
         await loadUsers();
+        showUserList();
+        listStatus("success", "Utilisateur créé.");
       } catch (error) {
         status("error", error.message);
       } finally {
@@ -1991,9 +2327,10 @@
       if (!select) return;
       try {
         await api("/api/admin/users", { method: "PATCH", body: JSON.stringify({ id: select.dataset.id, role: select.value }) });
-        status("success", "Rôle mis à jour.");
+        listStatus("success", "Rôle et permissions mis à jour.");
+        await loadUsers();
       } catch (error) {
-        status("error", error.message);
+        listStatus("error", error.message);
         await loadUsers();
       }
     });
@@ -2005,10 +2342,10 @@
       if (!window.confirm("Supprimer définitivement ce compte ? Cette action est irréversible.")) return;
       try {
         await api("/api/admin/users", { method: "DELETE", body: JSON.stringify({ id: del.dataset.id }) });
-        status("success", "Compte supprimé.");
+        listStatus("success", "Compte supprimé.");
         await loadUsers();
       } catch (error) {
-        status("error", error.message);
+        listStatus("error", error.message);
       }
     });
 
@@ -2016,6 +2353,14 @@
     document.querySelector("[data-panel='panel-equipe']")?.addEventListener("click", () => {
       if (!host.dataset.loaded) { loadUsers(); host.dataset.loaded = "1"; }
     });
+  }
+
+  function showUserList() {
+    const list = document.getElementById("users-list-view");
+    const editor = document.getElementById("user-editor-view");
+    if (list) list.hidden = false;
+    if (editor) editor.hidden = true;
+    setModuleStatus("user-status", "", "");
   }
 
   /* ─── Panel Journal d'activité ───────────────────────────────────── */

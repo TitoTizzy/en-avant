@@ -75,9 +75,6 @@
       <button class="adm-nav-item" data-panel="panel-events" type="button">
         <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Événements
       </button>
-      <button class="adm-nav-item" data-panel="panel-media" type="button">
-        <i class="fa-solid fa-photo-film" aria-hidden="true"></i> Médiathèque
-      </button>
       <button class="adm-nav-item" data-panel="panel-gallery" type="button">
         <i class="fa-solid fa-images" aria-hidden="true"></i> Galerie
       </button>
@@ -199,7 +196,7 @@
               <button class="adm-quick-btn" data-panel="panel-articles" data-article-new type="button">
                 <i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Rédiger un article
               </button>
-              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-events" type="button">
+              <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-events" data-event-new type="button">
                 <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> Ajouter un événement
               </button>
               <button class="adm-quick-btn adm-quick-ghost" data-panel="panel-members" type="button">
@@ -363,9 +360,34 @@
 
       <!-- ════════════════════ ÉVÉNEMENTS ═════════════════════════════ -->
       <section class="adm-panel" id="panel-events" hidden>
-        <div class="adm-module-layout">
-          <form class="u-card adm-create-card" id="event-create-form" novalidate>
-            <h4>Nouvel événement</h4>
+        <div id="events-list-view">
+          <div class="adm-articles-heading">
+            <div>
+              <h3>Événements</h3>
+              <p>Consultez et gérez les événements et comptes à rebours du site.</p>
+            </div>
+            <button class="btn btn-primary" type="button" id="event-new-button">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvel événement
+            </button>
+          </div>
+          <div id="events-admin" class="adm-record-list adm-entity-grid">
+            <p class="adm-loading">Chargement des événements…</p>
+          </div>
+          <div class="ea-form-status" id="event-list-status" role="status" aria-live="polite"></div>
+        </div>
+
+        <div id="event-editor-view" hidden>
+          <div class="adm-articles-heading">
+            <div>
+              <button class="adm-back-button" type="button" id="event-editor-back">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux événements
+              </button>
+              <h3 id="event-editor-title">Nouvel événement</h3>
+              <p id="event-editor-subtitle">Ajoutez un événement au calendrier public.</p>
+            </div>
+          </div>
+          <form class="u-card adm-article-editor" id="event-editor-form" novalidate>
+            <input type="hidden" id="event-id">
             <div class="ea-field">
               <label for="event-title">Titre</label>
               <input id="event-title" maxlength="160" required>
@@ -382,39 +404,15 @@
               <label for="event-description">Description</label>
               <textarea id="event-description" rows="5" maxlength="500"></textarea>
             </div>
-            <button class="btn btn-primary" type="submit" id="event-create-submit">
-              <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> Ajouter
-            </button>
+            <div class="adm-editor-actions">
+              <button class="btn btn-ghost" type="button" id="event-editor-cancel">Annuler</button>
+              <button class="btn btn-primary" type="submit" id="event-save-submit">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                <span id="event-save-label">Créer l'événement</span>
+              </button>
+            </div>
             <div class="ea-form-status" id="event-status" role="status" aria-live="polite"></div>
           </form>
-          <div id="events-admin" class="adm-record-list">
-            <p class="adm-loading">Chargement des événements…</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ════════════════════ MÉDIATHÈQUE ════════════════════════════ -->
-      <section class="adm-panel" id="panel-media" hidden>
-        <div class="adm-module-layout">
-          <form class="u-card adm-create-card" id="media-create-form" novalidate>
-            <h4>Ajouter une photo</h4>
-            <p class="u-note">JPG, PNG ou WebP, 3 Mo maximum. Les nouvelles photos apparaissent automatiquement dans la galerie de l'accueil.</p>
-            <div class="ea-field">
-              <label for="media-image">Fichier image</label>
-              <input id="media-image" type="file" accept="image/jpeg,image/png,image/webp" required>
-            </div>
-            <div class="ea-field">
-              <label for="media-caption">Légende</label>
-              <input id="media-caption" maxlength="180" placeholder="Présence, proximité, mobilisation">
-            </div>
-            <button class="btn btn-primary" type="submit" id="media-create-submit">
-              <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Téléverser
-            </button>
-            <div class="ea-form-status" id="media-status" role="status" aria-live="polite"></div>
-          </form>
-          <div id="media-admin" class="adm-media-grid">
-            <p class="adm-loading">Chargement de la médiathèque…</p>
-          </div>
         </div>
       </section>
 
@@ -656,46 +654,84 @@
 
       <!-- ════════════════════ GALERIE ════════════════════════════════ -->
       <section class="adm-panel" id="panel-gallery" hidden>
-        <div class="u-card" style="margin-bottom:1.2rem;">
-          <div class="adm-record-head">
+        <div id="gallery-list-view">
+          <div class="adm-articles-heading">
             <div>
-              <h4>Galerie photo</h4>
-              <p>Organisez vos photos par albums. Les visiteurs peuvent filtrer par catégorie.</p>
+              <h3>Galerie photo</h3>
+              <p>Gérez les photos visibles sur le site public.</p>
             </div>
-            <button type="button" class="btn btn-primary btn-sm" id="gallery-new-album">
-              <i class="fa-solid fa-folder-plus" aria-hidden="true"></i> Nouvel album
+            <button type="button" class="btn btn-primary" id="gallery-new-button">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter une photo
             </button>
+          </div>
+          <div id="gallery-admin" class="adm-media-grid">
+            <p class="adm-loading">Chargement de la galerie…</p>
           </div>
           <div class="ea-form-status" id="gallery-status" role="status" aria-live="polite"></div>
         </div>
-        <!-- Zone upload dans album sélectionné -->
-        <div id="gallery-upload-zone" class="u-card" style="margin-bottom:1.2rem; display:none;">
-          <h5 id="gallery-current-album-title" style="margin:0 0 1rem; color:var(--ink-100);">Album : —</h5>
-          <div class="adm-gallery-drop" id="gallery-dropzone">
-            <i class="fa-solid fa-cloud-arrow-up" style="font-size:2rem; opacity:.4;"></i>
-            <p style="margin:.6rem 0 0; color:var(--ink-400);">Glissez des photos ici ou cliquez pour choisir</p>
-            <input type="file" id="gallery-file-input" accept="image/*" multiple style="display:none;">
+
+        <div id="gallery-editor-view" hidden>
+          <div class="adm-articles-heading">
+            <div>
+              <button class="adm-back-button" type="button" id="gallery-editor-back">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour à la galerie
+              </button>
+              <h3 id="gallery-editor-title">Ajouter une photo</h3>
+              <p id="gallery-editor-subtitle">JPG, PNG ou WebP, 3 Mo maximum.</p>
+            </div>
           </div>
-          <!-- Prévisualisation avant upload -->
-          <div id="gallery-preview-grid" class="adm-gallery-preview" style="margin-top:1rem;"></div>
-          <div style="margin-top:1rem; display:flex; gap:.6rem;">
-            <button type="button" class="btn btn-primary btn-sm" id="gallery-upload-btn" disabled>
-              <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Envoyer les photos
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm" id="gallery-cancel-btn">Annuler</button>
-          </div>
-        </div>
-        <!-- Liste des albums -->
-        <div id="gallery-albums-list">
-          <p style="color:var(--ink-400);"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…</p>
+          <form class="u-card adm-article-editor" id="gallery-editor-form" novalidate>
+            <input type="hidden" id="gallery-id">
+            <div class="ea-field" id="gallery-image-field">
+              <label for="gallery-image">Fichier image</label>
+              <input id="gallery-image" type="file" accept="image/jpeg,image/png,image/webp">
+            </div>
+            <img id="gallery-image-preview" class="adm-article-editor-cover" alt="" hidden>
+            <div class="ea-field">
+              <label for="gallery-caption">Légende</label>
+              <input id="gallery-caption" maxlength="180" placeholder="Présence, proximité, mobilisation">
+            </div>
+            <div class="adm-editor-actions">
+              <button class="btn btn-ghost" type="button" id="gallery-editor-cancel">Annuler</button>
+              <button class="btn btn-primary" type="submit" id="gallery-save-submit">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                <span id="gallery-save-label">Ajouter la photo</span>
+              </button>
+            </div>
+            <div class="ea-form-status" id="gallery-editor-status" role="status" aria-live="polite"></div>
+          </form>
         </div>
       </section>
 
       <!-- ════════════════════ ÉQUIPE STAFF ══════════════════════════ -->
       <section class="adm-panel" id="panel-equipe" hidden>
-        <div class="adm-module-layout">
-          <form class="u-card adm-create-card" id="user-create-form" novalidate>
-            <h4>Nouvel utilisateur</h4>
+        <div id="users-list-view">
+          <div class="adm-articles-heading">
+            <div>
+              <h3>Utilisateurs et permissions</h3>
+              <p>Gérez les comptes d'accès et consultez les droits associés à chaque rôle.</p>
+            </div>
+            <button class="btn btn-primary" type="button" id="user-new-button">
+              <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Nouvel utilisateur
+            </button>
+          </div>
+          <div id="staff-list" class="adm-record-list">
+            <p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement des comptes…</p>
+          </div>
+          <div class="ea-form-status" id="user-list-status" role="status" aria-live="polite"></div>
+        </div>
+
+        <div id="user-editor-view" hidden>
+          <div class="adm-articles-heading">
+            <div>
+              <button class="adm-back-button" type="button" id="user-editor-back">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux utilisateurs
+              </button>
+              <h3>Nouvel utilisateur</h3>
+              <p>Créez un compte et contrôlez les permissions accordées par son rôle.</p>
+            </div>
+          </div>
+          <form class="u-card adm-article-editor" id="user-create-form" novalidate>
             <p class="u-note" style="margin:0 0 1.2rem;">Crée un compte d'accès et attribue-lui un rôle. Communique le mot de passe provisoire à la personne — elle pourra le changer ensuite.</p>
             <div class="ea-field">
               <label for="user-nom">Nom complet</label>
@@ -721,21 +757,24 @@
             <div class="ea-field">
               <label for="user-role">Rôle</label>
               <select id="user-role">
-                <option value="editor">Éditeur — gère le contenu (articles, événements…)</option>
-                <option value="readonly">Lecture seule — consulte sans modifier</option>
+                <option value="editor">Éditeur — délégation administrative à activer</option>
+                <option value="readonly">Lecture seule — accès administratif à activer</option>
                 <option value="member">Membre — espace membre (Trivia…)</option>
                 <option value="superadmin">SuperAdmin — accès total</option>
               </select>
             </div>
-            <button class="btn btn-primary" type="submit" id="user-create-submit">
-              <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Créer l'utilisateur
-            </button>
+            <fieldset class="adm-permissions-box">
+              <legend>Permissions accordées</legend>
+              <div id="user-permissions-preview" class="adm-permissions-grid"></div>
+            </fieldset>
+            <div class="adm-editor-actions">
+              <button class="btn btn-ghost" type="button" id="user-editor-cancel">Annuler</button>
+              <button class="btn btn-primary" type="submit" id="user-create-submit">
+                <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Créer l'utilisateur
+              </button>
+            </div>
             <div class="ea-form-status" id="user-status" role="status" aria-live="polite"></div>
           </form>
-
-          <div id="staff-list" class="adm-record-list">
-            <p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement des comptes…</p>
-          </div>
         </div>
       </section>
 

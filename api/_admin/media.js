@@ -1,4 +1,4 @@
-// /api/admin/media - Gestion de la galerie (SuperAdmin + PIN requis).
+// /api/admin/media - Gestion de la galerie photo (SuperAdmin + PIN requis).
 // GET    : liste des medias
 // POST   : { caption?, image_base64, image_ext }
 // PATCH  : { id, caption }
@@ -115,6 +115,6 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'GET, POST, PATCH, DELETE');
     return json(res, 405, { error: 'Méthode non autorisée.' });
   } catch (error) {
-    return handleError(res, error, 'Gestion de la médiathèque impossible.');
+    return handleError(res, error, 'Gestion de la galerie impossible.');
   }
 }
