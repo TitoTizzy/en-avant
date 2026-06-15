@@ -3115,9 +3115,86 @@ html.ea-returning .page-loader { display: none !important; }
 .adm-article-editor-cover {
   width: min(100%, 760px);
   max-height: 360px;
-  margin: 0 0 1.2rem;
+  margin: 0 0 .5rem;
   object-fit: cover;
   border-radius: 14px;
+}
+.adm-article-image-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  margin-bottom: .8rem;
+}
+.adm-article-image-del {
+  align-self: flex-start;
+  color: #ef4444;
+  border-color: rgba(239,68,68,.3);
+}
+.adm-article-image-del:hover {
+  background: rgba(239,68,68,.1);
+  border-color: #ef4444;
+}
+
+/* ─── Soumissions membres en attente ─── */
+.adm-pending-header {
+  padding: .9rem 1.1rem;
+  background: rgba(255,170,0,.06);
+  border: 1px solid rgba(255,170,0,.2);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+.adm-pending-header h4 {
+  font-size: .95rem;
+  font-weight: 700;
+  margin: 0 0 .2rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.adm-pending-header p {
+  font-size: .8rem;
+  color: rgba(255,255,255,.5);
+  margin: 0;
+}
+.adm-pending-list { margin-bottom: 2rem; }
+.adm-pending-card .adm-pending-preview {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  max-height: 120px;
+  overflow: hidden;
+  font-size: .82rem;
+  color: rgba(255,255,255,.6);
+  margin-bottom: .75rem;
+  position: relative;
+}
+.adm-pending-card .adm-pending-preview::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, var(--bg-card, #0d1831));
+}
+.adm-pending-card-actions { flex-wrap: wrap; }
+
+/* ─── Badge nav Articles ─── */
+.adm-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ea-orange, #ff6a2a);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+  margin-left: auto;
+  line-height: 1;
 }
 
 .adm-content-field { margin-top: 0.4rem; }
@@ -3131,6 +3208,8 @@ html.ea-returning .page-loader { display: none !important; }
 
 .article-editor-surface .ql-editor {
   min-height: clamp(360px, 48vh, 680px);
+  color: #111827 !important;
+  background: #fff !important;
 }
 
 .adm-article-editor > .ea-field,

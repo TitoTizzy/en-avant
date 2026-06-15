@@ -752,6 +752,7 @@
 
   let articlesCache = [];
   let articleQuill = null;
+  let pendingImageRemove = false;
 
   function articleLibraryCard(article) {
     const card = document.createElement("article");
@@ -824,11 +825,64 @@
     if (!host) return;
     try {
       const payload = await api("/api/admin/articles");
-      articlesCache = payload.articles || [];
+      articlesCache = (payload.articles || []).filter((a) => a.review_status !== "pending");
       renderArticleLibrary();
+      loadPendingArticles(); // parallèle, fire-and-forget
     } catch (error) {
       host.innerHTML = `<div class="u-card adm-empty">${esc(error.message)}</div>`;
     }
+  }
+
+  function pendingArticleCard(article) {
+    const card = document.createElement("article");
+    card.className = "u-card adm-record adm-pending-card";
+    card.dataset.id = article.id;
+    card.innerHTML = `
+      <div class="adm-article-card-body">
+        <div class="adm-article-card-meta">
+          <span class="badge pending">En attente</span>
+          <span>${esc(ARTICLE_CATEGORIES[article.categorie] || article.categorie)}</span>
+          <span>Par <strong>${esc(article.author_name || "Membre")}</strong></span>
+          <span>${fmtDate(article.updated_at)}</span>
+        </div>
+        <h4>${esc(article.titre)}</h4>
+        <p>${esc(article.excerpt || "Aucun résumé.")}</p>
+        <div class="adm-pending-preview">${article.contenu || ""}</div>
+        <div class="adm-record-actions adm-pending-card-actions">
+          <button class="btn btn-primary btn-xs pending-approve" type="button">
+            <i class="fa-solid fa-check" aria-hidden="true"></i> Approuver &amp; publier
+          </button>
+          <button class="btn btn-ghost btn-xs pending-reject" type="button">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i> Rejeter
+          </button>
+          <button class="btn btn-ghost btn-xs pending-read" type="button">
+            <i class="fa-solid fa-eye" aria-hidden="true"></i> Voir le contenu
+          </button>
+        </div>
+      </div>`;
+    return card;
+  }
+
+  async function loadPendingArticles() {
+    const wrap = document.getElementById("articles-pending-wrap");
+    const list = document.getElementById("articles-pending-list");
+    const countEl = document.getElementById("articles-pending-count");
+    const navBadge = document.getElementById("articles-nav-badge");
+    if (!wrap || !list) return;
+    try {
+      const payload = await api("/api/admin/articles?review=pending");
+      const pending = payload.articles || [];
+      if (!pending.length) {
+        wrap.hidden = true;
+        if (navBadge) { navBadge.hidden = true; navBadge.textContent = "0"; }
+        return;
+      }
+      wrap.hidden = false;
+      if (countEl) countEl.textContent = String(pending.length);
+      if (navBadge) { navBadge.hidden = false; navBadge.textContent = String(pending.length); }
+      list.innerHTML = "";
+      pending.forEach((article) => list.appendChild(pendingArticleCard(article)));
+    } catch { /* silencieux si table absente */ }
   }
 
   function showArticleList() {
@@ -843,6 +897,7 @@
     if (!form) return;
 
     form.reset();
+    pendingImageRemove = false;
     document.getElementById("article-id").value = article?.id || "";
     document.getElementById("article-title").value = article?.titre || "";
     document.getElementById("article-category").value = article?.categorie || "actualite";
@@ -855,15 +910,40 @@
     document.getElementById("article-save-label").textContent = article ? "Enregistrer les modifications" : "Créer le brouillon";
 
     const preview = document.getElementById("article-image-preview");
+    const removeBtn = document.getElementById("article-image-remove");
     preview.src = article?.image_url || "";
     preview.hidden = !article?.image_url;
+    if (removeBtn) removeBtn.hidden = !article?.image_url;
+
+    document.getElementById("articles-list-view").hidden = true;
+    document.getElementById("article-editor-view").hidden = false;
+
+    // Init Quill APRÈS avoir rendu la vue visible — élément caché = init ratée
+    if (!articleQuill) {
+      try {
+        articleQuill = new Quill("#article-content-editor", {
+          theme: "snow",
+          placeholder: "Rédigez votre article ici…",
+          modules: {
+            toolbar: [
+              [{ font: [] }, { size: ["small", false, "large", "huge"] }],
+              ["bold", "italic", "underline", "strike"],
+              [{ color: [] }, { background: [] }],
+              [{ list: "ordered" }, { list: "bullet" }],
+              [{ align: [] }],
+              ["link", "image"],
+              ["clean"],
+            ],
+          },
+        });
+      } catch (_) {}
+    }
+
     if (articleQuill) {
       articleQuill.setContents([]);
       if (article?.contenu) articleQuill.clipboard.dangerouslyPasteHTML(article.contenu);
     }
 
-    document.getElementById("articles-list-view").hidden = true;
-    document.getElementById("article-editor-view").hidden = false;
     setModuleStatus("article-status", "", "");
     document.getElementById("article-title").focus();
     document.querySelector(".adm-main")?.scrollTo?.({ top: 0, behavior: "smooth" });
@@ -890,24 +970,6 @@
     const host = document.getElementById("articles-admin");
     if (!form || !host) return;
 
-    try {
-      articleQuill = new Quill("#article-content-editor", {
-        theme: "snow",
-        placeholder: "Rédigez votre article ici…",
-        modules: {
-          toolbar: [
-            [{ font: [] }, { size: ["small", false, "large", "huge"] }],
-            ["bold", "italic", "underline", "strike"],
-            [{ color: [] }, { background: [] }],
-            [{ list: "ordered" }, { list: "bullet" }],
-            [{ align: [] }],
-            ["link", "image"],
-            ["clean"],
-          ],
-        },
-      });
-    } catch (_) {}
-
     document.getElementById("article-new-button")?.addEventListener("click", () => openArticleEditor());
     document.getElementById("article-editor-back")?.addEventListener("click", showArticleList);
     document.getElementById("article-editor-cancel")?.addEventListener("click", showArticleList);
@@ -927,8 +989,57 @@
       const file = event.target.files?.[0];
       if (!file) return;
       const preview = document.getElementById("article-image-preview");
+      const removeBtn = document.getElementById("article-image-remove");
       preview.src = URL.createObjectURL(file);
       preview.hidden = false;
+      if (removeBtn) removeBtn.hidden = false;
+      pendingImageRemove = false;
+    });
+
+    document.getElementById("article-image-remove")?.addEventListener("click", () => {
+      const preview = document.getElementById("article-image-preview");
+      const removeBtn = document.getElementById("article-image-remove");
+      const imageInput = document.getElementById("article-image");
+      preview.src = "";
+      preview.hidden = true;
+      if (removeBtn) removeBtn.hidden = true;
+      if (imageInput) imageInput.value = "";
+      pendingImageRemove = true;
+    });
+
+    // ── Soumissions membres en attente ──
+    document.getElementById("articles-pending-list")?.addEventListener("click", async (event) => {
+      const card = event.target.closest(".adm-pending-card");
+      if (!card) return;
+      const approve = event.target.closest(".pending-approve");
+      const reject = event.target.closest(".pending-reject");
+      const read = event.target.closest(".pending-read");
+      if (!approve && !reject && !read) return;
+      const id = card.dataset.id;
+      try {
+        if (approve) {
+          await api("/api/admin/articles", {
+            method: "PATCH",
+            body: JSON.stringify({ id, review_status: "approved", published: true }),
+          });
+          setModuleStatus("article-list-status", "success", "Article approuvé et publié.");
+          await Promise.all([loadPendingArticles(), loadArticleLibrary()]);
+        } else if (reject) {
+          const note = window.prompt("Raison du rejet (optionnel) :");
+          if (note === null) return;
+          await api("/api/admin/articles", {
+            method: "PATCH",
+            body: JSON.stringify({ id, review_status: "rejected", review_note: note || null }),
+          });
+          setModuleStatus("article-list-status", "success", "Soumission rejetée.");
+          await loadPendingArticles();
+        } else if (read) {
+          const article = card.querySelector(".adm-pending-preview");
+          article?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+        }
+      } catch (err) {
+        setModuleStatus("article-list-status", "error", err.message);
+      }
     });
 
     form.addEventListener("submit", async (event) => {
@@ -951,6 +1062,12 @@
           is_featured: document.getElementById("article-featured").checked,
         };
         const imageBody = await readArticleImage(document.getElementById("article-image"));
+
+        // Suppression de l'image si demandée et aucune nouvelle image sélectionnée
+        if (pendingImageRemove && !imageBody.image_base64) {
+          articleBody.remove_image = true;
+        }
+        pendingImageRemove = false;
 
         if (id) {
           await api("/api/admin/articles", {

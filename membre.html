@@ -152,6 +152,178 @@
       border-color: rgba(255,255,255,.3);
       color: rgba(255,255,255,.7);
     }
+
+    /* ─── Rédiger un article ─── */
+    .membre-card--article .membre-card-icon {
+      background: rgba(16,185,129,.12);
+      color: #34d399;
+    }
+    .membre-card--article {
+      border-color: rgba(16,185,129,.18);
+    }
+    .membre-card--article:hover {
+      border-color: #34d399;
+    }
+
+    .membre-article-wrap {
+      width: 100%;
+      max-width: 820px;
+    }
+    .membre-article-header {
+      margin-bottom: 1.75rem;
+    }
+    .membre-back-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.5);
+      cursor: pointer;
+      font-size: .85rem;
+      padding: 0;
+      margin-bottom: .75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      transition: color .2s;
+    }
+    .membre-back-btn:hover { color: rgba(255,255,255,.85); }
+    .membre-article-header h2 {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 700;
+      margin: 0 0 .35rem;
+    }
+    .membre-article-header p {
+      font-size: .88rem;
+      color: rgba(255,255,255,.5);
+      margin: 0;
+    }
+
+    .membre-article-form {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 1.1rem;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+    .membre-field {
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+      margin-bottom: 1.1rem;
+    }
+    .membre-field label {
+      font-size: .82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.6);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .membre-field input,
+    .membre-field select,
+    .membre-field textarea {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: .6rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: .93rem;
+      padding: .65rem .9rem;
+      width: 100%;
+      box-sizing: border-box;
+      transition: border-color .2s;
+      resize: vertical;
+    }
+    .membre-field input:focus,
+    .membre-field select:focus,
+    .membre-field textarea:focus {
+      outline: none;
+      border-color: var(--accent, #ff6a2a);
+    }
+    .membre-field select option { background: #0d1831; }
+    .membre-form-status {
+      min-height: 1.4rem;
+      font-size: .83rem;
+      margin-bottom: .75rem;
+    }
+    .membre-form-status.success { color: #34d399; }
+    .membre-form-status.error   { color: #f87171; }
+    .membre-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .membre-btn-primary {
+      background: var(--accent, #ff6a2a);
+      color: #fff;
+      border: none;
+      border-radius: .6rem;
+      padding: .65rem 1.4rem;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      transition: opacity .2s;
+    }
+    .membre-btn-primary:hover { opacity: .88; }
+    .membre-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .membre-btn-ghost {
+      background: none;
+      border: 1px solid rgba(255,255,255,.15);
+      color: rgba(255,255,255,.6);
+      border-radius: .6rem;
+      padding: .65rem 1.2rem;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .membre-btn-ghost:hover { border-color: rgba(255,255,255,.35); color: #fff; }
+
+    /* ─── Mes soumissions ─── */
+    .membre-submissions h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+    }
+    .membre-submission-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: .85rem;
+      padding: 1.1rem 1.3rem;
+      margin-bottom: .75rem;
+    }
+    .membre-submission-meta {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .4rem;
+    }
+    .membre-submission-meta .mbadge {
+      display: inline-block;
+      padding: .2rem .65rem;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .mbadge.pending  { background: rgba(251,191,36,.15); color: #fbbf24; }
+    .mbadge.approved { background: rgba(52,211,153,.15); color: #34d399; }
+    .mbadge.rejected { background: rgba(248,113,113,.15); color: #f87171; }
+    .membre-submission-title {
+      font-size: .95rem;
+      font-weight: 600;
+      margin: 0 0 .25rem;
+    }
+    .membre-submission-note {
+      font-size: .8rem;
+      color: rgba(255,255,255,.45);
+      margin: .3rem 0 0;
+      font-style: italic;
+    }
+    .membre-loading { color: rgba(255,255,255,.35); font-size: .85rem; }
   </style>
 </head>
 
@@ -198,12 +370,74 @@
         <h3>Faire un don</h3>
         <p>Soutenez le parti et accélérez la mise en œuvre du projet national.</p>
       </a>
+
+      <button type="button" class="membre-card membre-card--article" id="mb-write-article">
+        <div class="membre-card-icon">
+          <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+        </div>
+        <h3>Rédiger un article</h3>
+        <p>Soumettez un article au blog. Les admins le valideront avant publication.</p>
+      </button>
     </div>
 
     <button class="membre-logout" id="mb-logout">
       <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
       Se déconnecter
     </button>
+
+    <!-- ─── Panneau rédaction article ─── -->
+    <div class="membre-article-wrap reveal-up" id="member-article-section" hidden>
+      <div class="membre-article-header">
+        <button type="button" class="membre-back-btn" id="member-back-btn">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au tableau de bord
+        </button>
+        <h2>Rédiger un article</h2>
+        <p>Votre article sera soumis aux administrateurs pour validation avant publication.</p>
+      </div>
+
+      <form class="membre-article-form" id="member-article-form" novalidate>
+        <input type="hidden" id="m-article-id">
+        <div class="membre-field">
+          <label for="m-article-title">Titre *</label>
+          <input id="m-article-title" type="text" maxlength="200" placeholder="Titre de votre article" required>
+        </div>
+        <div class="membre-field">
+          <label for="m-article-category">Catégorie *</label>
+          <select id="m-article-category">
+            <option value="actualite">Actualité</option>
+            <option value="politique">Politique</option>
+            <option value="economie">Économie</option>
+            <option value="societe">Société</option>
+            <option value="diaspora">Diaspora</option>
+            <option value="programme">Programme</option>
+            <option value="communique">Communiqué</option>
+          </select>
+        </div>
+        <div class="membre-field">
+          <label for="m-article-excerpt">Résumé (optionnel)</label>
+          <textarea id="m-article-excerpt" rows="2" maxlength="300" placeholder="Un court résumé de votre article…"></textarea>
+        </div>
+        <div class="membre-field">
+          <label for="m-article-content">Contenu *</label>
+          <textarea id="m-article-content" rows="14" placeholder="Rédigez votre article ici…" required></textarea>
+        </div>
+        <div class="membre-form-status" id="member-article-status" role="status" aria-live="polite"></div>
+        <div class="membre-form-actions">
+          <button type="button" class="membre-btn-ghost" id="member-article-cancel">Annuler</button>
+          <button type="submit" class="membre-btn-primary" id="member-article-submit">
+            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+            <span id="m-submit-label">Soumettre l'article</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="membre-submissions" id="member-submissions-section">
+        <h3>Mes soumissions</h3>
+        <div id="member-submissions-list">
+          <p class="membre-loading">Chargement…</p>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -275,6 +509,136 @@
       document.getElementById("mb-logout").addEventListener("click", async () => {
         await client.auth.signOut();
         window.location.href = "/index.html";
+      });
+
+      // ─── Panneau rédaction article ───────────────────────────────────────
+      let currentSession = null;
+
+      async function getToken() {
+        const { data } = await client.auth.getSession();
+        currentSession = data.session;
+        return data.session?.access_token || null;
+      }
+
+      async function memberApi(path, opts = {}) {
+        const token = await getToken();
+        const res = await fetch(path, {
+          ...opts,
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`, ...(opts.headers || {}) },
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || `Erreur ${res.status}`);
+        return payload;
+      }
+
+      function setStatus(msg, type = "") {
+        const el = document.getElementById("member-article-status");
+        if (!el) return;
+        el.textContent = msg;
+        el.className = `membre-form-status ${type}`;
+      }
+
+      function fmtDate(iso) {
+        if (!iso) return "";
+        return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+      }
+
+      function statusLabel(review_status) {
+        if (review_status === "approved") return { cls: "approved", txt: "Approuvé" };
+        if (review_status === "rejected") return { cls: "rejected", txt: "Rejeté" };
+        return { cls: "pending", txt: "En attente" };
+      }
+
+      function renderSubmissions(articles) {
+        const list = document.getElementById("member-submissions-list");
+        if (!list) return;
+        if (!articles.length) {
+          list.innerHTML = '<p class="membre-loading">Aucune soumission pour le moment.</p>';
+          return;
+        }
+        list.innerHTML = articles.map((a) => {
+          const st = statusLabel(a.review_status);
+          const note = a.review_note ? `<p class="membre-submission-note">Note admin : ${a.review_note}</p>` : "";
+          return `<div class="membre-submission-card">
+            <div class="membre-submission-meta">
+              <span class="mbadge ${st.cls}">${st.txt}</span>
+              <span style="font-size:.78rem;color:rgba(255,255,255,.4);">${fmtDate(a.updated_at)}</span>
+            </div>
+            <p class="membre-submission-title">${a.titre}</p>
+            <p style="font-size:.82rem;color:rgba(255,255,255,.45);margin:0;">${a.excerpt || ""}</p>
+            ${note}
+          </div>`;
+        }).join("");
+      }
+
+      async function loadMySubmissions() {
+        try {
+          const payload = await memberApi("/api/member/articles");
+          renderSubmissions(payload.articles || []);
+        } catch {
+          const list = document.getElementById("member-submissions-list");
+          if (list) list.innerHTML = '<p class="membre-loading">Impossible de charger vos soumissions.</p>';
+        }
+      }
+
+      function showArticlePanel() {
+        document.querySelector(".membre-grid").hidden = true;
+        document.getElementById("mb-logout").hidden = true;
+        document.getElementById("member-article-section").hidden = false;
+        document.getElementById("member-article-form").reset();
+        document.getElementById("m-article-id").value = "";
+        document.getElementById("m-submit-label").textContent = "Soumettre l'article";
+        setStatus("");
+        loadMySubmissions();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function hideArticlePanel() {
+        document.querySelector(".membre-grid").hidden = false;
+        document.getElementById("mb-logout").hidden = false;
+        document.getElementById("member-article-section").hidden = true;
+      }
+
+      document.getElementById("mb-write-article")?.addEventListener("click", showArticlePanel);
+      document.getElementById("member-back-btn")?.addEventListener("click", hideArticlePanel);
+      document.getElementById("member-article-cancel")?.addEventListener("click", hideArticlePanel);
+
+      document.getElementById("member-article-form")?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const submitBtn = document.getElementById("member-article-submit");
+        const titre    = document.getElementById("m-article-title").value.trim();
+        const categorie = document.getElementById("m-article-category").value;
+        const excerpt  = document.getElementById("m-article-excerpt").value.trim();
+        const contenu  = document.getElementById("m-article-content").value.trim();
+
+        if (!titre)   { setStatus("Le titre est obligatoire.", "error"); return; }
+        if (!contenu || contenu.length < 20) { setStatus("Le contenu est trop court (20 caractères minimum).", "error"); return; }
+
+        submitBtn.disabled = true;
+        setStatus("Envoi en cours…");
+        try {
+          const id = document.getElementById("m-article-id").value;
+          if (id) {
+            await memberApi("/api/member/articles", {
+              method: "PATCH",
+              body: JSON.stringify({ id, titre, categorie, excerpt, contenu }),
+            });
+            setStatus("Article mis à jour et re-soumis.", "success");
+          } else {
+            await memberApi("/api/member/articles", {
+              method: "POST",
+              body: JSON.stringify({ titre, categorie, excerpt, contenu }),
+            });
+            setStatus("Article soumis avec succès ! Les administrateurs l'examineront prochainement.", "success");
+          }
+          document.getElementById("member-article-form").reset();
+          document.getElementById("m-article-id").value = "";
+          await loadMySubmissions();
+        } catch (err) {
+          setStatus(err.message, "error");
+        } finally {
+          submitBtn.disabled = false;
+        }
       });
     })();
   </script>

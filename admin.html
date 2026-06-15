@@ -90,6 +90,7 @@
       <p class="adm-nav-section">Contenu</p>
       <button class="adm-nav-item" data-panel="panel-articles" type="button">
         <i class="fa-solid fa-newspaper" aria-hidden="true"></i> Articles
+        <span class="adm-nav-badge" id="articles-nav-badge" hidden>0</span>
       </button>
       <button class="adm-nav-item" data-panel="panel-events" type="button">
         <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Événements
@@ -307,6 +308,15 @@
             <div class="ea-form-status" id="article-list-status" role="status" aria-live="polite"></div>
           </div>
 
+          <!-- Soumissions membres en attente de révision -->
+          <div id="articles-pending-wrap" hidden>
+            <div class="adm-pending-header">
+              <h4><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Soumissions membres en attente <span class="badge pending" id="articles-pending-count">0</span></h4>
+              <p>Articles soumis par des membres, en attente d'approbation ou de rejet.</p>
+            </div>
+            <div id="articles-pending-list" class="adm-record-list adm-pending-list"></div>
+          </div>
+
           <div id="articles-admin" class="adm-record-list">
             <p class="adm-loading">Chargement des articles…</p>
           </div>
@@ -349,7 +359,12 @@
               </div>
             </div>
 
-            <img id="article-image-preview" class="adm-article-editor-cover" alt="" hidden>
+            <div class="adm-article-image-wrap">
+              <img id="article-image-preview" class="adm-article-editor-cover" alt="" hidden>
+              <button type="button" class="btn btn-ghost btn-xs adm-article-image-del" id="article-image-remove" hidden>
+                <i class="fa-solid fa-trash" aria-hidden="true"></i> Retirer l'image
+              </button>
+            </div>
 
             <div class="ea-field">
               <label for="article-excerpt">Résumé</label>

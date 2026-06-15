@@ -24,7 +24,8 @@
     { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
-    { "source": "/api/trivia/generate-session", "destination": "/api/trivia?action=generate-session" }
+    { "source": "/api/trivia/generate-session", "destination": "/api/trivia?action=generate-session" },
+    { "source": "/api/member/articles",         "destination": "/api/member?action=articles" }
   ],
   "headers": [
     {
