@@ -1790,11 +1790,15 @@
     const row = document.createElement("div");
     row.className = "adm-team-row";
     row.dataset.id = member.id;
+    row.dataset.ordre = member.ordre ?? 0;
+    row.setAttribute("draggable", "true");
     row.innerHTML = `
+      <span class="drag-handle" title="Glisser pour réordonner">
+        <i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>
+      </span>
       <div class="adm-team-thumb"></div>
       <input class="ti-nom" placeholder="Nom (vide = vacant)" maxlength="120">
       <input class="ti-poste" placeholder="Poste / zone" maxlength="120">
-      <input class="ti-ordre" type="number" min="0" max="999" title="Ordre d'affichage">
       <label class="btn btn-ghost btn-xs" title="Photo : JPG, PNG ou WebP — 2 Mo max">
         <i class="fa-solid fa-camera" aria-hidden="true"></i>
         <input type="file" class="ti-photo" accept="image/jpeg,image/png,image/webp" hidden>
@@ -1818,7 +1822,6 @@
 
     row.querySelector(".ti-nom").value = member.nom || "";
     row.querySelector(".ti-poste").value = member.poste || "";
-    row.querySelector(".ti-ordre").value = member.ordre ?? 0;
     return row;
   }
 
@@ -1884,6 +1887,128 @@
     const host = document.getElementById("team-admin");
     if (!host) return;
 
+    /* ── Drag-and-drop : réorganisation des membres ────────────────────── */
+    let dragSrc = null;
+    let dragDropTarget = null;
+
+    function clearDragState() {
+      if (dragSrc) dragSrc.classList.remove("is-dragging");
+      host.querySelectorAll(".drop-before, .drop-after").forEach((el) => {
+        el.classList.remove("drop-before", "drop-after");
+      });
+      host.querySelectorAll(".drop-empty").forEach((el) => el.classList.remove("drop-empty"));
+      dragSrc = null;
+      dragDropTarget = null;
+    }
+
+    async function reindexSection(sectionEl) {
+      const rows = [...sectionEl.querySelectorAll(".adm-team-row")];
+      await Promise.all(rows.map((row, idx) =>
+        api("/api/admin/team", {
+          method: "PATCH",
+          body: JSON.stringify({ id: row.dataset.id, ordre: idx }),
+        })
+      ));
+    }
+
+    host.addEventListener("dragstart", (event) => {
+      if (!event.target.closest(".drag-handle")) {
+        event.preventDefault();
+        return;
+      }
+      const row = event.target.closest(".adm-team-row");
+      if (!row) return;
+      dragSrc = row;
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", row.dataset.id);
+      window.setTimeout(() => row.classList.add("is-dragging"), 0);
+    });
+
+    host.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      const targetRow = event.target.closest(".adm-team-row");
+      const targetSection = event.target.closest(".adm-team-section");
+      if (!targetRow && !targetSection) return;
+
+      if (targetRow && targetRow !== dragSrc) {
+        if (dragDropTarget && dragDropTarget !== targetRow) {
+          dragDropTarget.classList.remove("drop-before", "drop-after");
+        }
+        dragDropTarget = targetRow;
+        const rect = targetRow.getBoundingClientRect();
+        const before = event.clientY < rect.top + rect.height / 2;
+        targetRow.classList.toggle("drop-before", before);
+        targetRow.classList.toggle("drop-after", !before);
+        if (targetSection) targetSection.classList.remove("drop-empty");
+      } else if (targetSection) {
+        const hasRows = targetSection.querySelector(".adm-team-row");
+        if (!hasRows) targetSection.classList.add("drop-empty");
+      }
+    });
+
+    host.addEventListener("dragleave", (event) => {
+      const row = event.target.closest(".adm-team-row");
+      if (row && !row.contains(event.relatedTarget)) {
+        row.classList.remove("drop-before", "drop-after");
+      }
+      const section = event.target.closest(".adm-team-section");
+      if (section && !section.contains(event.relatedTarget)) {
+        section.classList.remove("drop-empty");
+      }
+    });
+
+    host.addEventListener("drop", async (event) => {
+      event.preventDefault();
+      if (!dragSrc) return;
+
+      const targetRow = event.target.closest(".adm-team-row");
+      const targetSection = event.target.closest(".adm-team-section");
+      const srcSection = dragSrc.closest(".adm-team-section");
+
+      let dropped = false;
+
+      if (targetRow && targetRow !== dragSrc) {
+        const rect = targetRow.getBoundingClientRect();
+        const before = event.clientY < rect.top + rect.height / 2;
+        if (before) {
+          targetRow.parentElement.insertBefore(dragSrc, targetRow);
+        } else {
+          targetRow.parentElement.insertBefore(dragSrc, targetRow.nextSibling);
+        }
+        dropped = true;
+      } else if (targetSection && !targetSection.querySelector(".adm-team-row")) {
+        targetSection.appendChild(dragSrc);
+        dropped = true;
+      }
+
+      const newSection = dragSrc.closest(".adm-team-section");
+      const movedId = dragSrc.dataset.id;
+      clearDragState();
+
+      if (!dropped || !newSection) return;
+
+      const sectionChanged = srcSection !== newSection;
+      try {
+        if (sectionChanged) {
+          const newKey = newSection.dataset.sectionKey;
+          await api("/api/admin/team", {
+            method: "PATCH",
+            body: JSON.stringify({ id: movedId, section: newKey }),
+          });
+        }
+        await reindexSection(newSection);
+        if (sectionChanged) await reindexSection(srcSection);
+        teamNote("success", "Ordre mis à jour.");
+      } catch (error) {
+        teamNote("error", error.message);
+        await loadTeam();
+      }
+    });
+
+    host.addEventListener("dragend", clearDragState);
+
+    /* ── Clics : ajout / sauvegarde / suppression ──────────────────────── */
     host.addEventListener("click", async (event) => {
       const addBtn = event.target.closest(".ti-add");
       const saveBtn = event.target.closest(".ti-save");
@@ -1912,7 +2037,6 @@
               id: row.dataset.id,
               nom: row.querySelector(".ti-nom").value,
               poste: row.querySelector(".ti-poste").value,
-              ordre: parseInt(row.querySelector(".ti-ordre").value, 10) || 0,
             }),
           });
           teamNote("success", "Carte enregistrée — la page Organisation est à jour.");

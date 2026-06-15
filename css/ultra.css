@@ -1899,7 +1899,7 @@ html.ea-returning .page-loader { display: none !important; }
 
 .adm-team-row {
   display: grid;
-  grid-template-columns: 48px minmax(150px, 1.2fr) minmax(130px, 1fr) 76px auto auto auto;
+  grid-template-columns: 24px 48px minmax(150px, 1.2fr) minmax(130px, 1fr) auto auto auto;
   gap: 0.55rem;
   align-items: center;
   padding: 0.55rem;
@@ -1941,13 +1941,41 @@ html.ea-returning .page-loader { display: none !important; }
 
 .ti-del:hover { color: #ff9eb1; border-color: rgba(255, 84, 112, 0.5); }
 
+/* Drag handle */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: rgba(255,255,255,.3);
+  font-size: .9rem;
+  flex-shrink: 0;
+  user-select: none;
+  touch-action: none;
+}
+.drag-handle:hover { color: rgba(255,255,255,.7); }
+.drag-handle:active { cursor: grabbing; }
+
+/* États drag-and-drop */
+.adm-team-row.is-dragging { opacity: .35; }
+.adm-team-row.drop-before {
+  box-shadow: 0 -3px 0 0 var(--ea-orange, #ff6a2a);
+  border-radius: 0;
+}
+.adm-team-row.drop-after {
+  box-shadow: 0 3px 0 0 var(--ea-orange, #ff6a2a);
+  border-radius: 0;
+}
+.adm-team-section.drop-empty {
+  outline: 2px dashed var(--ea-orange, #ff6a2a);
+  border-radius: 10px;
+}
+
 @media (max-width: 900px) {
-  .adm-team-row { grid-template-columns: 44px 1fr 1fr; }
-  .adm-team-row .ti-ordre,
+  .adm-team-row { grid-template-columns: 24px 44px 1fr 1fr; }
   .adm-team-row label,
   .adm-team-row .ti-save,
   .adm-team-row .ti-del { grid-row: 2; }
-  .adm-team-row .ti-ordre { grid-column: 1; width: 70px; }
 }
 
 @keyframes uFlash {
@@ -3682,6 +3710,31 @@ body { top: 0 !important; }
 .ql-toolbar button.ql-active .ql-fill   { fill: var(--ea-orange, #ff6a2a); }
 .ql-toolbar .ql-picker-label:hover,
 .ql-toolbar .ql-picker-label.ql-active  { color: var(--ea-orange, #ff6a2a); }
+/* Color/background picker — z-index élevé pour passer au-dessus du panel admin */
+.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  z-index: 9999;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.22);
+}
+.ql-snow .ql-color-picker .ql-picker-options {
+  padding: 4px 6px;
+  width: 160px;
+}
+.ql-snow .ql-color-picker .ql-picker-item {
+  border: 2px solid transparent;
+  border-radius: 3px;
+  float: left;
+  height: 18px;
+  margin: 2px;
+  padding: 0;
+  width: 18px;
+  cursor: pointer;
+}
+.ql-snow .ql-color-picker .ql-picker-item:hover,
+.ql-snow .ql-color-picker .ql-picker-item.ql-selected { border-color: #000; }
+/* Empêche le parent de rogner le dropdown */
+.adm-content-field { overflow: visible; }
+.article-editor-surface { overflow: visible; }
 .ql-editor.ql-blank::before { color: #6b7280; font-style: normal; }
 .ql-editor {
   min-height: 200px;

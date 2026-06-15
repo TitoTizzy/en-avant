@@ -7,13 +7,6 @@
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 
-const SECTIONS = [
-  'coordination-nationale',
-  'conseil-strategique',
-  'coordonnateurs-adjoints',
-  'coordonnateurs-departementaux',
-  'branches-exterieures',
-];
 
 const PHOTO_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 const PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2 Mo
@@ -45,10 +38,8 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const section = clean(body.section);
-      if (!SECTIONS.includes(section)) {
-        return json(res, 422, { error: 'Section inconnue.' });
-      }
+      const section = clean(body.section).slice(0, 80);
+      if (!section) return json(res, 422, { error: 'Section requise.' });
 
       const { data, error } = await supabase
         .from('team_members')
@@ -72,6 +63,7 @@ export default async function handler(req, res) {
       if ('nom' in body) updates.nom = clean(body.nom).slice(0, 120) || null;
       if ('poste' in body) updates.poste = clean(body.poste).slice(0, 120) || null;
       if ('ordre' in body && Number.isInteger(Number(body.ordre))) updates.ordre = Number(body.ordre);
+      if ('section' in body && clean(body.section)) updates.section = clean(body.section).slice(0, 80);
 
       // Photo : envoyée en base64 par le Dashboard → bucket public `assets`.
       if (body.photo_base64) {
