@@ -1,8 +1,8 @@
 // /api/admin/team — Gestion de l'organigramme (SuperAdmin + PIN requis).
-// GET    : liste fraîche (sans cache)
+// GET    : liste fraîche (sans cache) + sections depuis team_sections
 // POST   : { section, nom?, poste?, ordre? }            → crée une carte
-// PATCH  : { id, nom?, poste?, ordre?, photo_base64?, photo_ext? } → met à jour
-//          (la photo part dans le bucket public `assets`, dossier equipe/)
+// PATCH  : { id, nom?, poste?, ordre?, section?, photo_base64?, photo_ext? } → met à jour
+// PUT    : { sections: [{key, label}] }                 → enregistre l'ordre des sections
 // DELETE : { id }                                       → supprime la carte
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
@@ -22,19 +22,49 @@ export default async function handler(req, res) {
     const body = getBody(req);
 
     if (req.method === 'GET') {
-      const { data, error } = await supabase
-        .from('team_members')
-        .select('id, section, nom, poste, photo_url, ordre')
-        .order('section', { ascending: true })
-        .order('ordre', { ascending: true });
+      const [membersResult, sectionsResult] = await Promise.all([
+        supabase
+          .from('team_members')
+          .select('id, section, nom, poste, photo_url, ordre')
+          .order('section', { ascending: true })
+          .order('ordre', { ascending: true }),
+        supabase
+          .from('team_sections')
+          .select('key, label, ordre')
+          .order('ordre', { ascending: true }),
+      ]);
 
-      if (error) {
-        if (error.code === '42P01' || error.code === 'PGRST205') {
+      if (membersResult.error) {
+        if (membersResult.error.code === '42P01' || membersResult.error.code === 'PGRST205') {
           return json(res, 503, { error: 'Table absente : exécutez supabase/team.sql dans Supabase.' });
         }
-        throw error;
+        throw membersResult.error;
       }
-      return json(res, 200, { members: data || [] });
+
+      // sections: null si la table team_sections n'existe pas encore
+      const sections = sectionsResult.error ? null : sectionsResult.data;
+      return json(res, 200, { members: membersResult.data || [], sections });
+    }
+
+    if (req.method === 'PUT') {
+      // { sections: [{key, label}] } — enregistre l'ordre des sections
+      if (!Array.isArray(body.sections)) return json(res, 422, { error: 'sections requis.' });
+
+      const rows = body.sections
+        .map((s, i) => ({
+          key:   clean(String(s.key   || '')).slice(0, 80),
+          label: clean(String(s.label || '')).slice(0, 120),
+          ordre: i,
+        }))
+        .filter((s) => s.key && s.label);
+
+      if (!rows.length) return json(res, 422, { error: 'Aucune section valide.' });
+
+      const { error } = await supabase
+        .from('team_sections')
+        .upsert(rows, { onConflict: 'key' });
+      if (error) throw error;
+      return json(res, 200, { ok: true });
     }
 
     if (req.method === 'POST') {
@@ -116,7 +146,7 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true });
     }
 
-    res.setHeader('Allow', 'GET, POST, PATCH, DELETE');
+    res.setHeader('Allow', 'GET, POST, PATCH, PUT, DELETE');
     return json(res, 405, { error: 'Méthode non autorisée.' });
   } catch (error) {
     return handleError(res, error, 'Gestion de l\'équipe impossible.');

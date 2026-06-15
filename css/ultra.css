@@ -1971,6 +1971,30 @@ html.ea-returning .page-loader { display: none !important; }
   border-radius: 10px;
 }
 
+/* Section drag handle */
+.section-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.28);
+  cursor: grab;
+  touch-action: none;
+}
+.section-drag-handle:hover { color: rgba(255, 255, 255, 0.7); }
+.section-drag-handle:active { cursor: grabbing; }
+
+/* Section DnD states */
+.adm-team-section.section-is-dragging { opacity: 0.35; }
+.adm-team-section.section-drop-before .adm-team-head {
+  box-shadow: 0 -3px 0 0 var(--ea-orange, #ff6a2a);
+}
+.adm-team-section.section-drop-after .adm-team-head {
+  box-shadow: 0 3px 0 0 var(--ea-orange, #ff6a2a);
+}
+
+
 @media (max-width: 900px) {
   .adm-team-row { grid-template-columns: 24px 44px 1fr 1fr; }
   .adm-team-row label,

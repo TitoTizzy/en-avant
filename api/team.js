@@ -10,23 +10,31 @@ export default async function handler(req, res) {
 
   try {
     const supabase = getServiceClient();
-    const { data, error } = await supabase
-      .from('team_members')
-      .select('id, section, nom, poste, photo_url, ordre')
-      .order('section', { ascending: true })
-      .order('ordre', { ascending: true });
 
-    if (error) {
-      // Table pas encore créée (team.sql non exécuté) : 42P01 = Postgres,
-      // PGRST205 = PostgREST « not in schema cache ».
-      if (error.code === '42P01' || error.code === 'PGRST205') {
-        return json(res, 200, { members: [] });
+    const [membersResult, sectionsResult] = await Promise.all([
+      supabase
+        .from('team_members')
+        .select('id, section, nom, poste, photo_url, ordre')
+        .order('ordre', { ascending: true }),
+      supabase
+        .from('team_sections')
+        .select('key, label, ordre')
+        .order('ordre', { ascending: true }),
+    ]);
+
+    if (membersResult.error) {
+      // Table pas encore créée : 42P01 = Postgres, PGRST205 = PostgREST
+      if (membersResult.error.code === '42P01' || membersResult.error.code === 'PGRST205') {
+        return json(res, 200, { members: [], sections: null });
       }
-      throw error;
+      throw membersResult.error;
     }
 
+    // sections: null si team_sections n'existe pas encore (fallback HTML statique)
+    const sections = sectionsResult.error ? null : sectionsResult.data;
+
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
-    return json(res, 200, { members: data || [] });
+    return json(res, 200, { members: membersResult.data || [], sections });
   } catch (error) {
     return handleError(res, error);
   }

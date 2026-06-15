@@ -1837,20 +1837,39 @@
     localStorage.setItem("ea-org-sections", JSON.stringify(sections));
   }
 
+  async function saveSectionsToDb(sections) {
+    saveSections(sections); // toujours synchroniser le localStorage
+    try {
+      await api("/api/admin/team", {
+        method: "PUT",
+        body: JSON.stringify({ sections }),
+      });
+    } catch (err) {
+      console.warn("Sections non sauvegardées en DB :", err.message);
+    }
+  }
+
   async function loadTeam() {
     const host = document.getElementById("team-admin");
     if (!host) return;
 
     try {
-      const { members } = await api("/api/admin/team");
+      const { members, sections: dbSections } = await api("/api/admin/team");
       host.innerHTML = "";
 
-      const sections = getSections();
-      // Sections déduites de la DB qui n'existent pas encore dans la liste locale
+      // Sections : DB en priorité, localStorage en repli
+      let sections;
+      if (Array.isArray(dbSections) && dbSections.length > 0) {
+        sections = dbSections;
+        saveSections(sections);
+      } else {
+        sections = getSections();
+      }
+      // Sections inconnues détectées dans la DB → ajouter localement
       const knownKeys = new Set(sections.map((s) => s.key));
       members.forEach((m) => {
         if (m.section && !knownKeys.has(m.section)) {
-          sections.push({ key: m.section, label: m.section });
+          sections.push({ key: m.section, label: m.section, ordre: sections.length });
           knownKeys.add(m.section);
         }
       });
@@ -1859,14 +1878,18 @@
         const block = document.createElement("div");
         block.className = "adm-team-section";
         block.dataset.sectionKey = sec.key;
+        block.setAttribute("draggable", "true");
         block.innerHTML = `
-          <div class="adm-team-head" style="align-items:center; gap:.5rem;">
-            <input type="text" class="adm-section-title-edit" value="${sec.label}"
-                   title="Cliquez pour renommer la section" data-orig="${sec.key}">
-            <button type="button" class="btn btn-ghost btn-xs ti-rename-section" data-section="${sec.key}" title="Renommer">
+          <div class="adm-team-head">
+            <span class="section-drag-handle" title="Glisser pour déplacer cette section">
+              <i class="fa-solid fa-grip-lines" aria-hidden="true"></i>
+            </span>
+            <input type="text" class="adm-section-title-edit" value="${esc(sec.label)}"
+                   title="Cliquez pour renommer la section" data-orig="${esc(sec.key)}">
+            <button type="button" class="btn btn-ghost btn-xs ti-rename-section" data-section="${esc(sec.key)}" title="Renommer">
               <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
             </button>
-            <button type="button" class="btn btn-ghost btn-xs ti-add" data-section="${sec.key}" style="margin-left:auto;">
+            <button type="button" class="btn btn-ghost btn-xs ti-add" data-section="${esc(sec.key)}" style="margin-left:auto;">
               <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter une carte
             </button>
           </div>`;
@@ -1887,9 +1910,14 @@
     const host = document.getElementById("team-admin");
     if (!host) return;
 
-    /* ── Drag-and-drop : réorganisation des membres ────────────────────── */
+    /* ── Drag-and-drop : membres ──────────────────────────────────────── */
     let dragSrc = null;
     let dragDropTarget = null;
+    let dragFromMemberHandle = false;
+
+    /* ── Drag-and-drop : sections ─────────────────────────────────────── */
+    let sectionDragSrc = null;
+    let dragFromSectionHandle = false;
 
     function clearDragState() {
       if (dragSrc) dragSrc.classList.remove("is-dragging");
@@ -1899,6 +1927,14 @@
       host.querySelectorAll(".drop-empty").forEach((el) => el.classList.remove("drop-empty"));
       dragSrc = null;
       dragDropTarget = null;
+    }
+
+    function clearSectionDragState() {
+      if (sectionDragSrc) sectionDragSrc.classList.remove("section-is-dragging");
+      host.querySelectorAll(".section-drop-before, .section-drop-after").forEach((el) => {
+        el.classList.remove("section-drop-before", "section-drop-after");
+      });
+      sectionDragSrc = null;
     }
 
     async function reindexSection(sectionEl) {
@@ -1911,22 +1947,54 @@
       ));
     }
 
+    // mousedown détecte quel handle a initié le drag avant que dragstart ne soit déclenché
+    host.addEventListener("mousedown", (e) => {
+      dragFromMemberHandle = !!e.target.closest(".adm-team-row .drag-handle");
+      dragFromSectionHandle = !!e.target.closest(".section-drag-handle");
+    });
+
     host.addEventListener("dragstart", (event) => {
-      if (!event.target.closest(".drag-handle")) {
+      const rowEl = event.target.closest(".adm-team-row");
+      const sectionEl = !rowEl && event.target.closest(".adm-team-section");
+
+      if (rowEl) {
+        if (!dragFromMemberHandle) { event.preventDefault(); return; }
+        dragFromMemberHandle = false;
+        dragSrc = rowEl;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", rowEl.dataset.id);
+        window.setTimeout(() => rowEl.classList.add("is-dragging"), 0);
+      } else if (sectionEl) {
+        if (!dragFromSectionHandle) { event.preventDefault(); return; }
+        dragFromSectionHandle = false;
+        sectionDragSrc = sectionEl;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", sectionEl.dataset.sectionKey || "");
+        window.setTimeout(() => sectionEl.classList.add("section-is-dragging"), 0);
+      } else {
         event.preventDefault();
-        return;
       }
-      const row = event.target.closest(".adm-team-row");
-      if (!row) return;
-      dragSrc = row;
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", row.dataset.id);
-      window.setTimeout(() => row.classList.add("is-dragging"), 0);
     });
 
     host.addEventListener("dragover", (event) => {
       event.preventDefault();
       event.dataTransfer.dropEffect = "move";
+
+      if (sectionDragSrc) {
+        const targetSection = event.target.closest(".adm-team-section");
+        if (targetSection && targetSection !== sectionDragSrc) {
+          host.querySelectorAll(".section-drop-before, .section-drop-after").forEach((el) => {
+            el.classList.remove("section-drop-before", "section-drop-after");
+          });
+          const rect = targetSection.getBoundingClientRect();
+          const before = event.clientY < rect.top + rect.height / 2;
+          targetSection.classList.toggle("section-drop-before", before);
+          targetSection.classList.toggle("section-drop-after", !before);
+        }
+        return;
+      }
+
+      if (!dragSrc) return;
       const targetRow = event.target.closest(".adm-team-row");
       const targetSection = event.target.closest(".adm-team-section");
       if (!targetRow && !targetSection) return;
@@ -1948,6 +2016,13 @@
     });
 
     host.addEventListener("dragleave", (event) => {
+      if (sectionDragSrc) {
+        const section = event.target.closest(".adm-team-section");
+        if (section && !section.contains(event.relatedTarget)) {
+          section.classList.remove("section-drop-before", "section-drop-after");
+        }
+        return;
+      }
       const row = event.target.closest(".adm-team-row");
       if (row && !row.contains(event.relatedTarget)) {
         row.classList.remove("drop-before", "drop-after");
@@ -1960,6 +2035,37 @@
 
     host.addEventListener("drop", async (event) => {
       event.preventDefault();
+
+      if (sectionDragSrc) {
+        const srcEl = sectionDragSrc;
+        const targetSection = event.target.closest(".adm-team-section");
+        clearSectionDragState();
+        if (!targetSection || targetSection === srcEl) return;
+
+        const rect = targetSection.getBoundingClientRect();
+        const before = event.clientY < rect.top + rect.height / 2;
+        if (before) {
+          host.insertBefore(srcEl, targetSection);
+        } else {
+          host.insertBefore(srcEl, targetSection.nextSibling);
+        }
+
+        const newOrder = [...host.querySelectorAll(".adm-team-section")].map((el, i) => ({
+          key: el.dataset.sectionKey,
+          label: el.querySelector(".adm-section-title-edit")?.value?.trim() || el.dataset.sectionKey,
+          ordre: i,
+        }));
+
+        try {
+          await saveSectionsToDb(newOrder);
+          teamNote("success", "Ordre des sections mis à jour.");
+        } catch (error) {
+          teamNote("error", error.message);
+          await loadTeam();
+        }
+        return;
+      }
+
       if (!dragSrc) return;
 
       const targetRow = event.target.closest(".adm-team-row");
@@ -2006,7 +2112,10 @@
       }
     });
 
-    host.addEventListener("dragend", clearDragState);
+    host.addEventListener("dragend", () => {
+      clearDragState();
+      clearSectionDragState();
+    });
 
     /* ── Clics : ajout / sauvegarde / suppression ──────────────────────── */
     host.addEventListener("click", async (event) => {
@@ -2229,8 +2338,8 @@
           teamNote("error", "Une section avec ce nom existe déjà.");
           return;
         }
-        sections.push({ key, label: name.trim() });
-        saveSections(sections);
+        sections.push({ key, label: name.trim(), ordre: sections.length });
+        await saveSectionsToDb(sections);
         await loadTeam();
         teamNote("success", `Section « ${name.trim()} » ajoutée.`);
       });
@@ -2254,7 +2363,7 @@
       if (sec) {
         const oldLabel = sec.label;
         sec.label = newLabel;
-        saveSections(sections);
+        await saveSectionsToDb(sections);
         teamNote("success", `Section renommée « ${newLabel} ».`);
         // Mettre à jour le data-orig pour cohérence
         if (input) input.dataset.orig = sectionKey;
