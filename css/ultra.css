@@ -3721,3 +3721,72 @@ p.text-center {
 }
 .ea-checkbox-row input[type="checkbox"] { accent-color: var(--ea-orange); width: 1rem; height: 1rem; cursor: pointer; }
 font[style] { background: transparent !important; box-shadow: none !important; }
+
+/* --- Verrouillage global du dashboard apres inactivite ------------------- */
+body.adm-is-locked {
+  overflow: hidden;
+}
+
+.adm-pin-lock[hidden] {
+  display: none;
+}
+
+.adm-pin-lock {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 106, 42, .16), transparent 34rem),
+    rgba(3, 8, 28, .78);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+  backdrop-filter: blur(22px) saturate(125%);
+}
+
+.adm-pin-lock-card {
+  width: min(100%, 450px);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .45);
+}
+
+.adm-pin-lock-card p {
+  text-align: center;
+}
+
+.adm-pin-lock-card .ea-field {
+  margin: 1.5rem 0 1rem;
+  text-align: left;
+}
+
+.adm-pin-lock-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1.25rem;
+  color: #fff;
+  font-size: 1.35rem;
+  background: linear-gradient(145deg, var(--ea-orange), #ff8a59);
+  box-shadow: 0 16px 42px rgba(255, 106, 42, .32);
+}
+
+.adm-pin-lock-logout {
+  margin-top: .85rem;
+  padding: .65rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink-300);
+  font: inherit;
+  cursor: pointer;
+  transition: color .2s ease;
+}
+
+.adm-pin-lock-logout:hover,
+.adm-pin-lock-logout:focus-visible {
+  color: #fff;
+}

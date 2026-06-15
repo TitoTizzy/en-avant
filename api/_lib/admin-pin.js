@@ -4,7 +4,7 @@ import {
 } from 'node:crypto';
 
 const COOKIE_NAME = 'ea_admin_pin';
-const MAX_AGE_SECONDS = 30 * 60;
+const MAX_AGE_SECONDS = 15 * 60;
 
 function secret() {
   const value = process.env.ADMIN_PIN_COOKIE_SECRET;

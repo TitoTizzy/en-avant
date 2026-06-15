@@ -10,8 +10,26 @@ document.documentElement.classList.add("js-ready");
   "use strict";
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const activityKey = "ea-last-activity";
+  let lastActivityWrite = 0;
+
+  function recordActivity() {
+    const now = Date.now();
+    if (now - lastActivityWrite < 5000) return;
+    lastActivityWrite = now;
+    localStorage.setItem(activityKey, String(now));
+  }
+
+  ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
+    document.addEventListener(eventName, recordActivity, { passive: true });
+  });
+  window.addEventListener("scroll", recordActivity, { passive: true });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) recordActivity();
+  });
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (!localStorage.getItem(activityKey)) recordActivity();
     initScrollProgress();
     initSmartHeader();
     initMobileMenu();

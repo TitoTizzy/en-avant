@@ -35,6 +35,25 @@
   </div>
 </div>
 
+<div class="adm-pin-lock" id="adm-pin-lock" hidden role="dialog" aria-modal="true" aria-labelledby="adm-pin-lock-title">
+  <form class="u-card adm-pin-lock-card" id="adm-pin-lock-form" novalidate>
+    <div class="adm-pin-lock-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+    <p class="eyebrow">Session verrouillée</p>
+    <h2 id="adm-pin-lock-title">Confirmez votre PIN</h2>
+    <p>Le dashboard a été verrouillé après 15 minutes d'inactivité.</p>
+    <div class="ea-field">
+      <label for="adm-pin-lock-input">PIN SuperAdmin</label>
+      <input id="adm-pin-lock-input" type="password" inputmode="numeric" minlength="4" maxlength="8"
+        autocomplete="current-password" required>
+    </div>
+    <button class="btn btn-primary btn-full" type="submit" id="adm-pin-lock-submit">
+      <i class="fa-solid fa-unlock-keyhole" aria-hidden="true"></i> Déverrouiller
+    </button>
+    <button class="adm-pin-lock-logout" type="button" id="adm-pin-lock-logout">Se déconnecter</button>
+    <div class="ea-form-status" id="adm-pin-lock-status" role="status" aria-live="polite"></div>
+  </form>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════════════
      APPLICATION — layout sidebar + main
 ════════════════════════════════════════════════════════════════════════ -->

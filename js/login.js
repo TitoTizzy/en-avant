@@ -131,6 +131,7 @@
       if (!response.ok) throw new Error(payload.error || "PIN incorrect.");
 
       localStorage.setItem("ea-is-admin", "1");
+      localStorage.setItem("ea-last-activity", String(Date.now()));
       window.location.href = "/admin.html";
     } catch (error) {
       console.error(error);

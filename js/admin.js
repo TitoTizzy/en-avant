@@ -29,6 +29,21 @@
 
   const client = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
   let session = null;
+  const PIN_IDLE_MS = 15 * 60 * 1000;
+  const PIN_REFRESH_MS = 4 * 60 * 1000;
+  const ACTIVITY_KEY = "ea-last-activity";
+  const pinLock = document.getElementById("adm-pin-lock");
+  const pinLockForm = document.getElementById("adm-pin-lock-form");
+  const pinLockInput = document.getElementById("adm-pin-lock-input");
+  const pinLockSubmit = document.getElementById("adm-pin-lock-submit");
+  const pinLockStatus = document.getElementById("adm-pin-lock-status");
+  const pinLockLogout = document.getElementById("adm-pin-lock-logout");
+  let lastActivity = Number(localStorage.getItem(ACTIVITY_KEY)) || Date.now();
+  let lastPinRefresh = Date.now();
+  let pinSecurityActive = false;
+  let pinRefreshPromise = null;
+  let pinLockPromise = null;
+  let resolvePinLock = null;
 
   const esc = (value) => {
     const span = document.createElement("span");
@@ -50,7 +65,48 @@
       minimumFractionDigits: 2,
     })} ${currency.toUpperCase()}`;
 
-  async function api(path, options = {}) {
+  function isPinRequired(message, statusCode) {
+    return statusCode === 401 &&
+      /PIN SuperAdmin requis|PIN.+expir|v[ée]rification PIN/i.test(message || "");
+  }
+
+  function setPinLockStatus(type = "", message = "") {
+    if (!pinLockStatus) return;
+    pinLockStatus.className = `ea-form-status${type ? ` ${type}` : ""}`;
+    pinLockStatus.textContent = message;
+  }
+
+  function openPinLock(message = "Votre session sécurisée a expiré après 15 minutes d'inactivité.") {
+    if (!pinLock) return Promise.reject(new Error("Fenêtre PIN indisponible."));
+    if (pinLockPromise) return pinLockPromise;
+
+    pinLock.hidden = false;
+    document.body.classList.add("adm-is-locked");
+    pinLockInput.value = "";
+    setPinLockStatus("info", message);
+    window.setTimeout(() => pinLockInput.focus(), 50);
+
+    pinLockPromise = new Promise((resolve) => {
+      resolvePinLock = resolve;
+    });
+    return pinLockPromise;
+  }
+
+  function closePinLock() {
+    pinLock.hidden = true;
+    document.body.classList.remove("adm-is-locked");
+    pinLockInput.value = "";
+    setPinLockStatus();
+    lastActivity = Date.now();
+    lastPinRefresh = lastActivity;
+    localStorage.setItem(ACTIVITY_KEY, String(lastActivity));
+    const resolve = resolvePinLock;
+    resolvePinLock = null;
+    pinLockPromise = null;
+    resolve?.(true);
+  }
+
+  async function rawAuthenticatedFetch(path, options = {}) {
     const sessionResult = await client.auth.getSession();
     session = sessionResult.data.session;
     if (!session) {
@@ -68,13 +124,125 @@
       },
     });
     const payload = await response.json().catch(() => ({}));
+    return { response, payload };
+  }
+
+  async function api(path, options = {}, canRetryPin = true) {
+    const { response, payload } = await rawAuthenticatedFetch(path, options);
     if (!response.ok) {
+      if (canRetryPin && isPinRequired(payload.error, response.status)) {
+        await openPinLock();
+        return api(path, options, false);
+      }
       const error = new Error(payload.error || "Requête impossible.");
       error.status = response.status;
       throw error;
     }
     return payload;
   }
+
+  async function refreshPinSession() {
+    if (!pinSecurityActive || pinLockPromise || pinRefreshPromise) return pinRefreshPromise;
+    pinRefreshPromise = (async () => {
+      try {
+        const { response, payload } = await rawAuthenticatedFetch("/api/auth/touch-pin", {
+          method: "POST",
+        });
+        if (response.ok) {
+          lastPinRefresh = Date.now();
+          return;
+        }
+        if (isPinRequired(payload.error, response.status)) await openPinLock();
+      } catch (error) {
+        console.warn("Renouvellement du PIN indisponible.", error);
+      } finally {
+        pinRefreshPromise = null;
+      }
+    })();
+    return pinRefreshPromise;
+  }
+
+  function registerActivity() {
+    if (!pinSecurityActive || pinLockPromise) return;
+    const now = Date.now();
+    if (now - lastActivity >= PIN_IDLE_MS) {
+      openPinLock();
+      return;
+    }
+    lastActivity = now;
+    localStorage.setItem(ACTIVITY_KEY, String(now));
+    if (now - lastPinRefresh >= PIN_REFRESH_MS) refreshPinSession();
+  }
+
+  function startPinSecurity() {
+    pinSecurityActive = true;
+
+    ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
+      document.addEventListener(eventName, registerActivity, { passive: true });
+    });
+    window.addEventListener("scroll", registerActivity, { passive: true });
+    window.addEventListener("focus", registerActivity);
+    window.addEventListener("storage", (event) => {
+      if (event.key !== ACTIVITY_KEY || pinLockPromise) return;
+      const sharedActivity = Number(event.newValue);
+      if (!Number.isFinite(sharedActivity) || sharedActivity <= lastActivity) return;
+      lastActivity = sharedActivity;
+      if (Date.now() - lastPinRefresh >= PIN_REFRESH_MS) refreshPinSession();
+    });
+
+    window.setInterval(() => {
+      if (!pinLockPromise && Date.now() - lastActivity >= PIN_IDLE_MS) openPinLock();
+    }, 5000);
+
+    if (Date.now() - lastActivity >= PIN_IDLE_MS) {
+      openPinLock();
+    } else {
+      lastPinRefresh = 0;
+      refreshPinSession();
+    }
+  }
+
+  pinLockInput?.addEventListener("input", () => {
+    pinLockInput.value = pinLockInput.value.replace(/\D/g, "").slice(0, 8);
+  });
+
+  pinLockForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const pin = pinLockInput.value.trim();
+    if (!/^\d{4,8}$/.test(pin)) {
+      setPinLockStatus("error", "Entrez votre PIN de 4 à 8 chiffres.");
+      pinLockInput.focus();
+      return;
+    }
+
+    pinLockSubmit.classList.add("btn-loading");
+    pinLockSubmit.disabled = true;
+    setPinLockStatus("info", "Vérification en cours...");
+
+    try {
+      const { response, payload } = await rawAuthenticatedFetch("/api/auth/verify-pin", {
+        method: "POST",
+        body: JSON.stringify({ pin }),
+      });
+      if (!response.ok) throw new Error(payload.error || "PIN incorrect.");
+      closePinLock();
+    } catch (error) {
+      pinLockInput.value = "";
+      pinLockInput.focus();
+      setPinLockStatus("error", error.message || "PIN incorrect.");
+    } finally {
+      pinLockSubmit.classList.remove("btn-loading");
+      pinLockSubmit.disabled = false;
+    }
+  });
+
+  pinLockLogout?.addEventListener("click", async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    await client.auth.signOut();
+    localStorage.removeItem("ea-is-admin");
+    localStorage.removeItem(ACTIVITY_KEY);
+    window.location.href = "/login.html";
+  });
 
   const PANEL_TITLES = {
     "panel-home":         "Tableau de bord",
@@ -1504,7 +1672,6 @@
       badge.textContent = status;
     } catch (error) {
       console.error(error);
-      if (error.status === 401) deny("Votre vérification PIN a expiré. Reconnectez-vous.");
     } finally {
       button.classList.remove("btn-loading");
     }
@@ -1996,6 +2163,7 @@
 
     guard.hidden = true;
     app.hidden = false;
+    startPinSecurity();
 
     // Wire des interactions UI
     bindListTools();
