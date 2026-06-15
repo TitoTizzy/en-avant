@@ -88,7 +88,7 @@
     "panel-leads":        "Leads",
     "panel-trivia":       "Trivia IA",
     "panel-integrations": "Intégrations",
-    "panel-equipe":       "Équipe (staff)",
+    "panel-equipe":       "Utilisateurs",
     "panel-security":     "Sécurité",
     "panel-settings":     "Paramètres",
     "panel-logs":         "Journal d'activité",
@@ -1910,30 +1910,112 @@
   /* ─── Panel Équipe staff ──────────────────────────────────────────── */
   function bindStaffPanel() {
     const host = document.getElementById("staff-list");
+    const form = document.getElementById("user-create-form");
     if (!host) return;
 
-    // S'affiche quand on arrive sur le panel
-    document.querySelector("[data-panel='panel-equipe']")?.addEventListener("click", loadStaff);
+    const ROLE_LABELS = { superadmin: "SuperAdmin", editor: "Éditeur", readonly: "Lecture seule", member: "Membre" };
+    const ROLE_KEYS = ["editor", "readonly", "member", "superadmin"];
+    let meId = null;
 
-    async function loadStaff() {
-      if (host.dataset.loaded) return;
+    const status = (type, msg) => setModuleStatus("user-status", type, msg);
+
+    function userRow(u) {
+      const name = u.nom || u.username || u.email || "?";
+      const isMe = u.id === meId;
+      return `<div class="adm-staff-row" data-id="${esc(u.id)}">
+        <div class="adm-staff-avatar">${esc(String(name)[0].toUpperCase())}</div>
+        <div class="adm-staff-info">
+          <strong>${esc(name)}${isMe ? ' <span class="badge approved">vous</span>' : ""}</strong>
+          <span>${esc(u.email || "")}</span>
+        </div>
+        <select class="ea-select-sm user-role-select" data-id="${esc(u.id)}" aria-label="Rôle">
+          ${ROLE_KEYS.map((r) => `<option value="${r}" ${u.role === r ? "selected" : ""}>${ROLE_LABELS[r]}</option>`).join("")}
+        </select>
+        <button class="btn btn-ghost btn-xs user-delete" data-id="${esc(u.id)}" title="Supprimer le compte" ${isMe ? "disabled" : ""}>
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </button>
+      </div>`;
+    }
+
+    async function loadUsers() {
+      host.innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement des comptes…</p>';
       try {
-        const { members } = await api("/api/admin/dashboard?dataset=members&limit=100");
-        const admins = (members || []).filter((m) => m.role === "superadmin" || m.role === "editor");
-        if (!admins.length) { host.innerHTML = '<p class="adm-empty">Aucun membre staff pour l\'instant.</p>'; return; }
-        host.innerHTML = `<div class="u-card">${admins.map((m) => `
-          <div class="adm-staff-row">
-            <div class="adm-staff-avatar">${(m.pseudo || m.email || "?")[0].toUpperCase()}</div>
-            <div class="adm-staff-info">
-              <strong>${m.pseudo || m.email}</strong>
-              <span>${m.email} · <span class="badge ${m.role === "superadmin" ? "approved" : "pending"}">${m.role}</span></span>
-            </div>
-          </div>`).join("")}</div>`;
-        host.dataset.loaded = "1";
-      } catch (_) {
-        host.innerHTML = '<p class="adm-empty">Données non disponibles localement.</p>';
+        const { users, me } = await api("/api/admin/users");
+        meId = me;
+        if (!users?.length) { host.innerHTML = '<p class="adm-empty">Aucun utilisateur.</p>'; return; }
+        host.innerHTML = `<div class="u-card adm-users-card">${users.map(userRow).join("")}</div>`;
+      } catch (error) {
+        host.innerHTML = `<p class="adm-empty">${esc(error.message)}</p>`;
       }
     }
+
+    // Création d'un utilisateur
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = document.getElementById("user-create-submit");
+      button.classList.add("btn-loading");
+      try {
+        await api("/api/admin/users", {
+          method: "POST",
+          body: JSON.stringify({
+            nom: document.getElementById("user-nom").value.trim(),
+            username: document.getElementById("user-pseudo").value.trim(),
+            email: document.getElementById("user-email").value.trim(),
+            password: document.getElementById("user-password").value,
+            role: document.getElementById("user-role").value,
+          }),
+        });
+        form.reset();
+        status("success", "Utilisateur créé.");
+        await loadUsers();
+      } catch (error) {
+        status("error", error.message);
+      } finally {
+        button.classList.remove("btn-loading");
+      }
+    });
+
+    // Générateur de mot de passe provisoire
+    document.getElementById("user-gen-pw")?.addEventListener("click", () => {
+      const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#%";
+      const pw = Array.from(crypto.getRandomValues(new Uint8Array(12)))
+        .map((b) => chars[b % chars.length]).join("");
+      const field = document.getElementById("user-password");
+      field.value = pw;
+      field.focus();
+    });
+
+    // Changement de rôle (délégation)
+    host.addEventListener("change", async (event) => {
+      const select = event.target.closest(".user-role-select");
+      if (!select) return;
+      try {
+        await api("/api/admin/users", { method: "PATCH", body: JSON.stringify({ id: select.dataset.id, role: select.value }) });
+        status("success", "Rôle mis à jour.");
+      } catch (error) {
+        status("error", error.message);
+        await loadUsers();
+      }
+    });
+
+    // Suppression (délégation)
+    host.addEventListener("click", async (event) => {
+      const del = event.target.closest(".user-delete");
+      if (!del) return;
+      if (!window.confirm("Supprimer définitivement ce compte ? Cette action est irréversible.")) return;
+      try {
+        await api("/api/admin/users", { method: "DELETE", body: JSON.stringify({ id: del.dataset.id }) });
+        status("success", "Compte supprimé.");
+        await loadUsers();
+      } catch (error) {
+        status("error", error.message);
+      }
+    });
+
+    // Chargement à la première ouverture du panneau
+    document.querySelector("[data-panel='panel-equipe']")?.addEventListener("click", () => {
+      if (!host.dataset.loaded) { loadUsers(); host.dataset.loaded = "1"; }
+    });
   }
 
   /* ─── Panel Journal d'activité ───────────────────────────────────── */

@@ -106,7 +106,7 @@
 
       <p class="adm-nav-section">SuperAdmin</p>
       <button class="adm-nav-item" data-panel="panel-equipe" type="button">
-        <i class="fa-solid fa-users-gear" aria-hidden="true"></i> Équipe (staff)
+        <i class="fa-solid fa-users-gear" aria-hidden="true"></i> Utilisateurs
       </button>
       <button class="adm-nav-item" data-panel="panel-security" type="button">
         <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Sécurité
@@ -693,16 +693,49 @@
 
       <!-- ════════════════════ ÉQUIPE STAFF ══════════════════════════ -->
       <section class="adm-panel" id="panel-equipe" hidden>
-        <div class="u-card" style="margin-bottom:1.2rem;">
-          <div class="adm-record-head">
-            <div>
-              <h4>Équipe d'administration</h4>
-              <p>Gérez les comptes ayant accès au dashboard. Seul le SuperAdmin peut ajouter ou retirer des droits.</p>
+        <div class="adm-module-layout">
+          <form class="u-card adm-create-card" id="user-create-form" novalidate>
+            <h4>Nouvel utilisateur</h4>
+            <p class="u-note" style="margin:0 0 1.2rem;">Crée un compte d'accès et attribue-lui un rôle. Communique le mot de passe provisoire à la personne — elle pourra le changer ensuite.</p>
+            <div class="ea-field">
+              <label for="user-nom">Nom complet</label>
+              <input id="user-nom" maxlength="120" required>
             </div>
+            <div class="ea-field">
+              <label for="user-pseudo">Pseudo (affiché)</label>
+              <input id="user-pseudo" maxlength="30" placeholder="optionnel">
+            </div>
+            <div class="ea-field">
+              <label for="user-email">Email</label>
+              <input id="user-email" type="email" maxlength="160" required autocomplete="off">
+            </div>
+            <div class="ea-field">
+              <label for="user-password">Mot de passe provisoire</label>
+              <div style="display:flex; gap:.5rem;">
+                <input id="user-password" type="text" minlength="8" maxlength="200" required autocomplete="off" placeholder="8 caractères minimum" style="flex:1;">
+                <button type="button" class="btn btn-ghost btn-xs" id="user-gen-pw" title="Générer un mot de passe">
+                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+            <div class="ea-field">
+              <label for="user-role">Rôle</label>
+              <select id="user-role">
+                <option value="editor">Éditeur — gère le contenu (articles, événements…)</option>
+                <option value="readonly">Lecture seule — consulte sans modifier</option>
+                <option value="member">Membre — espace membre (Trivia…)</option>
+                <option value="superadmin">SuperAdmin — accès total</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" type="submit" id="user-create-submit">
+              <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Créer l'utilisateur
+            </button>
+            <div class="ea-form-status" id="user-status" role="status" aria-live="polite"></div>
+          </form>
+
+          <div id="staff-list" class="adm-record-list">
+            <p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement des comptes…</p>
           </div>
-        </div>
-        <div id="staff-list">
-          <p style="color:var(--ink-400);"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…</p>
         </div>
       </section>
 

@@ -3465,9 +3465,11 @@ body { top: 0 !important; }
   display: grid; place-items: center;
   font-weight: 700; font-size: .85rem; color: #fff; flex-shrink: 0;
 }
-.adm-staff-info { flex: 1; }
+.adm-staff-info { flex: 1; min-width: 0; }
 .adm-staff-info strong { display: block; color: var(--ink-100); }
-.adm-staff-info span   { color: var(--ink-400); font-size: .82rem; }
+.adm-staff-info span   { color: var(--ink-400); font-size: .82rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-staff-row .user-role-select { flex-shrink: 0; }
+.adm-staff-row .user-delete { flex-shrink: 0; }
 
 /* ─── Section org éditable ──────────────────────────────────────────── */
 .adm-section-title-edit {
