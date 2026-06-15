@@ -3025,8 +3025,31 @@ html.ea-returning .page-loader { display: none !important; }
 }
 
 .adm-article-editor {
-  max-width: 1050px;
+  width: 100%;
+  max-width: none;
+  min-height: calc(100vh - 235px);
   padding: clamp(1.1rem, 3vw, 2rem);
+}
+
+.adm-full-create-surface {
+  width: 100%;
+  max-width: none;
+  min-height: calc(100vh - 210px);
+  padding: clamp(1.1rem, 3vw, 2rem);
+}
+
+#article-editor-view,
+#event-editor-view,
+#gallery-editor-view,
+#user-editor-view {
+  width: 100%;
+}
+
+#article-editor-view .adm-articles-heading,
+#event-editor-view .adm-articles-heading,
+#gallery-editor-view .adm-articles-heading,
+#user-editor-view .adm-articles-heading {
+  width: 100%;
 }
 
 .adm-article-editor-grid {
@@ -3050,7 +3073,20 @@ html.ea-returning .page-loader { display: none !important; }
 .article-editor-surface,
 .article-editor-surface .ql-container,
 .article-editor-surface .ql-editor {
+  width: 100%;
   background: #fff;
+}
+
+.article-editor-surface .ql-editor {
+  min-height: clamp(360px, 48vh, 680px);
+}
+
+.adm-article-editor > .ea-field,
+.adm-article-editor .ea-field input,
+.adm-article-editor .ea-field select,
+.adm-article-editor .ea-field textarea {
+  width: 100%;
+  max-width: none;
 }
 
 .adm-editor-actions {
@@ -3296,6 +3332,8 @@ html.ea-returning .page-loader { display: none !important; }
   .adm-article-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .adm-article-editor-grid { grid-template-columns: 1fr; }
   .adm-editor-title-field { grid-column: auto; }
+  .adm-article-editor { min-height: calc(100vh - 190px); }
+  .adm-full-create-surface { min-height: calc(100vh - 180px); }
   .adm-media-grid { grid-template-columns: 1fr; }
   .adm-integration-grid { grid-template-columns: 1fr; }
   .tq-wrap { padding-top: 7.5rem; }
@@ -3311,6 +3349,15 @@ html.ea-returning .page-loader { display: none !important; }
   .adm-article-filters { grid-template-columns: 1fr; }
   #articles-admin { grid-template-columns: 1fr; }
   .adm-editor-actions { flex-direction: column-reverse; }
+  .adm-article-editor {
+    min-height: 0;
+    padding: 1rem;
+  }
+  .adm-full-create-surface {
+    min-height: 0;
+    padding: 1rem;
+  }
+  .article-editor-surface .ql-editor { min-height: 320px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
