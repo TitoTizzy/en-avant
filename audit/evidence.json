@@ -1,0 +1,557 @@
+{
+  "date": "2026-11-12",
+  "scope": "Local uniquement; services externes simules",
+  "readable": [
+    "adherer.html",
+    "admin.html",
+    "api/articles.js",
+    "api/create-checkout.js",
+    "api/events.js",
+    "api/media.js",
+    "api/team.js",
+    "api/webhooks/stripe.js",
+    "api/_admin/dashboard.js",
+    "api/_admin/media.js",
+    "api/_admin/team.js",
+    "api/_admin/trivia.js",
+    "api/_auth/change-pin.js",
+    "api/_auth/login.js",
+    "api/_auth/register.js",
+    "api/_lib/admin-pin.js",
+    "api/_lib/http.js",
+    "api/_lib/supabase.js",
+    "api/_member/articles.js",
+    "api/_trivia/generate-session.js",
+    "api/_trivia/generate.js",
+    "api/_trivia/score.js",
+    "Apropos.html",
+    "article-details.html",
+    "blog.html",
+    "css/livre-blanc.css",
+    "css/organisation.css",
+    "css/premium.css",
+    "css/ultra.css",
+    "css/vingt-chantiers-haiti.css",
+    "DEPLOYMENT.md",
+    "don.html",
+    "historique.html",
+    "index.html",
+    "js/article.js",
+    "js/don.js",
+    "js/env.js",
+    "js/livre-blanc.js",
+    "js/login.js",
+    "js/organisation-team.js",
+    "js/organisation.js",
+    "js/premium.js",
+    "js/register.js",
+    "js/trivia.js",
+    "js/vingt-chantiers-haiti.js",
+    "livre-blanc.html",
+    "login.html",
+    "membre.html",
+    "organisation.html",
+    "README.md",
+    "register.html",
+    "scripts/check-project.mjs",
+    "scripts/dev-server.mjs",
+    "supabase/add-change-pin.sql",
+    "supabase/lock-admin-api.sql",
+    "supabase/setup-superadmin.sql",
+    "supabase/site-settings.sql",
+    "supabase/team-sections.sql",
+    "supabase/team.sql",
+    "supabase/verify.sql",
+    "trivia.html",
+    "vingt-chantiers.html"
+  ],
+  "unreadable": [
+    {
+      "file": "api/admin.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/auth.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/leads-livreblanc.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/member.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/members.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/trivia.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_admin/articles.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_admin/events.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_admin/integrations.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_admin/settings.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_admin/users.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_auth/logout.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_auth/touch-pin.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_auth/verify-pin.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "api/_trivia/questions.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "css/blog.css",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "css/style.css",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "js/adherer.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "js/admin.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "js/app.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "js/blog.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "js/countdown.js",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "scripts/test-connexion.mjs",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "supabase/add-member-role.sql",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "supabase/add-user-permissions.sql",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "supabase/articles-review.sql",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "supabase/remove-article-tts.sql",
+      "code": "UNKNOWN"
+    },
+    {
+      "file": "supabase/schema.sql",
+      "code": "UNKNOWN"
+    }
+  ],
+  "html": [
+    {
+      "file": "adherer.html",
+      "title": "Adhérer | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 2,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "admin.html",
+      "title": "Dashboard | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": true,
+      "images": 3,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 0
+    },
+    {
+      "file": "Apropos.html",
+      "title": "À propos | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 2,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "article-details.html",
+      "title": "Article | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 3,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "blog.html",
+      "title": "Blog & Actualités | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 5,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 6
+    },
+    {
+      "file": "don.html",
+      "title": "Faire un don | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 4,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "historique.html",
+      "title": "Historique | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 5,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "index.html",
+      "title": "En Avant | Pour changer Haïti ensemble",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 10,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "livre-blanc.html",
+      "title": "Le Livre blanc | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 3,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "login.html",
+      "title": "Connexion | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": true,
+      "images": 1,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 0
+    },
+    {
+      "file": "membre.html",
+      "title": "Espace membre | En Avant",
+      "h1": 0,
+      "canonical": false,
+      "noindex": true,
+      "images": 0,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 0
+    },
+    {
+      "file": "organisation.html",
+      "title": "Organisation — En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 2,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "register.html",
+      "title": "Créer un compte | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": true,
+      "images": 1,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 0
+    },
+    {
+      "file": "trivia.html",
+      "title": "Le Quiz du Livre blanc | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 2,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    },
+    {
+      "file": "vingt-chantiers.html",
+      "title": "Les 20 Chantiers | En Avant",
+      "h1": 1,
+      "canonical": false,
+      "noindex": false,
+      "images": 3,
+      "imagesWithDimensions": 0,
+      "responsiveImages": 0,
+      "placeholderLinks": 2
+    }
+  ],
+  "missingLocalTargets": [],
+  "tests": [
+    {
+      "name": "Limiter: une nouvelle instance accepte de nouveau la meme IP",
+      "pass": true
+    },
+    {
+      "name": "Quiz: un score maximal declare par le client est accepte sans reponses",
+      "pass": true
+    },
+    {
+      "name": "Dashboard: acces_dashboard suffit pour exporter les NINU",
+      "pass": true
+    },
+    {
+      "name": "Inscription: email auto-confirme et erreur de mise a jour profil ignoree",
+      "pass": true
+    },
+    {
+      "name": "Article: un slug absent de API affiche le communique de demonstration",
+      "pass": true
+    },
+    {
+      "name": "Espace membre: un titre contenant du HTML est injecte sans echappement",
+      "pass": true
+    }
+  ],
+  "syntax": [
+    {
+      "file": "api/articles.js",
+      "pass": true
+    },
+    {
+      "file": "api/create-checkout.js",
+      "pass": true
+    },
+    {
+      "file": "api/events.js",
+      "pass": true
+    },
+    {
+      "file": "api/media.js",
+      "pass": true
+    },
+    {
+      "file": "api/team.js",
+      "pass": true
+    },
+    {
+      "file": "api/webhooks/stripe.js",
+      "pass": true
+    },
+    {
+      "file": "api/_admin/dashboard.js",
+      "pass": true
+    },
+    {
+      "file": "api/_admin/media.js",
+      "pass": true
+    },
+    {
+      "file": "api/_admin/team.js",
+      "pass": true
+    },
+    {
+      "file": "api/_admin/trivia.js",
+      "pass": true
+    },
+    {
+      "file": "api/_auth/change-pin.js",
+      "pass": true
+    },
+    {
+      "file": "api/_auth/login.js",
+      "pass": true
+    },
+    {
+      "file": "api/_auth/register.js",
+      "pass": true
+    },
+    {
+      "file": "api/_lib/admin-pin.js",
+      "pass": true
+    },
+    {
+      "file": "api/_lib/http.js",
+      "pass": true
+    },
+    {
+      "file": "api/_lib/supabase.js",
+      "pass": true
+    },
+    {
+      "file": "api/_member/articles.js",
+      "pass": true
+    },
+    {
+      "file": "api/_trivia/generate-session.js",
+      "pass": true
+    },
+    {
+      "file": "api/_trivia/generate.js",
+      "pass": true
+    },
+    {
+      "file": "api/_trivia/score.js",
+      "pass": true
+    },
+    {
+      "file": "js/article.js",
+      "pass": true
+    },
+    {
+      "file": "js/don.js",
+      "pass": true
+    },
+    {
+      "file": "js/env.js",
+      "pass": true
+    },
+    {
+      "file": "js/livre-blanc.js",
+      "pass": true
+    },
+    {
+      "file": "js/login.js",
+      "pass": true
+    },
+    {
+      "file": "js/organisation-team.js",
+      "pass": true
+    },
+    {
+      "file": "js/organisation.js",
+      "pass": true
+    },
+    {
+      "file": "js/premium.js",
+      "pass": true
+    },
+    {
+      "file": "js/register.js",
+      "pass": true
+    },
+    {
+      "file": "js/trivia.js",
+      "pass": true
+    },
+    {
+      "file": "js/vingt-chantiers-haiti.js",
+      "pass": true
+    },
+    {
+      "file": "scripts/check-project.mjs",
+      "pass": true
+    },
+    {
+      "file": "scripts/dev-server.mjs",
+      "pass": true
+    }
+  ],
+  "assets": {
+    "pictureCount": 49,
+    "totalPictureBytes": 20764212,
+    "largest": [
+      {
+        "file": "pictures/chantiers/chantier-05.jpeg",
+        "bytes": 2694627
+      },
+      {
+        "file": "pictures/chantiers/chantier-13.jpeg",
+        "bytes": 1973292
+      },
+      {
+        "file": "pictures/chantiers/chantier-01.jpeg",
+        "bytes": 1868818
+      },
+      {
+        "file": "pictures/chantiers/chantier-18.png",
+        "bytes": 1566021
+      },
+      {
+        "file": "pictures/chantiers/chantier-15.jpeg",
+        "bytes": 746870
+      },
+      {
+        "file": "pictures/chantiers/chantier-09.jpeg",
+        "bytes": 722192
+      },
+      {
+        "file": "pictures/chantiers/chantier-12.jpeg",
+        "bytes": 671562
+      },
+      {
+        "file": "pictures/chantiers/chantier-08.jpeg",
+        "bytes": 652129
+      },
+      {
+        "file": "pictures/chantiers/chantier-20.jpeg",
+        "bytes": 650893
+      },
+      {
+        "file": "pictures/chantiers/chantier-11.jpeg",
+        "bytes": 616935
+      }
+    ],
+    "pdfBytes": 23987523
+  }
+}

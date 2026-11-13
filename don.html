@@ -31,6 +31,7 @@
 
   <link rel="stylesheet" href="/css/ultra.css" />
   <link rel="stylesheet" href="/css/premium.css" />
+  <link rel="stylesheet" href="/css/don.css" />
   <meta name="theme-color" content="#071229" />
   <style>
     /* === DON PAGE ===================================================== */
@@ -197,6 +198,35 @@
       </div>
 
       <!-- Pourquoi donner -->
+      <section class="don-online" aria-labelledby="don-online-title">
+        <div class="don-online-heading">
+          <span class="don-online-kicker">Soutenir En Avant</span>
+          <h2 id="don-online-title">Faire un don en ligne</h2>
+          <p>Une contribution, un pas de plus pour Haïti.</p>
+        </div>
+        <div class="don-online-body">
+          <div class="don-online-label">
+            <h3 id="don-amount-label">Choisissez votre montant</h3>
+            <span>Dollars américains · USD</span>
+          </div>
+          <div class="don-amounts" role="group" aria-labelledby="don-amount-label" aria-describedby="don-payment-notice">
+            <button class="don-amount" type="button" data-donation="10" aria-pressed="false"><span>10 $</span><small>Bientôt disponible</small></button>
+            <button class="don-amount" type="button" data-donation="25" aria-pressed="false"><span>25 $</span><small>Bientôt disponible</small></button>
+            <button class="don-amount" type="button" data-donation="50" aria-pressed="false"><span>50 $</span><small>Bientôt disponible</small></button>
+            <button class="don-amount" type="button" data-donation="100" aria-pressed="false"><span>100 $</span><small>Bientôt disponible</small></button>
+            <button class="don-amount" type="button" data-donation="250" aria-pressed="false"><span>250 $</span><small>Bientôt disponible</small></button>
+            <button class="don-amount" type="button" data-donation="500" aria-pressed="false"><span>500 $</span><small>Bientôt disponible</small></button>
+            <button class="don-amount" type="button" data-donation="1000" aria-pressed="false"><span>1 000 $</span><small>Bientôt disponible</small></button>
+            <button class="don-amount don-amount--custom" type="button" data-donation="custom" aria-pressed="false"><span>Autre montant</span><small>Bientôt disponible</small></button>
+          </div>
+          <p class="don-payment-notice" id="don-payment-notice"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Les liens de paiement seront bientôt disponibles. Les montants non encore activés ne permettent aucun paiement pour le moment.</span></p>
+          <div class="don-payment-selection" id="don-payment-selection" role="status" aria-live="polite" aria-atomic="true">Sélectionnez un montant pour soutenir le mouvement.</div>
+          <button class="don-payment-submit" id="don-payment-submit" type="button" disabled>Liens de paiement bientôt disponibles</button>
+          <p class="don-payment-security"><i class="fa-solid fa-lock" aria-hidden="true"></i> Lorsqu'il sera disponible, le paiement s'effectuera sur la page sécurisée de Stripe.</p>
+          <noscript><p class="don-payment-notice">Activez JavaScript pour sélectionner un montant. Les coordonnées Cash App et Zelle restent accessibles ci-dessous.</p></noscript>
+        </div>
+      </section>
+
       <div class="reveal-up" style="max-width:820px;margin:0 auto 4rem;">
         <div class="don-why-heading">
           <span>Engagement</span>
@@ -312,7 +342,7 @@
 
         <p class="don-note">
           <i class="fa-solid fa-lock" aria-hidden="true"></i>
-          Chaque transaction est tracée et enregistrée de façon transparente.
+          Conservez la confirmation remise par votre service de paiement.
         </p>
       </div>
 
@@ -381,6 +411,7 @@
 
   <script src="/js/premium.js"></script>
   <script src="/js/app.js"></script>
+  <script src="/js/donation-links.js"></script>
   <script src="/js/don.js"></script>
   <script src="/js/env.js"></script>
 </body>

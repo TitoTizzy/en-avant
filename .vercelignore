@@ -4,6 +4,10 @@ supabase
 # Outils locaux (tests de connexion) : jamais servis publiquement
 scripts
 
+# Rapports et documentation technique : versionnes, jamais servis publiquement
+audit
+docs/CONFIGURATION-DONS.md
+
 # Dépendances (Vercel les réinstalle lui-même)
 node_modules
 
