@@ -92,6 +92,10 @@ export default async function handler(req, res) {
     const params = {
       mode: isMonthly ? 'subscription' : 'payment',
       line_items: [{ price: priceId, quantity: 1 }],
+      // Carte (Apple Pay et Google Pay inclus) et Link uniquement. Cash App Pay,
+      // PayPal, Klarna… sont exclus : non autorisés pour une organisation
+      // politique (MCC 8651) ou inadaptés à un don.
+      payment_method_types: ['card', 'link'],
       billing_address_collection: 'required',
       custom_text: {
         submit: {
