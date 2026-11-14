@@ -1,57 +1,70 @@
-// Tests isoles du selecteur : aucune ouverture de lien ni transaction Stripe.
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
+// Tests isolés des dons : aucun appel réseau, aucune transaction Stripe.
+// Lancer : node --test scripts/test-donations.mjs
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import handler, { availablePrices, donationsEnabled } from '../api/create-checkout.js';
 
-const code = await readFile(new URL('../js/don.js', import.meta.url), 'utf8');
-const configCode = await readFile(new URL('../js/donation-links.js', import.meta.url), 'utf8');
-const keys = ['10', '25', '50', '100', '250', '500', '1000', 'custom'];
-function setup(config, search = '') {
-  const element = () => ({ textContent: '', disabled: true, hidden: false, attrs: {}, events: {},
-    setAttribute(k,v) {this.attrs[k]=v;}, addEventListener(k,fn) {this.events[k]=fn;},
-    click() {if (!this.disabled) this.events.click?.();} });
-  const buttons = keys.map(key => {
-    const e = element(); e.disabled = false; e.dataset = {donation:key};
-    const small = element(); e.querySelector = () => small; return e;
+const PRICE = (n) => `price_TEST${String(n).padStart(8, '0')}`;
+const fullEnv = () => ({
+  DONATIONS_ENABLED: 'true',
+  STRIPE_SECRET_KEY: 'sk_test_dummy',
+  SITE_URL: 'https://enavant.org',
+  STRIPE_PRICE_UNIQUE_10: PRICE(1), STRIPE_PRICE_UNIQUE_LIBRE: PRICE(2),
+  STRIPE_PRICE_MENSUEL_10: PRICE(3), STRIPE_PRICE_MENSUEL_LIBRE: PRICE(4),
+});
+
+function call(method, body = {}, headers = {}) {
+  return new Promise((resolve) => {
+    const res = {
+      statusCode: 200, headers: {},
+      setHeader(k, v) { this.headers[k.toLowerCase()] = v; },
+      status(c) { this.statusCode = c; return this; },
+      json(p) { resolve({ status: this.statusCode, body: p }); },
+    };
+    handler({ method, body, headers: { 'x-forwarded-for': `10.0.0.${Math.random() * 250 | 0}`, ...headers } }, res);
   });
-  const submit = element(), selection = element(), notice = element(), redirected = [];
-  const nodes = {'don-payment-submit':submit,'don-payment-selection':selection,'don-payment-notice':notice};
-  const window = {EA_DONATION_LINKS:config,location:{search,assign:url=>redirected.push(url)}};
-  vm.runInNewContext(code,{window,URL,URLSearchParams,document:{querySelectorAll:()=>buttons,getElementById:id=>nodes[id]}});
-  return {buttons,submit,selection,notice,redirected};
 }
-test('Sans configuration : tous les montants restent sans paiement',()=>{
-  const s=setup(undefined);
-  for(const b of s.buttons){b.click();assert.equal(s.submit.disabled,true);s.submit.click();}
-  assert.equal(s.notice.hidden,false);assert.deepEqual(s.redirected,[]);
+
+function withEnv(env, fn) {
+  const saved = { ...process.env };
+  for (const k of Object.keys(process.env)) if (/^(STRIPE_|DONATIONS_|SITE_URL)/.test(k)) delete process.env[k];
+  Object.assign(process.env, env);
+  return fn().finally(() => { process.env = saved; });
+}
+
+test('Liste blanche : seules les clés prévues avec un id price_ valide sont retenues', () => {
+  const p = availablePrices({ ...fullEnv(), STRIPE_PRICE_UNIQUE_25: 'https://evil.example', STRIPE_PRICE_UNIQUE_999: PRICE(9) });
+  assert.deepEqual(Object.keys(p.unique).sort(), ['10', 'libre']);
+  assert.deepEqual(Object.keys(p.mensuel), ['10']); // montant libre mensuel jamais accepté
 });
-test('Chaque montant active redirige exclusivement vers son propre lien',()=>{
-  const config=Object.fromEntries(keys.map(k=>[k,`https://buy.stripe.com/test_audit_${k}`]));
-  const s=setup(config);
-  keys.forEach((key,i)=>{s.buttons[i].click();assert.equal(s.submit.disabled,false);s.submit.click();assert.equal(s.redirected.at(-1),config[key]);assert.equal(s.buttons.filter(b=>b.attrs['aria-pressed']==='true').length,1);});
-  assert.equal(s.notice.hidden,true);
+
+test('Dons désactivés tant que DONATIONS_ENABLED, la clé et SITE_URL ne sont pas tous présents', () => {
+  assert.equal(donationsEnabled(fullEnv()), true);
+  assert.equal(donationsEnabled({ ...fullEnv(), DONATIONS_ENABLED: 'false' }), false);
+  assert.equal(donationsEnabled({ ...fullEnv(), STRIPE_SECRET_KEY: '' }), false);
+  assert.equal(donationsEnabled({ ...fullEnv(), SITE_URL: 'http://enavant.org' }), false);
 });
-test('Un montant manquant ne reutilise jamais le lien du montant precedent',()=>{
-  const s=setup({'10':'https://buy.stripe.com/test_audit_10'});
-  s.buttons[0].click();s.submit.click();s.buttons[1].click();s.submit.click();
-  assert.equal(s.submit.disabled,true);assert.equal(s.redirected.length,1);
-  assert.match(s.selection.textContent,/25/);assert.equal(s.notice.hidden,false);
-});
-test('Liens non Stripe, HTTP, secrets et URL trompeuses restent indisponibles',()=>{
-  for(const url of ['sk_test_fictif','javascript:alert(1)','http://buy.stripe.com/test','https://buy.stripe.com.evil.invalid/test','https://buy.stripe.com@evil.invalid/test','https://evil.invalid@buy.stripe.com/test','https://buy.stripe.com:444/test','https://buy.stripe.com/']){
-    const s=setup({'10':url});s.buttons[0].click();s.submit.click();assert.equal(s.submit.disabled,true,url);assert.equal(s.redirected.length,0);
+
+test('GET désactivé : aucun montant exposé', () => withEnv({ ...fullEnv(), DONATIONS_ENABLED: 'false' }, async () => {
+  const r = await call('GET');
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body, { enabled: false, amounts: { unique: [], mensuel: [] } });
+}));
+
+test('POST refusé (503) quand les dons sont fermés', () => withEnv({ ...fullEnv(), DONATIONS_ENABLED: 'false' }, async () => {
+  const r = await call('POST', { frequency: 'unique', amount: '10' });
+  assert.equal(r.status, 503);
+}));
+
+test('POST : clé inconnue ou fréquence invalide → 422, sans appel Stripe', () => withEnv(fullEnv(), async () => {
+  for (const body of [{ frequency: 'unique', amount: '25' }, { frequency: 'mensuel', amount: 'libre' },
+    { frequency: 'annuel', amount: '10' }, { frequency: 'unique', amount: '1e9' }]) {
+    const r = await call('POST', body, { origin: 'https://enavant.org' });
+    assert.equal(r.status, 422, JSON.stringify(body));
   }
-});
-test('Le montant libre est choisi sur sa propre page Stripe',()=>{
-  const s=setup({custom:'https://buy.stripe.com/test_audit_custom'});
-  s.buttons[7].click();assert.match(s.selection.textContent,/directement sur Stripe/);s.submit.click();assert.equal(s.redirected[0],'https://buy.stripe.com/test_audit_custom');
-});
-test('Le retour succes ne pretend pas confirmer un paiement',()=>{
-  const s=setup({},'?statut=succes');assert.match(s.selection.textContent,/connaître le statut/);assert.doesNotMatch(s.selection.textContent,/bien été enregistré/);assert.equal(s.submit.disabled,true);
-});
-test('La configuration livree laisse tous les liens vides',()=>{
-  const context={window:{}};vm.runInNewContext(configCode,context);
-  assert.deepEqual(Object.keys(context.window.EA_DONATION_LINKS).sort(),keys.slice().sort());
-  assert.equal(Object.values(context.window.EA_DONATION_LINKS).every(v=>v===''),true);
-});
+}));
+
+test('POST depuis une autre origine → 403', () => withEnv(fullEnv(), async () => {
+  const r = await call('POST', { frequency: 'unique', amount: '10' }, { origin: 'https://evil.example' });
+  assert.equal(r.status, 403);
+}));
