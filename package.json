@@ -11,7 +11,8 @@
     "dev": "node scripts/dev-server.mjs",
     "dev:vercel": "vercel dev",
     "check": "node scripts/check-project.mjs",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "test": "node --test scripts/test-donations.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
