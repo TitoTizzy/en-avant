@@ -132,8 +132,9 @@ export default async function handler(req, res) {
         .eq('id', memberId);
       if (error) throw error;
 
-      // Ouverture de l'accès + email, uniquement au passage à « approved ».
-      if (status === 'approved' && member.status !== 'approved') {
+      // Ouverture de l'accès + email à chaque clic sur « Approuver »,
+      // y compris pour une fiche déjà approuvée (anciennes adhésions sans compte).
+      if (status === 'approved') {
         try {
           const result = await onApproved(supabase, member);
           return json(res, 200, { ok: true, email_sent: result.emailSent, mode: result.mode });

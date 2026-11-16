@@ -1693,6 +1693,8 @@
 
     const row = button.closest("tr");
     const action = button.dataset.action;
+    if (button.disabled) return; // évite le double envoi pendant la requête
+    button.disabled = true;
     button.classList.add("btn-loading");
     membersStatus("", "");
 
@@ -1749,6 +1751,7 @@
       console.error(error);
       membersStatus("error", error.message || "Action impossible.");
     } finally {
+      button.disabled = false;
       button.classList.remove("btn-loading");
     }
   });
