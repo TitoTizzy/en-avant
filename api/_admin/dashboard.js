@@ -1,5 +1,7 @@
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
+import { onApproved, sendAccessLink, relanceEmail } from '../_lib/adhesion.js';
+import { sendBatchToMembers } from '../_lib/notify.js';
 
 const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -17,7 +19,47 @@ function maskNinu(value, identity) {
   return s.length <= 3 ? '•••' : `${'•'.repeat(Math.max(s.length - 3, 3))}${s.slice(-3)}`;
 }
 
-const maskMembers = (rows, identity) => (rows || []).map((m) => ({ ...m, ninu: maskNinu(m.ninu, identity) }));
+// user_id n'est jamais renvoyé au navigateur : seulement « a un compte ou non ».
+const maskMembers = (rows, identity) => (rows || []).map(({ user_id: userId, ...m }) => ({
+  ...m,
+  ninu: maskNinu(m.ninu, identity),
+  has_account: Boolean(userId),
+}));
+
+const isUuid = (v) => /^[0-9a-f-]{36}$/i.test(String(v || ''));
+const RELANCE_DELAI_MS = 7 * 24 * 3600 * 1000;
+
+/** Comptes « member » sans fiche d'adhésion, non relancés depuis 7 jours. */
+async function relanceTargets(supabase) {
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, email, nom, relance_adhesion_at')
+    .eq('role', 'member')
+    .limit(1000);
+  if (error) throw error;
+  const { data: fiches, error: fichesError } = await supabase
+    .from('members')
+    .select('user_id, email')
+    .limit(5000);
+  if (fichesError) throw fichesError;
+  const linked = new Set(fiches.map((f) => f.user_id).filter(Boolean));
+  const emails = new Set(fiches.map((f) => String(f.email || '').toLowerCase()));
+  const limit = Date.now() - RELANCE_DELAI_MS;
+  return (profiles || []).filter((p) => p.email
+    && !linked.has(p.id)
+    && !emails.has(String(p.email).toLowerCase())
+    && (!p.relance_adhesion_at || new Date(p.relance_adhesion_at).getTime() < limit));
+}
+
+async function loadMember(supabase, memberId) {
+  const { data, error } = await supabase
+    .from('members')
+    .select('id, nom, email, status, user_id')
+    .eq('id', memberId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
 
 /** Totaux des dons encaissés, par devise, calculés en base (fonction SQL donations_totals). */
 async function donationTotals(supabase) {
@@ -38,9 +80,12 @@ export default async function handler(req, res) {
       const memberId = clean(body.member_id);
       const status = clean(body.status);
 
-      if (!/^[0-9a-f-]{36}$/i.test(memberId) || !MEMBER_STATUSES.includes(status)) {
+      if (!isUuid(memberId) || !MEMBER_STATUSES.includes(status)) {
         return json(res, 422, { error: 'Mise à jour invalide.' });
       }
+
+      const member = await loadMember(supabase, memberId);
+      if (!member) return json(res, 404, { error: 'Adhésion introuvable.' });
 
       const { error } = await supabase
         .from('members')
@@ -48,11 +93,62 @@ export default async function handler(req, res) {
         .eq('id', memberId);
       if (error) throw error;
 
+      // Ouverture de l'accès + email, uniquement au passage à « approved ».
+      if (status === 'approved' && member.status !== 'approved') {
+        try {
+          const result = await onApproved(supabase, member);
+          return json(res, 200, { ok: true, email_sent: result.emailSent, mode: result.mode });
+        } catch (approveError) {
+          console.error('Approbation : ouverture du compte impossible', approveError?.message || approveError);
+          return json(res, 200, {
+            ok: true,
+            email_sent: false,
+            warning: 'Adhésion approuvée, mais l’accès n’a pas pu être ouvert. Utilisez « Lien d’accès » pour réessayer.',
+          });
+        }
+      }
       return json(res, 200, { ok: true });
     }
 
+    if (req.method === 'POST') {
+      if (!can(identity, 'voir_membres')) return forbidden(res);
+      const body = getBody(req);
+      const action = clean(body.action);
+
+      if (action === 'access_link') {
+        const memberId = clean(body.member_id);
+        if (!isUuid(memberId)) return json(res, 422, { error: 'Adhésion invalide.' });
+        const member = await loadMember(supabase, memberId);
+        if (!member) return json(res, 404, { error: 'Adhésion introuvable.' });
+        if (member.status !== 'approved') {
+          return json(res, 409, { error: 'Approuvez d’abord cette adhésion.' });
+        }
+        const sent = await sendAccessLink(supabase, member);
+        return json(res, sent ? 200 : 502, sent
+          ? { ok: true }
+          : { error: 'Le lien a été créé mais l’email n’est pas parti. Réessayez dans un instant.' });
+      }
+
+      if (action === 'relance') {
+        const targets = await relanceTargets(supabase);
+        if (body.preview === true) return json(res, 200, { ok: true, count: targets.length });
+        const sentTo = new Set(await sendBatchToMembers(targets.map(relanceEmail)));
+        const ids = targets.filter((t) => sentTo.has(t.email)).map((t) => t.id);
+        if (ids.length) {
+          const { error } = await supabase
+            .from('profiles')
+            .update({ relance_adhesion_at: new Date().toISOString() })
+            .in('id', ids);
+          if (error) throw error;
+        }
+        return json(res, 200, { ok: true, sent: ids.length, failed: targets.length - ids.length });
+      }
+
+      return json(res, 422, { error: 'Action inconnue.' });
+    }
+
     if (req.method !== 'GET') {
-      res.setHeader('Allow', 'GET, PATCH');
+      res.setHeader('Allow', 'GET, PATCH, POST');
       return json(res, 405, { error: 'Méthode non autorisée.' });
     }
 
@@ -76,7 +172,7 @@ export default async function handler(req, res) {
       const configs = {
         members: {
           table: 'members',
-          fields: 'id, nom, ninu, email, ville, status, created_at',
+          fields: 'id, nom, ninu, email, ville, status, created_at, user_id',
           order: 'created_at',
           filters: ['nom', 'ninu', 'email', 'ville'],
         },
@@ -132,7 +228,7 @@ export default async function handler(req, res) {
       seeMembers
         ? supabase
           .from('members')
-          .select('id, nom, ninu, email, ville, status, created_at', { count: 'exact' })
+          .select('id, nom, ninu, email, ville, status, created_at, user_id', { count: 'exact' })
           .order('created_at', { ascending: false })
           .limit(25)
         : empty,

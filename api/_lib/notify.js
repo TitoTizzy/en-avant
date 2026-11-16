@@ -54,21 +54,80 @@ export async function notifyTeam({ subject, title, rows = [], note, adminPath = 
 </div>`;
   const text = `${title}\n\n${rowsText}${note ? `\n\n${note}` : ''}\n\nTableau de bord : ${link}`;
 
+  return deliver({ to, subject: `[enavant.org] ${oneLine(subject, 140)}`, html, text, label: subject });
+}
+
+/** Envoi effectif via Resend, avec délai maximal. Ne lève jamais d'exception. */
+async function deliver({ to, subject, html, text, replyTo, label }) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const send = resend.emails.send({
       from: senderAddress(),
       to,
-      subject: `[enavant.org] ${oneLine(subject, 140)}`,
+      subject,
       html,
       text,
+      ...(replyTo ? { replyTo } : {}),
     });
     const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS));
     const { error } = (await Promise.race([send, timeout])) || {};
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('[notify] échec :', subject, error?.message || error);
+    console.error('[notify] échec :', label || subject, error?.message || error);
     return false;
   }
 }
+
+/** Construit un email adressé à une personne (adhérent). Réponses renvoyées vers contact@. */
+function buildMemberEmail({ to, subject, title, paragraphs = [], cta, footer }) {
+  const replyTo = (process.env.NOTIFY_EMAIL || DEFAULT_TO).split(',')[0].trim();
+  const parasHtml = paragraphs.map((p) => `<p style="font-size:15px;line-height:1.55">${escapeHtml(p)}</p>`).join('');
+  const button = cta
+    ? `<p style="margin:28px 0"><a href="${escapeHtml(cta.url)}" style="background:#ff6a2a;color:#fff;padding:13px 24px;border-radius:999px;text-decoration:none;font-weight:bold">${escapeHtml(cta.label)}</a></p>`
+      + `<p style="color:#5b6b82;font-size:12px">Si le bouton ne fonctionne pas, copiez ce lien : ${escapeHtml(cta.url)}</p>`
+    : '';
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#0e1726">
+  <h2 style="color:#e0551f;margin:0 0 12px">${escapeHtml(title)}</h2>
+  ${parasHtml}${button}
+  <p style="color:#5b6b82;font-size:12px">${escapeHtml(footer || 'En Avant — enavant.org. Pour toute question, répondez simplement à cet email.')}</p>
+</div>`;
+  const text = `${title}\n\n${paragraphs.join('\n\n')}${cta ? `\n\n${cta.label} : ${cta.url}` : ''}`;
+  return { from: senderAddress(), to: [to], subject: oneLine(subject, 140), html, text, replyTo };
+}
+
+/**
+ * Email adressé à une personne. Ne contient jamais de donnée sensible.
+ * Ne lève jamais d'exception.
+ * @param {{ to: string, subject: string, title: string, paragraphs: string[], cta?: { label: string, url: string }, footer?: string }} m
+ * @returns {Promise<boolean>}
+ */
+export async function sendToMember(message) {
+  if (!process.env.RESEND_API_KEY || !message?.to) return false;
+  const { to, subject, html, text, replyTo } = buildMemberEmail(message);
+  return deliver({ to, subject, html, text, replyTo, label: message.subject });
+}
+
+/**
+ * Envoi groupé (API batch de Resend, 100 emails par appel).
+ * @returns {Promise<string[]>} adresses effectivement envoyées.
+ */
+export async function sendBatchToMembers(messages) {
+  if (!process.env.RESEND_API_KEY) return [];
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const sent = [];
+  for (let i = 0; i < messages.length; i += 100) {
+    const chunk = messages.slice(i, i + 100).filter((m) => m?.to);
+    if (!chunk.length) continue;
+    try {
+      const { error } = await resend.batch.send(chunk.map(buildMemberEmail));
+      if (error) throw error;
+      sent.push(...chunk.map((m) => m.to));
+    } catch (error) {
+      console.error('[notify] échec envoi groupé :', error?.message || error);
+    }
+  }
+  return sent;
+}
+
+export { siteUrl };

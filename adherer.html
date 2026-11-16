@@ -133,6 +133,21 @@
             </div>
 
             <div class="ea-field">
+              <label for="adh-pseudo">Pseudo <span style="color:var(--ink-500);font-weight:400;">(affiché dans l'espace membre et le classement du trivia)</span></label>
+              <input
+                type="text"
+                id="adh-pseudo"
+                name="pseudo"
+                autocomplete="nickname"
+                minlength="2"
+                maxlength="30"
+                placeholder="Ex. marie_p"
+                required
+              />
+              <span class="ea-error">Pseudo invalide : 2 à 30 lettres, chiffres, « . », « - » ou « _ ».</span>
+            </div>
+
+            <div class="ea-field">
               <label for="adh-ninu">NINU — Numéro d'Identification Nationale Unique</label>
               <input
                 type="text"
@@ -195,6 +210,39 @@
               </div>
             </div>
 
+            <div class="ea-form-row">
+              <div class="ea-field">
+                <label for="adh-password">Mot de passe</label>
+                <input
+                  type="password"
+                  id="adh-password"
+                  name="password"
+                  autocomplete="new-password"
+                  minlength="10"
+                  placeholder="10 caractères minimum"
+                  required
+                />
+                <span class="ea-error">Mot de passe trop court (10 caractères minimum).</span>
+              </div>
+
+              <div class="ea-field">
+                <label for="adh-confirm">Confirmer le mot de passe</label>
+                <input
+                  type="password"
+                  id="adh-confirm"
+                  name="confirm"
+                  autocomplete="new-password"
+                  placeholder="Retapez votre mot de passe"
+                  required
+                />
+                <span class="ea-error">Les deux mots de passe ne correspondent pas.</span>
+              </div>
+            </div>
+            <p class="ea-hint" style="font-size:.82rem;opacity:.75;margin:-.25rem 0 1rem;">
+              Ce mot de passe vous servira à vous connecter à votre espace membre, une fois votre
+              adresse email confirmée et votre adhésion approuvée.
+            </p>
+
             <!-- Piège anti-spam : doit rester vide -->
             <input
               type="text"
@@ -209,7 +257,7 @@
               <input type="checkbox" id="adh-consent" name="consent" required />
               <span>
                 J'accepte que mes données soient traitées par En Avant dans le cadre de ma
-                demande d'adhésion, conformément à la <a href="/mentions-legales#confidentialite" target="_blank" rel="noopener">politique de confidentialité</a> (en cours de rédaction).
+                demande d'adhésion et de mon compte membre, conformément à la <a href="/mentions-legales#confidentialite" target="_blank" rel="noopener">politique de confidentialité</a> (en cours de rédaction).
               </span>
             </label>
 
@@ -218,6 +266,9 @@
             </button>
 
             <div class="ea-form-status" id="adh-status" role="status" aria-live="polite"></div>
+            <p style="text-align:center;font-size:.9rem;margin-top:1rem;">
+              Déjà un compte ? <a href="/login.html" class="text-link">Connectez-vous</a> pour compléter votre adhésion.
+            </p>
           </form>
         </div>
       </div>
@@ -230,8 +281,13 @@
       <div class="ea-modal-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></div>
       <h3 id="adh-modal-title">Candidature envoyée</h3>
       <p>
-        Merci pour votre engagement. Notre comité d'éthique examinera votre candidature
-        et vous recontactera très vite.
+        Merci pour votre engagement. Deux étapes maintenant :
+      </p>
+      <p>
+        <strong>1.</strong> Confirmez votre adresse grâce à l'email que nous venons de vous envoyer
+        (pensez à vérifier les indésirables).<br />
+        <strong>2.</strong> Notre comité d'éthique examine votre candidature. Vous recevrez un email
+        dès qu'elle sera approuvée : votre espace membre s'ouvrira alors.
       </p>
       <button type="button" class="btn btn-primary btn-full" id="adh-modal-close">Compris</button>
     </div>

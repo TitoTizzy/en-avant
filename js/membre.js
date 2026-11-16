@@ -37,6 +37,15 @@
         .eq("id", session.user.id)
         .maybeSingle();
 
+      // Adhésion pas encore approuvée : pas d'espace membre.
+      if (profile?.role === "pending") {
+        await client.auth.signOut();
+        window.location.href = "/login.html?attente=1";
+        return;
+      }
+
+      loadAdhesion();
+
       const isSuperAdmin = profile?.role === "superadmin";
       const perms = Array.isArray(profile?.permissions) ? profile.permissions : [];
       const hasAdminAccess = isSuperAdmin || perms.includes("acces_dashboard");
@@ -66,6 +75,57 @@
         }
       }
     } catch { /* Silencieux — accès profil indisponible */ }
+  });
+
+  // ─── Fiche d'adhésion (comptes créés avant le formulaire unique) ─────
+  async function loadAdhesion() {
+    try {
+      const { status } = await memberApi("/api/member/adhesion");
+      if (status === "none") document.getElementById("mb-adhesion").hidden = false;
+      if (status === "pending") document.getElementById("mb-adhesion-pending").hidden = false;
+    } catch { /* Silencieux : la bannière est facultative */ }
+  }
+
+  const adhesionForm = document.getElementById("mb-adhesion-form");
+  adhesionForm?.elements.ninu.addEventListener("input", (event) => {
+    event.target.value = event.target.value.replace(/\D/g, "").slice(0, 10);
+  });
+  adhesionForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const status = document.getElementById("mb-adhesion-status");
+    const f = adhesionForm.elements;
+    const show = (msg, type) => { status.textContent = msg; status.className = `membre-form-status ${type}`; };
+
+    if (!f.sexe.value || !/^1\d{9}$/.test(f.ninu.value) || f.telephone.value.replace(/\D/g, "").length < 8
+      || f.ville.value.trim().length < 2) {
+      show("Vérifiez les champs : NINU à 10 chiffres commençant par 1, téléphone et ville requis.", "error");
+      return;
+    }
+    if (!f.consent.checked) {
+      show("Merci de cocher la case de consentement.", "error");
+      return;
+    }
+
+    const button = adhesionForm.querySelector("button[type='submit']");
+    button.disabled = true;
+    try {
+      await memberApi("/api/member/adhesion", {
+        method: "POST",
+        body: JSON.stringify({
+          sexe: f.sexe.value,
+          ninu: f.ninu.value,
+          telephone: f.telephone.value.trim(),
+          ville: f.ville.value.trim(),
+          consent: true,
+        }),
+      });
+      document.getElementById("mb-adhesion").hidden = true;
+      document.getElementById("mb-adhesion-pending").hidden = false;
+    } catch (error) {
+      show(error.message || "Envoi impossible pour le moment.", "error");
+    } finally {
+      button.disabled = false;
+    }
   });
 
   // Déconnexion

@@ -1,14 +1,17 @@
-// POST /api/members — Inscription adhérent (DAT Branche 1 §3)
-// Formulaire HTML natif → validation serveur → INSERT Supabase `members`.
-// La table est protégée par RLS : seule cette route (service_role) peut écrire.
-import { getServiceClient } from './_lib/supabase.js';
+// POST /api/members — Formulaire unique d'adhésion (/adherer).
+//
+// Crée en une fois :
+//   1. le compte de connexion (Supabase Auth, signUp → email de confirmation) ;
+//   2. la fiche d'adhésion (`members`, statut « pending »), reliée au compte.
+// Le compte démarre avec le rôle « pending » : l'espace membre ne s'ouvre
+// qu'après approbation de la fiche dans le tableau de bord.
+import { getAnonClient, getServiceClient } from './_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError,
-  isEmail, isText, isPhone, clean, enforceRateLimit,
+  isEmail, isText, clean, enforceRateLimit,
 } from './_lib/http.js';
-import { notifyTeam } from './_lib/notify.js';
-
-const SEXES = ['femme', 'homme', 'autre'];
+import { notifyTeam, siteUrl } from './_lib/notify.js';
+import { validateFiche, duplicateFicheMessage } from './_lib/adhesion.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
@@ -23,53 +26,124 @@ export default async function handler(req, res) {
     }
 
     const nom = clean(body.nom);
-    const sexe = clean(body.sexe).toLowerCase();
-    const ninu = clean(body.ninu).replace(/\D/g, '');
+    const pseudo = clean(body.pseudo).slice(0, 30);
     const email = clean(body.email).toLowerCase();
-    const telephone = clean(body.telephone);
-    const ville = clean(body.ville);
+    const password = String(body.password || '');
+    const { values: fiche, errors } = validateFiche(body);
 
-    const errors = {};
     if (!isText(nom, 2, 120)) errors.nom = 'Nom invalide (2 à 120 caractères).';
-    if (!SEXES.includes(sexe)) errors.sexe = 'Valeur non reconnue.';
-    if (!/^1\d{9}$/.test(ninu)) errors.ninu = 'NINU invalide : 10 chiffres requis (carte ONI).';
+    if (!/^[\p{L}\p{N}_.-]{2,30}$/u.test(pseudo)) {
+      errors.pseudo = 'Pseudo invalide : 2 à 30 lettres, chiffres, « . », « - » ou « _ ».';
+    }
     if (!isEmail(email)) errors.email = 'Adresse email invalide.';
-    if (!isPhone(telephone)) errors.telephone = 'Numéro de téléphone invalide.';
-    if (!isText(ville, 2, 80)) errors.ville = 'Ville invalide.';
-    if (body.consent !== true) errors.consent = 'Le consentement RGPD est requis.';
+    if (password.length < 10) errors.password = 'Mot de passe trop court (10 caractères minimum).';
+    if (password.length > 200) errors.password = 'Mot de passe trop long.';
 
     if (Object.keys(errors).length > 0) {
       return json(res, 422, { error: 'Formulaire invalide.', fields: errors });
     }
 
     const supabase = getServiceClient();
-    const { error } = await supabase.from('members').insert({
-      nom, sexe, ninu, email, telephone, ville,
-      consent: true,
-      status: 'pending',
+
+    // Doublons détectés AVANT de créer le compte (évite un compte orphelin).
+    for (const [column, value] of [['ninu', fiche.ninu], ['email', email]]) {
+      const { data: existing, error: dupError } = await supabase
+        .from('members')
+        .select('id')
+        .eq(column, value)
+        .limit(1);
+      if (dupError) throw dupError;
+      if (existing?.length) {
+        const dup = duplicateFicheMessage({ message: column });
+        return json(res, 409, { error: dup.error, fields: { [dup.field]: dup.error } });
+      }
+    }
+
+    const { data: pseudoTaken, error: pseudoError } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('username', pseudo.replace(/[%_\\]/g, '\\$&'))
+      .limit(1);
+    if (pseudoError) throw pseudoError;
+    if (pseudoTaken?.length) {
+      const message = 'Ce pseudo est déjà utilisé : choisissez-en un autre.';
+      return json(res, 409, { error: message, fields: { pseudo: message } });
+    }
+
+    // 1. Compte de connexion (email de confirmation envoyé par Supabase).
+    const { data, error } = await getAnonClient().auth.signUp({
+      email,
+      password,
+      options: {
+        data: { nom, pseudo, username: pseudo },
+        emailRedirectTo: `${siteUrl()}/login?confirme=1`,
+      },
     });
 
     if (error) {
-      if (error.code === '23505') {
-        const surNinu = /ninu/i.test(`${error.message} ${error.details || ''}`);
-        return json(res, 409, {
-          error: surNinu
-            ? 'Ce NINU est déjà associé à une candidature.'
-            : 'Cette adresse email a déjà soumis une candidature.',
-        });
+      if (/password/i.test(error.message || '')) {
+        const message = 'Mot de passe refusé : choisissez-en un plus robuste.';
+        return json(res, 422, { error: message, fields: { password: message } });
+      }
+      if (/already registered|already been registered/i.test(error.message || '')) {
+        return json(res, 409, alreadyAccount());
       }
       throw error;
+    }
+
+    // Adresse déjà inscrite : Supabase renvoie un utilisateur sans identité.
+    const user = data?.user;
+    if (!user || (Array.isArray(user.identities) && user.identities.length === 0)) {
+      return json(res, 409, alreadyAccount());
+    }
+
+    // 2. Profil : rôle « pending » explicite (le défaut SQL l'est aussi).
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ role: 'pending', nom, username: pseudo })
+      .eq('id', user.id);
+
+    // 3. Fiche d'adhésion reliée au compte.
+    const { error: insertError } = profileError
+      ? { error: profileError }
+      : await supabase.from('members').insert({
+        nom,
+        email,
+        ...fiche,
+        consent: true,
+        status: 'pending',
+        user_id: user.id,
+      });
+
+    if (insertError) {
+      // Pas de compte sans fiche : on annule la création du compte.
+      await supabase.auth.admin.deleteUser(user.id).catch((e) => console.error('Rollback compte :', e?.message));
+      if (insertError.code === '23505') {
+        const dup = duplicateFicheMessage(insertError);
+        return json(res, 409, { error: dup.error, fields: { [dup.field]: dup.error } });
+      }
+      throw insertError;
     }
 
     await notifyTeam({
       subject: `Nouvelle demande d'adhésion — ${nom}`,
       title: 'Nouvelle demande d’adhésion',
-      rows: [['Nom', nom], ['Ville', ville]],
-      note: 'Email, téléphone et NINU sont consultables dans le tableau de bord (onglet Membres).',
+      rows: [['Nom', nom], ['Pseudo', pseudo], ['Ville', fiche.ville]],
+      note: 'Email, téléphone et NINU sont consultables dans le tableau de bord (onglet Membres). '
+        + 'L’accès à l’espace membre s’ouvrira quand vous approuverez la demande.',
     });
 
-    return json(res, 201, { ok: true, message: 'Candidature enregistrée.' });
+    return json(res, 201, {
+      ok: true,
+      message: 'Candidature enregistrée. Confirmez votre adresse email via le lien reçu ; '
+        + 'votre espace membre s’ouvrira dès que votre adhésion sera approuvée.',
+    });
   } catch (error) {
-    return handleError(res, error);
+    return handleError(res, error, 'Inscription momentanément indisponible.');
   }
+}
+
+function alreadyAccount() {
+  const message = 'Un compte existe déjà avec cette adresse : connectez-vous pour compléter votre adhésion depuis votre espace membre.';
+  return { error: message, fields: { email: message }, login: true };
 }

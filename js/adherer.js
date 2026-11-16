@@ -1,5 +1,6 @@
 /* ==========================================================================
    EN AVANT — ADHÉSION
+   Formulaire unique : fiche d'adhésion + compte membre (pseudo, mot de passe).
    Validation temps réel + envoi sécurisé vers /api/members (Vercel Function).
    Aucune clé ni accès direct à la base : tout passe par le backend.
    ========================================================================== */
@@ -15,6 +16,7 @@
   const modal = document.getElementById("adh-modal");
   const modalClose = document.getElementById("adh-modal-close");
   const ninuInput = document.getElementById("adh-ninu");
+  const passwordInput = document.getElementById("adh-password");
 
   const RULES = {
     nom: (v) => v.trim().length >= 2 && v.trim().length <= 120,
@@ -23,6 +25,9 @@
     email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()),
     telephone: (v) => (v.replace(/\D/g, "").length >= 8 && v.trim().length <= 25),
     ville: (v) => v.trim().length >= 2 && v.trim().length <= 80,
+    pseudo: (v) => /^[\p{L}\p{N}_.-]{2,30}$/u.test(v.trim()),
+    password: (v) => v.length >= 10 && v.length <= 200,
+    confirm: (v) => v.length > 0 && v === passwordInput.value,
   };
 
   const fieldOf = (input) => input.closest(".ea-field");
@@ -93,6 +98,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nom: data.nom.trim(),
+          pseudo: data.pseudo.trim(),
+          password: data.password,
           sexe: data.sexe,
           ninu: data.ninu.replace(/\D/g, ""),
           email: data.email.trim().toLowerCase(),
@@ -106,11 +113,13 @@
       const payload = await response.json().catch(() => ({}));
 
       if (response.status === 409) {
-        if (/ninu/i.test(payload.error || "")) {
-          const field = fieldOf(ninuInput);
+        Object.keys(payload.fields || {}).forEach((name) => {
+          const input = form.elements.namedItem(name);
+          const field = input && fieldOf(input);
+          if (!field) return;
           field.classList.add("is-invalid");
-          ninuInput.setAttribute("aria-invalid", "true");
-        }
+          input.setAttribute("aria-invalid", "true");
+        });
         showStatus(
           "error",
           payload.error || "Une candidature existe déjà avec ces informations."
@@ -137,6 +146,7 @@
       }
 
       form.reset();
+      passwordInput.value = "";
       form.querySelectorAll(".ea-field").forEach((f) =>
         f.classList.remove("is-valid", "is-invalid")
       );

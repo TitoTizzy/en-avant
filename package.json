@@ -12,7 +12,7 @@
     "dev:vercel": "vercel dev",
     "check": "node scripts/check-project.mjs",
     "deploy": "vercel --prod",
-    "test": "node --no-experimental-require-module --test scripts/test-imports.mjs scripts/test-donations.mjs scripts/test-notifications.mjs"
+    "test": "node --no-experimental-require-module --test scripts/test-imports.mjs scripts/test-donations.mjs scripts/test-notifications.mjs scripts/test-adhesion.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
