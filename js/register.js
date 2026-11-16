@@ -55,7 +55,7 @@
     setFieldError(emailInput, "err-email", !emailOk);
     if (!emailOk) ok = false;
 
-    const pwOk = password.length >= 8;
+    const pwOk = password.length >= 10;
     setFieldError(passwordInput, "err-password", !pwOk);
     if (!pwOk) ok = false;
 

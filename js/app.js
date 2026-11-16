@@ -189,16 +189,21 @@ async function hydrateLeaderboard() {
     const RANKS = ["gold", "silver", "bronze"];
     const top5  = payload.leaderboard.slice(0, 5);
 
-    rows.innerHTML = top5.map((entry, i) => {
-      const rankClass = RANKS[i] || "";
-      const pseudo    = (entry.pseudo || "—").slice(0, 20);
-      const score     = `${entry.score}/${entry.total || 8}`;
-      return `<div class="lb-lb-row">
-        <span class="lb-lb-rank${rankClass ? ` ${rankClass}` : ""}">${i + 1}</span>
-        <span class="lb-lb-name">${pseudo}</span>
-        <span class="lb-lb-score">${score}</span>
-      </div>`;
-    }).join("");
+    rows.replaceChildren(...top5.map((entry, i) => {
+      const row = document.createElement("div");
+      row.className = "lb-lb-row";
+      const rank = document.createElement("span");
+      rank.className = `lb-lb-rank${RANKS[i] ? ` ${RANKS[i]}` : ""}`;
+      rank.textContent = String(i + 1);
+      const name = document.createElement("span");
+      name.className = "lb-lb-name";
+      name.textContent = String(entry.pseudo || "—").slice(0, 20);
+      const score = document.createElement("span");
+      score.className = "lb-lb-score";
+      score.textContent = `${Number(entry.score) || 0}/${Number(entry.total) || 8}`;
+      row.append(rank, name, score);
+      return row;
+    }));
 
     overlay.hidden = true;
   } catch {

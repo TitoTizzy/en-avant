@@ -4,6 +4,7 @@
 // PATCH : { id, titre?, categorie?, contenu?, excerpt? } → modifie un brouillon personnel
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
+import { sanitizeArticleHtml } from '../_lib/sanitize.js';
 
 const CATEGORIES = [
   'actualite', 'politique', 'economie', 'societe',
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const titre   = clean(body.titre);
       const categorie = clean(body.categorie);
-      const contenu = String(body.contenu || '').trim();
+      const contenu = sanitizeArticleHtml(body.contenu);
       const excerpt = clean(body.excerpt).slice(0, 300) || null;
 
       if (!isText(titre, 3, 200))         return json(res, 422, { error: 'Titre requis (3 à 200 caractères).' });
@@ -109,7 +110,7 @@ export default async function handler(req, res) {
       }
       if ('excerpt' in body) updates.excerpt = clean(body.excerpt).slice(0, 300) || null;
       if ('contenu' in body) {
-        const contenu = String(body.contenu || '').trim();
+        const contenu = sanitizeArticleHtml(body.contenu);
         if (contenu.length < 20) return json(res, 422, { error: 'Contenu trop court.' });
         updates.contenu = contenu;
       }
