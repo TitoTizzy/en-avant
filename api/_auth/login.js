@@ -46,6 +46,22 @@ export default async function handler(req, res) {
       .eq('id', data.user.id)
       .maybeSingle();
 
+    // Adhésion pas encore approuvée : la session n'est pas remise au navigateur.
+    if (!profile || profile.role === 'pending') {
+      await service.auth.admin.signOut(data.session.access_token).catch(() => {});
+      const { data: fiche } = await service
+        .from('members')
+        .select('status')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+      return json(res, 403, {
+        pending: true,
+        error: fiche?.status === 'rejected'
+          ? 'Votre demande d’adhésion n’a pas été retenue. Pour toute question : contact@enavant.org.'
+          : 'Votre adhésion est en cours d’examen. Vous recevrez un email dès qu’elle sera approuvée.',
+      });
+    }
+
     return json(res, 200, {
       ok: true,
       role: profile?.role || 'readonly',

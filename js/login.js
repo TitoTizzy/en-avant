@@ -25,14 +25,11 @@
     statusBox.textContent = message;
   };
 
-  // Message de succès après une inscription réussie
-  if (sessionStorage.getItem("ea-register-success")) {
-    sessionStorage.removeItem("ea-register-success");
-    showStatus("success", "Compte créé. Confirmez votre adresse grâce à l'email que nous venons de vous envoyer, puis connectez-vous.");
-  }
-
-  if (new URLSearchParams(window.location.search).get("confirme") === "1") {
-    showStatus("success", "Adresse email confirmée. Vous pouvez vous connecter.");
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("confirme") === "1") {
+    showStatus("success", "Adresse email confirmée. Si votre adhésion est déjà approuvée, vous pouvez vous connecter ; sinon, vous recevrez un email dès son approbation.");
+  } else if (params.get("attente") === "1") {
+    showStatus("error", "Votre adhésion est en cours d'examen. Vous recevrez un email dès qu'elle sera approuvée.");
   }
 
   if (!configured) {

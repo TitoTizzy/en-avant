@@ -5,13 +5,16 @@
   "functions": {
     "api/trivia.js": { "maxDuration": 60 }
   },
+  "redirects": [
+    { "source": "/register", "destination": "/adherer", "permanent": true },
+    { "source": "/register.html", "destination": "/adherer", "permanent": true }
+  ],
   "crons": [
     { "path": "/api/cron/digest", "schedule": "0 12 * * *" }
   ],
   "rewrites": [
     { "source": "/api/auth/login",        "destination": "/api/auth?action=login" },
     { "source": "/api/auth/logout",       "destination": "/api/auth?action=logout" },
-    { "source": "/api/auth/register",     "destination": "/api/auth?action=register" },
     { "source": "/api/auth/verify-pin",   "destination": "/api/auth?action=verify-pin" },
     { "source": "/api/auth/touch-pin",    "destination": "/api/auth?action=touch-pin" },
     { "source": "/api/auth/change-pin",   "destination": "/api/auth?action=change-pin" },
@@ -29,7 +32,8 @@
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
     { "source": "/api/trivia/generate-session", "destination": "/api/trivia?action=generate-session" },
-    { "source": "/api/member/articles",         "destination": "/api/member?action=articles" }
+    { "source": "/api/member/articles",         "destination": "/api/member?action=articles" },
+    { "source": "/api/member/adhesion",         "destination": "/api/member?action=adhesion" }
   ],
   "headers": [
     {

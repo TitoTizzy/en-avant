@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 
   try {
     // Membre ou superadmin — pas de PIN requis pour le quiz
-    const { user } = await requireRole(req, ['member', 'superadmin'], { requirePin: false });
+    const { user } = await requireRole(req, ['member', 'editor', 'superadmin'], { requirePin: false });
     const supabase = getServiceClient();
 
     const serveBank = async (reason) => {

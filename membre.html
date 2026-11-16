@@ -328,6 +328,24 @@
       font-style: italic;
     }
     .membre-loading { color: rgba(255,255,255,.35); font-size: .85rem; }
+
+    .membre-adhesion {
+      width: 100%; max-width: 820px; margin-bottom: 1.5rem;
+      background: rgba(255,106,42,.06); border: 1px solid rgba(255,106,42,.35);
+      border-radius: 1.1rem; padding: 1.4rem 1.6rem;
+    }
+    .membre-adhesion-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+    .membre-adhesion-head i { font-size: 1.4rem; color: var(--accent, #ff6a2a); margin-top: .2rem; }
+    .membre-adhesion-head h2 { font-size: 1.1rem; margin: 0 0 .25rem; }
+    .membre-adhesion-head p { margin: 0; font-size: .88rem; color: rgba(255,255,255,.6); }
+    .membre-adhesion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .9rem; margin-bottom: 1rem; }
+    .membre-adhesion-grid label { display: flex; flex-direction: column; gap: .35rem; font-size: .82rem; color: rgba(255,255,255,.7); }
+    .membre-adhesion-grid input, .membre-adhesion-grid select {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: .6rem;
+      padding: .6rem .75rem; color: inherit; font: inherit;
+    }
+    .membre-adhesion-consent { display: flex; gap: .6rem; font-size: .8rem; color: rgba(255,255,255,.6); margin-bottom: 1rem; }
+    .membre-adhesion-note { width: 100%; max-width: 820px; margin: 0 0 1.5rem; font-size: .88rem; color: rgba(255,255,255,.6); }
   </style>
 </head>
 
@@ -341,6 +359,48 @@
         Membre En Avant
       </span>
     </div>
+
+    <section class="membre-adhesion" id="mb-adhesion" hidden>
+      <div class="membre-adhesion-head">
+        <i class="fa-solid fa-id-card" aria-hidden="true"></i>
+        <div>
+          <h2>Complétez votre adhésion</h2>
+          <p>Votre compte est actif, mais votre fiche d'adhésion n'est pas encore remplie. Cela prend une minute.</p>
+        </div>
+      </div>
+      <form id="mb-adhesion-form" novalidate>
+        <div class="membre-adhesion-grid">
+          <label>Sexe
+            <select name="sexe" required>
+              <option value="" selected disabled>Choisir…</option>
+              <option value="femme">Femme</option>
+              <option value="homme">Homme</option>
+              <option value="autre">Autre / Préfère ne pas dire</option>
+            </select>
+          </label>
+          <label>NINU (10 chiffres)
+            <input name="ninu" inputmode="numeric" maxlength="10" autocomplete="off" required>
+          </label>
+          <label>Téléphone
+            <input name="telephone" type="tel" autocomplete="tel" placeholder="+509 0000-0000" required>
+          </label>
+          <label>Ville
+            <input name="ville" autocomplete="address-level2" required>
+          </label>
+        </div>
+        <label class="membre-adhesion-consent">
+          <input type="checkbox" name="consent" required>
+          <span>J'accepte que ces données soient traitées par En Avant pour ma demande d'adhésion,
+            conformément à la <a href="/mentions-legales#confidentialite" target="_blank" rel="noopener">politique de confidentialité</a>.</span>
+        </label>
+        <button type="submit" class="btn btn-primary">Envoyer ma fiche</button>
+        <p class="membre-form-status" id="mb-adhesion-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <p class="membre-adhesion-note" id="mb-adhesion-pending" hidden>
+      <i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
+      Votre fiche d'adhésion est en cours d'examen par le comité d'éthique.
+    </p>
 
     <div class="membre-grid reveal-up">
       <a href="/trivia.html" class="membre-card membre-card--ia">

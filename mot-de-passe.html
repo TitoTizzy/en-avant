@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/pictures/logo/logo.png">
+  <title>Choisir mon mot de passe | En Avant</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <meta name="theme-color" content="#071229">
+</head>
+
+<body>
+  <main class="auth-wrap">
+    <div class="ea-glass-card auth-card">
+      <a href="/index.html" class="brand" aria-label="Retour à l'accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant">
+      </a>
+
+      <span class="eyebrow">Espace membre</span>
+      <h1 class="section-title" style="font-size:1.9rem; margin-bottom:1.6rem;">Choisir mon mot de passe</h1>
+
+      <p class="u-note" id="pw-checking" style="margin:0 0 1.4rem;">
+        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Vérification du lien…
+      </p>
+
+      <form id="pw-form" hidden novalidate>
+        <div class="ea-field">
+          <label for="pw-password">Nouveau mot de passe</label>
+          <input type="password" id="pw-password" autocomplete="new-password" minlength="10" placeholder="10 caractères minimum" required>
+          <span class="ea-error">Mot de passe trop court (10 caractères minimum).</span>
+        </div>
+        <div class="ea-field">
+          <label for="pw-confirm">Confirmer le mot de passe</label>
+          <input type="password" id="pw-confirm" autocomplete="new-password" placeholder="Retapez votre mot de passe" required>
+          <span class="ea-error">Les deux mots de passe ne correspondent pas.</span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-full" id="pw-submit">
+          <i class="fa-solid fa-key" aria-hidden="true"></i> Enregistrer
+        </button>
+      </form>
+
+      <div class="ea-form-status" id="pw-status" role="status" aria-live="polite"></div>
+
+      <p style="margin:1.6rem 0 0; text-align:center; font-size:0.9rem;">
+        <a href="/login.html" class="text-link" style="font-size:0.9rem;">Aller à la connexion</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/env.js"></script>
+  <script src="/js/mot-de-passe.js"></script>
+</body>
+</html>

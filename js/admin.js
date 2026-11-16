@@ -304,13 +304,14 @@
       <tr data-id="${esc(member.id)}">
         <td>${esc(member.nom)}</td>
         <td style="font-variant-numeric:tabular-nums;">${esc(member.ninu || "—")}</td>
-        <td>${esc(member.email)}</td>
+        <td>${esc(member.email)}${member.has_account === false ? ' <i class="fa-solid fa-user-slash" title="Pas encore de compte de connexion" aria-label="Pas de compte"></i>' : ""}</td>
         <td>${esc(member.ville)}</td>
         <td>${fmtDate(member.created_at)}</td>
         <td><span class="badge ${esc(member.status)}">${esc(member.status)}</span></td>
         <td style="white-space:nowrap;">
           <button class="btn btn-ghost btn-xs" data-action="approved" type="button">Approuver</button>
           <button class="btn btn-ghost btn-xs" data-action="rejected" type="button">Rejeter</button>
+          <button class="btn btn-ghost btn-xs" data-action="access_link" type="button" title="Envoie un lien sécurisé pour choisir son mot de passe"${member.status === "approved" ? "" : " hidden"}>Lien d'accès</button>
         </td>
       </tr>
     `).join("");
@@ -1656,24 +1657,75 @@
     document.getElementById("integrations-refresh")?.addEventListener("click", loadIntegrations);
   }
 
+  const membersStatus = (type, message) => {
+    const box = document.getElementById("members-status");
+    if (!box) return;
+    box.className = `ea-form-status ${type}`;
+    box.textContent = message;
+  };
+
   document.getElementById("tbl-members").addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
 
     const row = button.closest("tr");
-    const status = button.dataset.action;
+    const action = button.dataset.action;
     button.classList.add("btn-loading");
+    membersStatus("", "");
 
     try {
-      await api("/api/admin/dashboard", {
+      if (action === "access_link") {
+        await api("/api/admin/dashboard", {
+          method: "POST",
+          body: JSON.stringify({ action: "access_link", member_id: row.dataset.id }),
+        });
+        membersStatus("success", "Lien d'accès envoyé par email.");
+        return;
+      }
+
+      const payload = await api("/api/admin/dashboard", {
         method: "PATCH",
-        body: JSON.stringify({ member_id: row.dataset.id, status }),
+        body: JSON.stringify({ member_id: row.dataset.id, status: action }),
       });
       const badge = row.querySelector(".badge");
-      badge.className = `badge ${status}`;
-      badge.textContent = status;
+      badge.className = `badge ${action}`;
+      badge.textContent = action;
+      const linkBtn = row.querySelector('button[data-action="access_link"]');
+      if (linkBtn) linkBtn.hidden = action !== "approved";
+
+      if (payload.warning) membersStatus("error", payload.warning);
+      else if (action === "approved" && payload.email_sent === true) membersStatus("success", "Adhésion approuvée : accès ouvert et email envoyé.");
+      else if (action === "approved" && payload.email_sent === false) membersStatus("error", "Adhésion approuvée et accès ouvert, mais l'email n'est pas parti. Utilisez « Lien d'accès » ou prévenez la personne.");
     } catch (error) {
       console.error(error);
+      membersStatus("error", error.message || "Action impossible.");
+    } finally {
+      button.classList.remove("btn-loading");
+    }
+  });
+
+  document.getElementById("members-relance")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.classList.add("btn-loading");
+    try {
+      const { count } = await api("/api/admin/dashboard", {
+        method: "POST",
+        body: JSON.stringify({ action: "relance", preview: true }),
+      });
+      if (!count) {
+        membersStatus("success", "Aucun compte à relancer (tous ont une fiche, ou ont été relancés il y a moins de 7 jours).");
+        return;
+      }
+      if (!window.confirm(`Envoyer l'email « Complétez votre adhésion » à ${count} compte(s) ?`)) return;
+      const result = await api("/api/admin/dashboard", {
+        method: "POST",
+        body: JSON.stringify({ action: "relance" }),
+      });
+      membersStatus(result.failed ? "error" : "success",
+        `Relance envoyée à ${result.sent} compte(s)${result.failed ? `, ${result.failed} échec(s) : réessayez plus tard` : ""}.`);
+    } catch (error) {
+      console.error(error);
+      membersStatus("error", error.message || "Relance impossible.");
     } finally {
       button.classList.remove("btn-loading");
     }
@@ -2634,7 +2686,7 @@
     const form = document.getElementById("user-create-form");
     if (!host) return;
 
-    const ROLE_LABELS = { superadmin: "SuperAdmin", editor: "Éditeur", readonly: "Lecture seule", member: "Membre" };
+    const ROLE_LABELS = { superadmin: "SuperAdmin", editor: "Éditeur", readonly: "Lecture seule", member: "Membre", pending: "Adhésion en attente" };
     const ROLE_KEYS = ["editor", "readonly", "member", "superadmin"];
     const ALL_PERMISSIONS = [
       { key: "acces_dashboard",    label: "Accès au dashboard admin" },
@@ -2692,6 +2744,7 @@
             <span>${esc(u.email || "")}</span>
           </div>
           <select class="ea-select-sm user-role-select" data-id="${esc(u.id)}" aria-label="Rôle">
+            ${u.role === "pending" ? `<option value="pending" selected disabled>${ROLE_LABELS.pending}</option>` : ""}
             ${ROLE_KEYS.map((r) => `<option value="${r}" ${u.role === r ? "selected" : ""}>${ROLE_LABELS[r]}</option>`).join("")}
           </select>
           <button class="btn btn-ghost btn-xs user-delete" data-id="${esc(u.id)}" title="Supprimer le compte" ${isMe ? "disabled" : ""}>
