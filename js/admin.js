@@ -505,6 +505,9 @@
           load();
         }
       });
+      // Charge la 1re page avec le total réel (le tableau de bord initial ne le
+      // fournit pas : sans cela, « Suivant » restait inactif).
+      load();
       tools.querySelector(".list-export").addEventListener("click", async (event) => {
         const button = event.currentTarget;
         button.classList.add("btn-loading");
