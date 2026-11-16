@@ -1,5 +1,5 @@
 // /api/admin/users — Gestion des comptes d'accès (SuperAdmin + PIN requis).
-// GET    : liste des profils (comptes)
+// GET    : liste des utilisateurs (SuperAdmin, Éditeur, Lecture seule)
 // POST   : { email, password, nom, username, role } → crée un compte Auth + rôle
 // PATCH  : { id, role }                              → change le rôle
 // DELETE : { id }                                    → supprime le compte
@@ -7,6 +7,9 @@ import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isEmail, isText } from '../_lib/http.js';
 
 const ROLES = ['superadmin', 'editor', 'readonly', 'member'];
+// « Utilisateurs » = comptes d'administration ajoutés par un SuperAdmin.
+// Les membres (adhérents) sont gérés dans l'onglet Membres.
+const STAFF_ROLES = ['superadmin', 'editor', 'readonly'];
 const isUuid = (v) => /^[0-9a-f-]{36}$/i.test(String(v || ''));
 
 export default async function handler(req, res) {
@@ -19,6 +22,7 @@ export default async function handler(req, res) {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, username, nom, role, permissions, created_at')
+        .in('role', STAFF_ROLES)
         .order('created_at', { ascending: true })
         .limit(500);
       if (error) throw error;

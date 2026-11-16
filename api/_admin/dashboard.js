@@ -19,12 +19,51 @@ function maskNinu(value, identity) {
   return s.length <= 3 ? '•••' : `${'•'.repeat(Math.max(s.length - 3, 3))}${s.slice(-3)}`;
 }
 
-// user_id n'est jamais renvoyé au navigateur : seulement « a un compte ou non ».
-const maskMembers = (rows, identity) => (rows || []).map(({ user_id: userId, ...m }) => ({
-  ...m,
-  ninu: maskNinu(m.ninu, identity),
-  has_account: Boolean(userId),
-}));
+const STAFF_ROLES = ['superadmin', 'editor', 'readonly'];
+
+/** Statut du compte rattaché à une fiche : aucun | en_attente | actif. */
+const accountState = (role) => {
+  if (!role) return 'aucun';
+  return role === 'pending' ? 'en_attente' : 'actif';
+};
+
+// user_id n'est jamais renvoyé au navigateur : seulement l'état du compte.
+const maskMembers = (rows, identity, roles = new Map()) => (rows || []).map(({ user_id: userId, ...m }) => {
+  const role = userId ? roles.get(userId) : null;
+  return {
+    ...m,
+    ninu: maskNinu(m.ninu, identity),
+    has_account: Boolean(userId),
+    account: accountState(role),
+    is_user: STAFF_ROLES.includes(role),
+    can_promote: role === 'member',
+  };
+});
+
+/** Rôles des comptes rattachés aux fiches affichées. */
+async function rolesFor(supabase, rows) {
+  const ids = [...new Set((rows || []).map((r) => r.user_id).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const { data, error } = await supabase.from('profiles').select('id, role').in('id', ids);
+  if (error) throw error;
+  return new Map((data || []).map((p) => [p.id, p.role]));
+}
+
+/** Comptes membres (ou en attente) sans fiche d'adhésion. */
+async function accountsWithoutFiche(supabase) {
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, email, nom, username, role, created_at, relance_adhesion_at')
+    .in('role', ['member', 'pending'])
+    .order('created_at', { ascending: true })
+    .limit(1000);
+  if (error) throw error;
+  const { data: fiches, error: fichesError } = await supabase.from('members').select('user_id, email').limit(5000);
+  if (fichesError) throw fichesError;
+  const linked = new Set(fiches.map((f) => f.user_id).filter(Boolean));
+  const emails = new Set(fiches.map((f) => String(f.email || '').toLowerCase()));
+  return (profiles || []).filter((p) => !linked.has(p.id) && !emails.has(String(p.email || '').toLowerCase()));
+}
 
 const isUuid = (v) => /^[0-9a-f-]{36}$/i.test(String(v || ''));
 const RELANCE_DELAI_MS = 7 * 24 * 3600 * 1000;
@@ -129,6 +168,24 @@ export default async function handler(req, res) {
           : { error: 'Le lien a été créé mais l’email n’est pas parti. Réessayez dans un instant.' });
       }
 
+      if (action === 'promote') {
+        // Membre → utilisateur (Éditeur, sans permission cochée). SuperAdmin + PIN.
+        if (!identity.isSuperAdmin) return forbidden(res);
+        let userId = clean(body.user_id);
+        const memberId = clean(body.member_id);
+        if (!userId && isUuid(memberId)) userId = (await loadMember(supabase, memberId))?.user_id || '';
+        if (!isUuid(userId)) return json(res, 409, { error: 'Ce membre n’a pas encore de compte : envoyez-lui d’abord son lien d’accès.' });
+        const { data: updated, error } = await supabase
+          .from('profiles')
+          .update({ role: 'editor', permissions: [] })
+          .eq('id', userId)
+          .eq('role', 'member')
+          .select('id');
+        if (error) throw error;
+        if (!updated?.length) return json(res, 409, { error: 'Seul un membre au compte actif peut être promu.' });
+        return json(res, 200, { ok: true });
+      }
+
       if (action === 'relance') {
         const targets = await relanceTargets(supabase);
         if (body.preview === true) return json(res, 200, { ok: true, count: targets.length });
@@ -150,6 +207,29 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
       if (!can(identity, 'voir_membres')) return forbidden(res);
       const memberId = clean(getBody(req).member_id || req.query?.member_id);
+      const accountId = clean(getBody(req).user_id || req.query?.user_id);
+
+      // Compte membre sans fiche (section « Comptes sans fiche »).
+      if (!memberId && isUuid(accountId)) {
+        if (accountId === identity.user.id) return json(res, 403, { error: 'Vous ne pouvez pas supprimer votre propre compte.' });
+        const { data: target, error: targetError } = await supabase
+          .from('profiles').select('role, nom, email').eq('id', accountId).maybeSingle();
+        if (targetError) throw targetError;
+        if (!target) return json(res, 404, { error: 'Compte introuvable.' });
+        if (!['member', 'pending'].includes(target.role)) {
+          return json(res, 403, { error: 'Ce compte est un utilisateur : gérez-le dans le panneau Utilisateurs.' });
+        }
+        const { error: delUserError } = await supabase.auth.admin.deleteUser(accountId);
+        if (delUserError) throw delUserError;
+        await notifyTeam({
+          subject: `Compte membre supprimé — ${target.nom || target.email}`,
+          title: 'Compte membre supprimé',
+          rows: [['Nom', target.nom || target.email], ['Supprimé par', identity.user.email]],
+          note: 'Compte sans fiche d’adhésion, supprimé depuis l’onglet Membres.',
+        });
+        return json(res, 200, { ok: true, account_deleted: true });
+      }
+
       if (!isUuid(memberId)) return json(res, 422, { error: 'Adhésion invalide.' });
 
       const member = await loadMember(supabase, memberId);
@@ -205,6 +285,21 @@ export default async function handler(req, res) {
     }
 
     const dataset = clean(req.query?.dataset);
+    if (dataset === 'sans_fiche') {
+      if (!can(identity, 'voir_membres')) return forbidden(res);
+      const rows = await accountsWithoutFiche(supabase);
+      return json(res, 200, {
+        records: rows.map((p) => ({
+          user_id: p.id,
+          nom: p.nom && !String(p.nom).includes('@') ? p.nom : (p.username || ''),
+          email: p.email,
+          account: accountState(p.role),
+          can_promote: p.role === 'member',
+          relance_at: p.relance_adhesion_at,
+          created_at: p.created_at,
+        })),
+      });
+    }
     if (['members', 'donations', 'leads'].includes(dataset)) {
       const needed = dataset === 'members' ? 'voir_membres' : 'voir_dons';
       if (!can(identity, needed)) return forbidden(res);
@@ -256,7 +351,7 @@ export default async function handler(req, res) {
       const { data, error, count } = await query;
       if (error) throw error;
       return json(res, 200, {
-        records: dataset === 'members' ? maskMembers(data, identity) : (data || []),
+        records: dataset === 'members' ? maskMembers(data, identity, await rolesFor(supabase, data)) : (data || []),
         total: count || 0,
         page: exporting ? 1 : page,
         page_size: pageSize,
@@ -331,7 +426,7 @@ export default async function handler(req, res) {
         events: eventsCountResult.count || 0,
         media: mediaCountResult.count || 0,
       },
-      members: maskMembers(membersResult.data, identity),
+      members: maskMembers(membersResult.data, identity, await rolesFor(supabase, membersResult.data)),
       donations: donationsResult.data || [],
       leads: leadsResult.data || [],
     });

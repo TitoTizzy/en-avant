@@ -283,20 +283,37 @@
       if (item.dataset.panel === "panel-events") showEventList();
       if (item.dataset.panel === "panel-gallery") showGalleryList();
       if (item.dataset.panel === "panel-equipe") showUserList();
+      if (item.dataset.panel === "panel-members") loadAccountsWithoutFiche();
     });
   });
   document.querySelectorAll(".adm-quick-btn[data-panel]").forEach((btn) => {
     btn.addEventListener("click", () => {
       switchPanel(btn.dataset.panel);
       if (btn.hasAttribute("data-article-new")) openArticleEditor();
+      if (btn.dataset.panel === "panel-members") loadAccountsWithoutFiche();
       if (btn.hasAttribute("data-event-new")) openEventEditor();
     });
   });
 
+  let viewerIsSuperAdmin = false;
+
+  const ACCOUNT_LABELS = {
+    actif: ["approved", "actif"],
+    en_attente: ["pending", "en attente"],
+    aucun: ["rejected", "aucun"],
+  };
+  const accountBadge = (state, isUser) => {
+    const [cls, txt] = ACCOUNT_LABELS[state] || ACCOUNT_LABELS.aucun;
+    return `<span class="badge ${cls}">${txt}</span>${isUser ? ' <span class="badge approved" title="Promu : visible aussi dans Utilisateurs">utilisateur</span>' : ""}`;
+  };
+  const promoteButton = (canPromote) => (viewerIsSuperAdmin && canPromote
+    ? '<button class="btn btn-ghost btn-xs" data-action="promote" type="button" title="Passer ce membre en Éditeur (visible dans Utilisateurs)">Promouvoir</button>'
+    : "");
+
   function renderMembers(members) {
     const tbody = document.getElementById("tbl-members");
     if (!members.length) {
-      tbody.innerHTML = '<tr><td colspan="7">Aucune adhésion pour le moment.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8">Aucune adhésion pour le moment.</td></tr>';
       return;
     }
 
@@ -304,14 +321,16 @@
       <tr data-id="${esc(member.id)}">
         <td>${esc(member.nom)}</td>
         <td style="font-variant-numeric:tabular-nums;">${esc(member.ninu || "—")}</td>
-        <td>${esc(member.email)}${member.has_account === false ? ' <i class="fa-solid fa-user-slash" title="Pas encore de compte de connexion" aria-label="Pas de compte"></i>' : ""}</td>
+        <td>${esc(member.email)}</td>
         <td>${esc(member.ville)}</td>
         <td>${fmtDate(member.created_at)}</td>
         <td><span class="badge ${esc(member.status)}">${esc(member.status)}</span></td>
+        <td>${accountBadge(member.account, member.is_user)}</td>
         <td style="white-space:nowrap;">
           <button class="btn btn-ghost btn-xs" data-action="approved" type="button">Approuver</button>
           <button class="btn btn-ghost btn-xs" data-action="rejected" type="button">Rejeter</button>
           <button class="btn btn-ghost btn-xs" data-action="access_link" type="button" title="Envoie un lien sécurisé pour choisir son mot de passe"${member.status === "approved" ? "" : " hidden"}>Lien d'accès</button>
+          ${promoteButton(member.can_promote)}
           <button class="btn btn-ghost btn-xs" data-action="delete" type="button" title="Supprimer définitivement la demande et son compte" aria-label="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
         </td>
       </tr>
@@ -1675,6 +1694,18 @@
     membersStatus("", "");
 
     try {
+      if (action === "promote") {
+        const nom = row.querySelector("td")?.textContent.trim() || "ce membre";
+        if (!window.confirm(`Promouvoir ${nom} en Éditeur ? Il apparaîtra dans Utilisateurs, sans aucune permission cochée : à vous de les choisir.`)) return;
+        await api("/api/admin/dashboard", {
+          method: "POST",
+          body: JSON.stringify({ action: "promote", member_id: row.dataset.id }),
+        });
+        button.remove();
+        membersStatus("success", `${nom} est maintenant Éditeur. Cochez ses permissions dans le panneau Utilisateurs.`);
+        return;
+      }
+
       if (action === "delete") {
         const nom = row.querySelector("td")?.textContent.trim() || "cette personne";
         if (!window.confirm(`Supprimer définitivement la demande de ${nom} et son compte ? Cette action est irréversible.`)) return;
@@ -1736,11 +1767,71 @@
         method: "POST",
         body: JSON.stringify({ action: "relance" }),
       });
+      loadAccountsWithoutFiche();
       membersStatus(result.failed ? "error" : "success",
         `Relance envoyée à ${result.sent} compte(s)${result.failed ? `, ${result.failed} échec(s) : réessayez plus tard` : ""}.`);
     } catch (error) {
       console.error(error);
       membersStatus("error", error.message || "Relance impossible.");
+    } finally {
+      button.classList.remove("btn-loading");
+    }
+  });
+
+  /* ----- Comptes membres sans fiche d'adhésion ----- */
+  async function loadAccountsWithoutFiche() {
+    const tbody = document.getElementById("tbl-sans-fiche");
+    const counter = document.getElementById("sans-fiche-count");
+    if (!tbody) return;
+    try {
+      const { records } = await api("/api/admin/dashboard?dataset=sans_fiche");
+      if (counter) counter.textContent = String(records.length);
+      if (!records.length) {
+        tbody.innerHTML = '<tr><td colspan="6">Tous les comptes membres ont une fiche d\'adhésion.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = records.map((r) => `
+        <tr data-user="${esc(r.user_id)}">
+          <td>${esc(r.nom || "—")}</td>
+          <td>${esc(r.email)}</td>
+          <td>${fmtDate(r.created_at)}</td>
+          <td>${accountBadge(r.account, false)} <span class="badge pending">fiche à compléter</span></td>
+          <td>${r.relance_at ? fmtDate(r.relance_at) : "—"}</td>
+          <td style="white-space:nowrap;">
+            ${promoteButton(r.can_promote)}
+            <button class="btn btn-ghost btn-xs" data-action="delete" type="button" title="Supprimer définitivement ce compte" aria-label="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+          </td>
+        </tr>`).join("");
+    } catch (error) {
+      tbody.innerHTML = `<tr><td colspan="6">${esc(error.message)}</td></tr>`;
+    }
+  }
+
+  document.getElementById("tbl-sans-fiche")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const row = button.closest("tr");
+    const userId = row.dataset.user;
+    const nom = row.querySelector("td")?.textContent.trim() || "ce compte";
+    button.classList.add("btn-loading");
+    membersStatus("", "");
+    try {
+      if (button.dataset.action === "promote") {
+        if (!window.confirm(`Promouvoir ${nom} en Éditeur ? Il apparaîtra dans Utilisateurs, sans aucune permission cochée.`)) return;
+        await api("/api/admin/dashboard", { method: "POST", body: JSON.stringify({ action: "promote", user_id: userId }) });
+        membersStatus("success", `${nom} est maintenant Éditeur. Cochez ses permissions dans le panneau Utilisateurs.`);
+      } else {
+        if (!window.confirm(`Supprimer définitivement le compte de ${nom} ? Cette action est irréversible.`)) return;
+        await api(`/api/admin/dashboard?user_id=${encodeURIComponent(userId)}`, {
+          method: "DELETE",
+          body: JSON.stringify({ user_id: userId }),
+        });
+        membersStatus("success", `Compte de ${nom} supprimé.`);
+      }
+      await loadAccountsWithoutFiche();
+    } catch (error) {
+      console.error(error);
+      membersStatus("error", error.message || "Action impossible.");
     } finally {
       button.classList.remove("btn-loading");
     }
@@ -2428,6 +2519,7 @@
       .maybeSingle();
 
     const isSuperAdmin = profileRow?.role === "superadmin";
+    viewerIsSuperAdmin = isSuperAdmin;
     const userPerms = Array.isArray(profileRow?.permissions) ? profileRow.permissions : [];
     const canDo = (perm) => isSuperAdmin || userPerms.includes(perm);
 
