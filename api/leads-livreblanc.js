@@ -5,13 +5,16 @@ import { Resend } from 'resend';
 import { getServiceClient } from './_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError,
-  isEmail, isText, isPhone, clean,
+  isEmail, isText, isPhone, clean, enforceRateLimit,
 } from './_lib/http.js';
+import { escapeHtml, senderAddress } from './_lib/notify.js';
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 jours
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
+  // Chaque demande envoie un email : limite stricte pour éviter l'usage comme relais de spam.
+  if (!enforceRateLimit(req, res, { key: 'livreblanc', limit: 3 })) return;
 
   try {
     const body = getBody(req);
@@ -57,17 +60,18 @@ export default async function handler(req, res) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
-          from: process.env.RESEND_FROM || 'En Avant <onboarding@resend.dev>',
+          from: senderAddress(),
+          replyTo: process.env.NOTIFY_EMAIL || 'contact@enavant.org',
           to: email,
           subject: 'Votre exemplaire du Livre Blanc — En Avant',
           html: `
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#0e1726">
-              <h2 style="color:#e0551f">Merci infiniment, ${nom} !</h2>
+              <h2 style="color:#e0551f">Merci infiniment, ${escapeHtml(nom)} !</h2>
               <p>Merci de votre intérêt pour le projet <strong>En Avant</strong>.</p>
               <p>Voici votre lien de téléchargement du Livre Blanc — une vision
               sur 30 ans pour redresser Haïti (lien valable 7 jours) :</p>
               <p style="margin:28px 0">
-                <a href="${downloadUrl}"
+                <a href="${escapeHtml(downloadUrl)}"
                    style="background:#ff6a2a;color:#fff;padding:14px 26px;border-radius:999px;text-decoration:none;font-weight:bold">
                   Télécharger le Livre Blanc
                 </a>

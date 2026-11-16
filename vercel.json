@@ -5,6 +5,9 @@
   "functions": {
     "api/trivia.js": { "maxDuration": 60 }
   },
+  "crons": [
+    { "path": "/api/cron/digest", "schedule": "0 12 * * *" }
+  ],
   "rewrites": [
     { "source": "/api/auth/login",        "destination": "/api/auth?action=login" },
     { "source": "/api/auth/logout",       "destination": "/api/auth?action=logout" },
@@ -21,6 +24,7 @@
     { "source": "/api/admin/integrations","destination": "/api/admin?action=integrations" },
     { "source": "/api/admin/settings",    "destination": "/api/admin?action=settings" },
     { "source": "/api/admin/users",       "destination": "/api/admin?action=users" },
+    { "source": "/api/cron/digest",       "destination": "/api/admin?action=digest" },
     { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
