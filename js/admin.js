@@ -312,6 +312,7 @@
           <button class="btn btn-ghost btn-xs" data-action="approved" type="button">Approuver</button>
           <button class="btn btn-ghost btn-xs" data-action="rejected" type="button">Rejeter</button>
           <button class="btn btn-ghost btn-xs" data-action="access_link" type="button" title="Envoie un lien sécurisé pour choisir son mot de passe"${member.status === "approved" ? "" : " hidden"}>Lien d'accès</button>
+          <button class="btn btn-ghost btn-xs" data-action="delete" type="button" title="Supprimer définitivement la demande et son compte" aria-label="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
         </td>
       </tr>
     `).join("");
@@ -1674,6 +1675,20 @@
     membersStatus("", "");
 
     try {
+      if (action === "delete") {
+        const nom = row.querySelector("td")?.textContent.trim() || "cette personne";
+        if (!window.confirm(`Supprimer définitivement la demande de ${nom} et son compte ? Cette action est irréversible.`)) return;
+        const result = await api(`/api/admin/dashboard?member_id=${encodeURIComponent(row.dataset.id)}`, {
+          method: "DELETE",
+          body: JSON.stringify({ member_id: row.dataset.id }),
+        });
+        row.remove();
+        membersStatus("success", result.account_deleted
+          ? `Demande de ${nom} et compte supprimés : l'adresse peut être réutilisée.`
+          : `Demande de ${nom} supprimée.`);
+        return;
+      }
+
       if (action === "access_link") {
         await api("/api/admin/dashboard", {
           method: "POST",

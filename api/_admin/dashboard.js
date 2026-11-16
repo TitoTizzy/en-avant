@@ -1,7 +1,7 @@
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 import { onApproved, sendAccessLink, relanceEmail } from '../_lib/adhesion.js';
-import { sendBatchToMembers } from '../_lib/notify.js';
+import { sendBatchToMembers, notifyTeam } from '../_lib/notify.js';
 
 const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -147,8 +147,60 @@ export default async function handler(req, res) {
       return json(res, 422, { error: 'Action inconnue.' });
     }
 
+    if (req.method === 'DELETE') {
+      if (!can(identity, 'voir_membres')) return forbidden(res);
+      const memberId = clean(getBody(req).member_id || req.query?.member_id);
+      if (!isUuid(memberId)) return json(res, 422, { error: 'Adhésion invalide.' });
+
+      const member = await loadMember(supabase, memberId);
+      if (!member) return json(res, 404, { error: 'Adhésion introuvable.' });
+
+      const ownEmail = String(identity.user.email || '').toLowerCase();
+      if (member.user_id === identity.user.id || String(member.email).toLowerCase() === ownEmail) {
+        return json(res, 403, { error: 'Vous ne pouvez pas supprimer votre propre demande.' });
+      }
+
+      // Compte rattaché : effacé, sauf SuperAdmin (seule la fiche disparaît).
+      let accountDeleted = false;
+      if (member.user_id) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', member.user_id)
+          .maybeSingle();
+        if (profileError) throw profileError;
+        if (profile?.role !== 'superadmin') {
+          // Compte d'abord : si cela échoue, la fiche reste et l'action peut être relancée.
+          const { error: delUserError } = await supabase.auth.admin.deleteUser(member.user_id);
+          if (delUserError && !/not.?found/i.test(delUserError.message || '')) throw delUserError;
+          accountDeleted = true;
+        }
+      }
+
+      const { error: delError } = await supabase.from('members').delete().eq('id', memberId);
+      if (delError) throw delError;
+
+      const { data: actor } = await supabase
+        .from('profiles')
+        .select('nom, username')
+        .eq('id', identity.user.id)
+        .maybeSingle();
+      await notifyTeam({
+        subject: `Demande d'adhésion supprimée — ${member.nom}`,
+        title: 'Demande d’adhésion supprimée',
+        rows: [
+          ['Nom', member.nom],
+          ['Compte de connexion', accountDeleted ? 'supprimé' : (member.user_id ? 'conservé (SuperAdmin)' : 'aucun')],
+          ['Supprimée par', actor?.nom || actor?.username || identity.user.email],
+        ],
+        note: 'Action définitive effectuée depuis l’onglet Membres du tableau de bord.',
+      });
+
+      return json(res, 200, { ok: true, account_deleted: accountDeleted });
+    }
+
     if (req.method !== 'GET') {
-      res.setHeader('Allow', 'GET, PATCH, POST');
+      res.setHeader('Allow', 'GET, PATCH, POST, DELETE');
       return json(res, 405, { error: 'Méthode non autorisée.' });
     }
 
