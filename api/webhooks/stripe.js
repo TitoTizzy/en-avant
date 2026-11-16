@@ -13,15 +13,30 @@
 import Stripe from 'stripe';
 import getRawBody from 'raw-body';
 import { getServiceClient } from '../_lib/supabase.js';
+import { notifyTeam } from '../_lib/notify.js';
 
 export const config = { api: { bodyParser: false } };
 
 const API_VERSION = '2025-08-27.basil';
 
+/** Retourne true si le don est nouveau (false si rejeu Stripe déjà enregistré). */
 async function insertDonation(supabase, row) {
   const { error } = await supabase.from('donations').insert({ provider: 'stripe', ...row });
   // 23505 = doublon (rejeu Stripe) → déjà enregistré, on acquitte.
   if (error && error.code !== '23505') throw error;
+  return !error;
+}
+
+const money = (cents, currency) =>
+  `${((Number(cents) || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} ${String(currency || 'usd').toUpperCase()}`;
+
+function notifyDonation(row) {
+  return notifyTeam({
+    subject: `Don ${row.frequence} reçu — ${money(row.montant, row.devise)}`,
+    title: row.frequence === 'mensuel' ? 'Échéance de don mensuel reçue' : 'Nouveau don reçu',
+    rows: [['Montant', money(row.montant, row.devise)], ['Donateur', row.nom || '—'], ['Pays', row.pays || '—']],
+    note: 'Détails et reçu dans le tableau de bord Stripe et l’onglet Dons.',
+  });
 }
 
 async function setStatus(supabase, transactionIds, statut) {
@@ -87,21 +102,22 @@ export default async function handler(req, res) {
       case 'checkout.session.async_payment_succeeded': {
         // Les dons mensuels sont enregistrés par invoice.paid (1re échéance incluse).
         if (obj.mode === 'payment' && obj.payment_status === 'paid') {
-          await insertDonation(supabase, {
+          const row = {
             montant: obj.amount_total,
             devise: obj.currency || 'usd',
             transaction_id: String(obj.payment_intent || obj.id),
             frequence: 'unique',
             statut: 'completed',
             ...donorFields(obj.customer_details),
-          });
+          };
+          if (await insertDonation(supabase, row)) await notifyDonation(row);
         }
         break;
       }
 
       case 'invoice.paid': {
         if (obj.amount_paid > 0 && obj.parent?.type === 'subscription_details') {
-          await insertDonation(supabase, {
+          const row = {
             montant: obj.amount_paid,
             devise: obj.currency || 'usd',
             transaction_id: obj.id,
@@ -110,7 +126,8 @@ export default async function handler(req, res) {
             email: obj.customer_email || null,
             nom: obj.customer_name || null,
             pays: obj.customer_address?.country || null,
-          });
+          };
+          if (await insertDonation(supabase, row)) await notifyDonation(row);
         }
         break;
       }
@@ -121,6 +138,11 @@ export default async function handler(req, res) {
         if (!updated) {
           await setStatus(supabase, [await invoiceIdForPaymentIntent(stripe, pi)], 'refunded');
         }
+        await notifyTeam({
+          subject: `Don remboursé — ${money(obj.amount_refunded, obj.currency)}`,
+          title: 'Un don a été remboursé',
+          rows: [['Montant remboursé', money(obj.amount_refunded, obj.currency)], ['Référence Stripe', obj.id]],
+        });
         break;
       }
 
@@ -131,6 +153,12 @@ export default async function handler(req, res) {
           await setStatus(supabase, [await invoiceIdForPaymentIntent(stripe, pi)], 'disputed');
         }
         console.warn('Litige Stripe ouvert:', obj.id);
+        await notifyTeam({
+          subject: `URGENT — litige ouvert sur un don (${money(obj.amount, obj.currency)})`,
+          title: 'Un donateur conteste un paiement',
+          rows: [['Montant', money(obj.amount, obj.currency)], ['Motif', obj.reason || '—'], ['Référence Stripe', obj.id]],
+          note: 'Répondez au litige dans le tableau de bord Stripe avant la date limite indiquée, sinon il est perdu automatiquement.',
+        });
         break;
       }
 

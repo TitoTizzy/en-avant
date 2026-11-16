@@ -12,6 +12,7 @@ import { getAnonClient, getServiceClient } from '../_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError, isEmail, isText, clean, enforceRateLimit,
 } from '../_lib/http.js';
+import { notifyTeam } from '../_lib/notify.js';
 
 const GENERIC_OK = {
   ok: true,
@@ -81,6 +82,14 @@ export default async function handler(req, res) {
       console.error('Inscription : profil introuvable pour', user.id);
       throw new Error('Profil non initialisé.');
     }
+
+    await notifyTeam({
+      subject: `Nouveau compte membre — ${pseudo}`,
+      title: 'Nouveau compte membre créé',
+      rows: [['Nom', nom], ['Pseudo', pseudo]],
+      note: 'Le compte devient actif après confirmation de l’adresse email.',
+      adminPath: '/admin',
+    });
 
     return json(res, 201, GENERIC_OK);
   } catch (error) {

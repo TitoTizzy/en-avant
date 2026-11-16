@@ -5,6 +5,7 @@
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
 import { sanitizeArticleHtml } from '../_lib/sanitize.js';
+import { notifyTeam } from '../_lib/notify.js';
 
 const CATEGORIES = [
   'actualite', 'politique', 'economie', 'societe',
@@ -77,7 +78,15 @@ export default async function handler(req, res) {
           .select('id, titre, review_status')
           .single();
 
-        if (!error) return json(res, 201, { ok: true, article: data });
+        if (!error) {
+          await notifyTeam({
+            subject: `Article soumis à validation — ${titre}`,
+            title: 'Un membre a soumis un article',
+            rows: [['Titre', titre], ['Auteur', authorName || 'Membre'], ['Catégorie', categorie]],
+            note: 'L’article attend une relecture dans le tableau de bord (Articles → En attente).',
+          });
+          return json(res, 201, { ok: true, article: data });
+        }
         if (error.code !== '23505') throw error;
         lastError = error;
       }

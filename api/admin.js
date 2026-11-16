@@ -9,6 +9,7 @@ import triviaHandler from './_admin/trivia.js';
 import integrationsHandler from './_admin/integrations.js';
 import settingsHandler from './_admin/settings.js';
 import usersHandler from './_admin/users.js';
+import digestHandler from './_admin/digest.js';
 import { json } from './_lib/http.js';
 
 export default async function handler(req, res) {
@@ -23,6 +24,7 @@ export default async function handler(req, res) {
     case 'integrations': return integrationsHandler(req, res);
     case 'settings':     return settingsHandler(req, res);
     case 'users':        return usersHandler(req, res);
+    case 'digest':       return digestHandler(req, res);
     default:             return json(res, 404, { error: 'Route inconnue.' });
   }
 }

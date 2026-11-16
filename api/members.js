@@ -6,6 +6,7 @@ import {
   json, methodGuard, getBody, handleError,
   isEmail, isText, isPhone, clean, enforceRateLimit,
 } from './_lib/http.js';
+import { notifyTeam } from './_lib/notify.js';
 
 const SEXES = ['femme', 'homme', 'autre'];
 
@@ -59,6 +60,13 @@ export default async function handler(req, res) {
       }
       throw error;
     }
+
+    await notifyTeam({
+      subject: `Nouvelle demande d'adhésion — ${nom}`,
+      title: 'Nouvelle demande d’adhésion',
+      rows: [['Nom', nom], ['Ville', ville]],
+      note: 'Email, téléphone et NINU sont consultables dans le tableau de bord (onglet Membres).',
+    });
 
     return json(res, 201, { ok: true, message: 'Candidature enregistrée.' });
   } catch (error) {
