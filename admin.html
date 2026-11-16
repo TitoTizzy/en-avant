@@ -471,9 +471,23 @@
         <div class="u-table">
           <table>
             <thead>
-              <tr><th>Nom</th><th>NINU</th><th>Email</th><th>Ville</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+              <tr><th>Nom</th><th>NINU</th><th>Email</th><th>Ville</th><th>Date</th><th>Statut</th><th>Compte</th><th>Actions</th></tr>
             </thead>
-            <tbody id="tbl-members"><tr><td colspan="7">Chargement…</td></tr></tbody>
+            <tbody id="tbl-members"><tr><td colspan="8">Chargement…</td></tr></tbody>
+          </table>
+        </div>
+
+        <h3 style="margin:2rem 0 .4rem;">Comptes sans fiche (<span id="sans-fiche-count">…</span>)</h3>
+        <p style="margin:0 0 1rem;opacity:.7;font-size:.88rem;">
+          Membres qui ont un compte mais n'ont pas encore rempli leur fiche d'adhésion.
+          Leur accès reste ouvert ; « Envoyer la relance » les invite à la compléter.
+        </p>
+        <div class="u-table">
+          <table>
+            <thead>
+              <tr><th>Nom</th><th>Email</th><th>Inscrit le</th><th>Compte</th><th>Dernière relance</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="tbl-sans-fiche"><tr><td colspan="6">Chargement…</td></tr></tbody>
           </table>
         </div>
       </section>
