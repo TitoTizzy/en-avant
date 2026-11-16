@@ -18,7 +18,8 @@
   function deny(message, withLogin = true) {
     guard.hidden = false;
     app.hidden = true;
-    guardMsg.innerHTML = `<i class="fa-solid fa-shield-halved" aria-hidden="true"></i> ${message}`;
+    guardMsg.innerHTML = '<i class="fa-solid fa-shield-halved" aria-hidden="true"></i> ';
+    guardMsg.append(String(message));
     guardAction.hidden = !withLogin;
   }
 
@@ -61,7 +62,7 @@
       : "—";
 
   const fmtMoney = (cents, currency = "usd") =>
-    `${(cents / 100).toLocaleString("fr-FR", {
+    cents == null || Number.isNaN(Number(cents)) ? "—" : `${(Number(cents) / 100).toLocaleString("fr-FR", {
       minimumFractionDigits: 2,
     })} ${currency.toUpperCase()}`;
 
@@ -357,10 +358,10 @@
     roleBadge.textContent = payload.profile.role;
     roleBadge.hidden = false;
 
-    document.getElementById("st-members").textContent = payload.stats.members;
+    document.getElementById("st-members").textContent = payload.stats.members ?? "—";
     document.getElementById("st-donations").textContent =
       fmtMoney(payload.stats.donations_cents, "usd");
-    document.getElementById("st-leads").textContent = payload.stats.leads;
+    document.getElementById("st-leads").textContent = payload.stats.leads ?? "—";
     document.getElementById("st-trivia").textContent = payload.stats.trivia;
     document.getElementById("st-articles").textContent = payload.stats.articles;
     document.getElementById("st-events").textContent = payload.stats.events;
@@ -847,7 +848,7 @@
         </div>
         <h4>${esc(article.titre)}</h4>
         <p>${esc(article.excerpt || "Aucun résumé.")}</p>
-        <div class="adm-pending-preview">${article.contenu || ""}</div>
+        <div class="adm-pending-preview">${window.EA_sanitizeHTML(article.contenu || "")}</div>
         <div class="adm-record-actions adm-pending-card-actions">
           <button class="btn btn-primary btn-xs pending-approve" type="button">
             <i class="fa-solid fa-check" aria-hidden="true"></i> Approuver &amp; publier
@@ -941,7 +942,7 @@
 
     if (articleQuill) {
       articleQuill.setContents([]);
-      if (article?.contenu) articleQuill.clipboard.dangerouslyPasteHTML(article.contenu);
+      if (article?.contenu) articleQuill.clipboard.dangerouslyPasteHTML(window.EA_sanitizeHTML(article.contenu));
     }
 
     setModuleStatus("article-status", "", "");
@@ -2854,9 +2855,9 @@
       if (!logs?.length) { host.innerHTML = '<p class="adm-empty">Aucune entrée dans le journal.</p>'; return; }
       host.innerHTML = `<div class="u-card">${logs.map((l) => `
         <div class="adm-log-row">
-          <span class="adm-log-cat">${l.categorie || "—"}</span>
-          <span class="adm-log-msg">${l.message || ""}</span>
-          <span class="adm-log-meta">${l.username ? l.username + " · " : ""}${l.created_at ? new Date(l.created_at).toLocaleString("fr-FR") : ""}</span>
+          <span class="adm-log-cat">${esc(l.categorie || "—")}</span>
+          <span class="adm-log-msg">${esc(l.message || "")}</span>
+          <span class="adm-log-meta">${l.username ? esc(l.username) + " · " : ""}${l.created_at ? new Date(l.created_at).toLocaleString("fr-FR") : ""}</span>
         </div>`).join("")}</div>`;
     };
 

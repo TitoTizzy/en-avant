@@ -55,7 +55,10 @@
     dateEl.textContent = fmtDate(article.published_at);
 
     // Contenu : éditorial maîtrisé (rédigé par les éditeurs du parti via le Dashboard).
-    bodyEl.innerHTML = article.contenu || "<p>Contenu indisponible.</p>";
+    bodyEl.innerHTML = window.EA_sanitizeHTML
+      ? window.EA_sanitizeHTML(article.contenu || "<p>Contenu indisponible.</p>")
+      : "";
+    if (!window.EA_sanitizeHTML) bodyEl.textContent = "Contenu indisponible.";
 
     const words = bodyEl.textContent.trim().split(/\s+/).length;
     readingEl.textContent = `${Math.max(1, Math.round(words / 200))} min de lecture`;

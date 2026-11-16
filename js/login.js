@@ -28,7 +28,11 @@
   // Message de succès après une inscription réussie
   if (sessionStorage.getItem("ea-register-success")) {
     sessionStorage.removeItem("ea-register-success");
-    showStatus("success", "Compte créé avec succès. Connectez-vous dès maintenant.");
+    showStatus("success", "Compte créé. Confirmez votre adresse grâce à l'email que nous venons de vous envoyer, puis connectez-vous.");
+  }
+
+  if (new URLSearchParams(window.location.search).get("confirme") === "1") {
+    showStatus("success", "Adresse email confirmée. Vous pouvez vous connecter.");
   }
 
   if (!configured) {

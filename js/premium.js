@@ -501,7 +501,8 @@ document.documentElement.classList.add("js-ready");
 
       document.querySelectorAll("a.u-login").forEach((link) => {
         link.href = "/membre.html";
-        link.innerHTML = `<i class="fa-solid fa-circle-user" aria-hidden="true"></i> <span>${display}</span>`;
+        link.innerHTML = '<i class="fa-solid fa-circle-user" aria-hidden="true"></i> <span></span>';
+        link.querySelector("span").textContent = display;
         link.setAttribute("aria-label", `Espace membre de ${display}`);
 
         // Bouton Dashboard visible uniquement pour le superadmin

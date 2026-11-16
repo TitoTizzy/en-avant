@@ -6,12 +6,7 @@
   <link rel="icon" type="image/png" href="/pictures/logo/logo.png">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NJEJ3FDKXY"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-NJEJ3FDKXY');
-  </script>
+  <script src="/js/gtag.js"></script>
   <title>Créer un compte | En Avant</title>
   <meta name="robots" content="noindex, nofollow">
 
@@ -63,8 +58,8 @@
         <div class="ea-field">
           <label for="reg-password">Mot de passe</label>
           <input type="password" id="reg-password" name="password"
-                 autocomplete="new-password" placeholder="8 caractères minimum" required>
-          <span class="ea-error" id="err-password">Mot de passe trop court (8 caractères minimum).</span>
+                 autocomplete="new-password" placeholder="10 caractères minimum" minlength="10" required>
+          <span class="ea-error" id="err-password">Mot de passe trop court (10 caractères minimum).</span>
         </div>
 
         <div class="ea-field">

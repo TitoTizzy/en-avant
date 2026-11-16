@@ -31,6 +31,9 @@ export default async function handler(req, res) {
 
     const supabase = getAnonClient();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error && /not confirmed/i.test(error.message || '')) {
+      return json(res, 403, { error: 'Adresse email non confirmée : ouvrez le lien reçu par email.' });
+    }
     if (error || !data.session) {
       return json(res, 401, { error: 'Identifiants incorrects.' });
     }
