@@ -232,3 +232,12 @@ test('Feuilles de style : accolades équilibrées (sinon la fin du fichier est i
     assert.equal(depth, 0, `${f} : accolade non fermée`);
   }
 });
+
+test('Lien mot de passe : pointe directement vers /mot-de-passe avec le jeton haché', async () => {
+  const { passwordLinkFrom } = await import('../api/_lib/adhesion.js');
+  assert.equal(
+    passwordLinkFrom({ hashed_token: 'abc123', action_link: 'https://x.supabase.co/auth/v1/verify?token=…' }, 'invite'),
+    'https://enavant.org/mot-de-passe?token_hash=abc123&type=invite',
+  );
+  assert.equal(passwordLinkFrom({ action_link: 'https://x/verify' }, 'recovery'), 'https://x/verify', 'repli si pas de jeton haché');
+});

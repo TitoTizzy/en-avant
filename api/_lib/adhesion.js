@@ -38,6 +38,19 @@ export function duplicateFicheMessage(error) {
 }
 
 const passwordPageUrl = () => `${siteUrl()}/mot-de-passe`;
+
+/**
+ * Lien envoyé par email : il pointe directement vers notre page /mot-de-passe
+ * avec le jeton haché, au lieu du lien Supabase /auth/v1/verify.
+ * - ne dépend plus de la liste des « Redirect URLs » de Supabase ;
+ * - le jeton n'est consommé qu'à l'ouverture de la page par la personne
+ *   (les antivirus de messagerie qui « pré-cliquent » les liens ne l'utilisent plus).
+ */
+export function passwordLinkFrom(properties, type) {
+  const hash = properties?.hashed_token;
+  if (!hash) return properties?.action_link;
+  return `${passwordPageUrl()}?token_hash=${encodeURIComponent(hash)}&type=${encodeURIComponent(type)}`;
+}
 const loginUrl = () => `${siteUrl()}/login`;
 
 /** Passe un compte « pending » en « member ». Ne touche à aucun autre rôle. */
@@ -83,7 +96,7 @@ async function passwordLink(supabase, member) {
       options: { ...options, data: { nom: member.nom } },
     });
     if (!invite.error && invite.data?.user?.id) {
-      return { link: invite.data.properties.action_link, userId: invite.data.user.id };
+      return { link: passwordLinkFrom(invite.data.properties, 'invite'), userId: invite.data.user.id };
     }
     // Adresse déjà inscrite (compte créé séparément) : on la reprend.
     if (!/already|registered|exists/i.test(invite.error?.message || '')) throw invite.error;
@@ -97,7 +110,7 @@ async function passwordLink(supabase, member) {
     options,
   });
   if (recovery.error) throw recovery.error;
-  return { link: recovery.data.properties.action_link, userId };
+  return { link: passwordLinkFrom(recovery.data.properties, 'recovery'), userId };
 }
 
 /** Email « choisissez votre mot de passe ». */

@@ -5,6 +5,7 @@
 import { getServiceClient } from '../_lib/supabase.js';
 import { json, methodGuard, getBody, handleError, isEmail, clean, enforceRateLimit } from '../_lib/http.js';
 import { sendToMember, siteUrl } from '../_lib/notify.js';
+import { passwordLinkFrom } from '../_lib/adhesion.js';
 
 const NEUTRAL = {
   ok: true,
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
             'Vous avez demandé à réinitialiser votre mot de passe sur enavant.org. Cliquez sur le bouton ci-dessous pour en choisir un nouveau.',
             'Ce lien est personnel et expire rapidement. Si vous n’êtes pas à l’origine de cette demande, ignorez simplement cet email : votre mot de passe actuel reste valable.',
           ],
-          cta: { label: 'Choisir un nouveau mot de passe', url: data.properties.action_link },
+          cta: { label: 'Choisir un nouveau mot de passe', url: passwordLinkFrom(data.properties, 'recovery') },
         });
       }
     }
