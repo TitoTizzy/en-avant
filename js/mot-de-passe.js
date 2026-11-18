@@ -25,7 +25,7 @@
     checking.hidden = true;
     showStatus(
       "error",
-      "Ce lien n'est plus valide (il expire rapidement). Répondez à l'email reçu ou écrivez à contact@enavant.org pour en recevoir un nouveau."
+      "Ce lien n'est plus valide (il expire rapidement). Demandez-en un nouveau avec « Mot de passe oublié » sur la page de connexion, ou écrivez à contact@enavant.org."
     );
   };
 

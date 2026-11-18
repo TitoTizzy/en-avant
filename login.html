@@ -48,6 +48,32 @@
           <i class="fa-solid fa-lock" aria-hidden="true"></i>
           Se connecter
         </button>
+        <p style="margin:1rem 0 0; text-align:center;">
+          <button type="button" class="text-link" id="forgot-open" style="background:none;border:0;cursor:pointer;font:inherit;font-size:.9rem;">Mot de passe oublié ?</button>
+        </p>
+      </form>
+
+      <!-- Mot de passe oublié -->
+      <form id="forgot-form" hidden novalidate>
+        <p class="u-note" style="margin:0 0 1.4rem;">
+          <i class="fa-solid fa-key" aria-hidden="true"></i>
+          Saisissez l'adresse email de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe.
+        </p>
+        <div class="ea-field">
+          <label for="forgot-email">Adresse email</label>
+          <input type="email" id="forgot-email" name="email" autocomplete="email" placeholder="vous@exemple.com" required>
+          <span class="ea-error">Adresse email invalide.</span>
+        </div>
+        <div class="ea-honeypot" aria-hidden="true" style="position:absolute;left:-9999px;">
+          <label for="forgot-website">Ne pas remplir</label>
+          <input type="text" id="forgot-website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-full" id="forgot-submit">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Envoyer le lien
+        </button>
+        <p style="margin:1rem 0 0; text-align:center;">
+          <button type="button" class="text-link" id="forgot-back" style="background:none;border:0;cursor:pointer;font:inherit;font-size:.9rem;">← Retour à la connexion</button>
+        </p>
       </form>
 
       <!-- Étape 2 : PIN SuperAdmin vérifié côté serveur -->

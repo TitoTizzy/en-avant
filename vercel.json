@@ -14,6 +14,7 @@
   ],
   "rewrites": [
     { "source": "/api/auth/login",        "destination": "/api/auth?action=login" },
+    { "source": "/api/auth/forgot",       "destination": "/api/auth?action=forgot" },
     { "source": "/api/auth/logout",       "destination": "/api/auth?action=logout" },
     { "source": "/api/auth/verify-pin",   "destination": "/api/auth?action=verify-pin" },
     { "source": "/api/auth/touch-pin",    "destination": "/api/auth?action=touch-pin" },

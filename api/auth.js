@@ -5,6 +5,7 @@ import logoutHandler from './_auth/logout.js';
 import verifyPinHandler from './_auth/verify-pin.js';
 import touchPinHandler from './_auth/touch-pin.js';
 import changePinHandler from './_auth/change-pin.js';
+import forgotHandler from './_auth/forgot.js';
 import { json } from './_lib/http.js';
 
 export default async function handler(req, res) {
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
     case 'verify-pin':  return verifyPinHandler(req, res);
     case 'touch-pin':   return touchPinHandler(req, res);
     case 'change-pin':  return changePinHandler(req, res);
+    case 'forgot':      return forgotHandler(req, res);
     default:            return json(res, 404, { error: 'Route inconnue.' });
   }
 }
