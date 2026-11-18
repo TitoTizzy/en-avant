@@ -43,15 +43,35 @@
 
   const client = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
-  client.auth.getSession().then(({ data: { session } }) => {
+  const showForm = () => {
+    checking.hidden = true;
+    form.hidden = false;
+    passwordInput.focus();
+  };
+
+  (async () => {
+    // Lien de nos emails : /mot-de-passe?token_hash=…&type=invite|recovery
+    const query = new URLSearchParams(window.location.search);
+    const tokenHash = query.get("token_hash");
+    const type = query.get("type");
+    if (tokenHash && ["invite", "recovery", "magiclink", "email"].includes(type)) {
+      const { data, error } = await client.auth.verifyOtp({ token_hash: tokenHash, type });
+      window.history.replaceState(null, "", window.location.pathname); // retire le jeton de l'adresse
+      if (error || !data?.session) {
+        expired();
+        return;
+      }
+      showForm();
+      return;
+    }
+    // Anciens liens (passage par Supabase) : la session arrive dans l'adresse.
+    const { data: { session } } = await client.auth.getSession();
     if (!session) {
       expired();
       return;
     }
-    checking.hidden = true;
-    form.hidden = false;
-    passwordInput.focus();
-  });
+    showForm();
+  })().catch(expired);
 
   const fieldOf = (input) => input.closest(".ea-field");
   const mark = (input, ok) => {
