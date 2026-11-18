@@ -277,8 +277,25 @@
     if (sectionEl) sectionEl.textContent = title;
   }
 
+  // ─── Menu latéral sur mobile (tiroir) ──────────────────────────────
+  const sidebar = document.getElementById("adm-sidebar");
+  const scrim = document.getElementById("adm-scrim");
+  const burger = document.getElementById("adm-burger");
+  const setMenu = (open) => {
+    if (!sidebar) return;
+    sidebar.classList.toggle("is-open", open);
+    if (scrim) scrim.hidden = !open;
+    burger?.setAttribute("aria-expanded", String(open));
+    document.body.classList.toggle("adm-menu-open", open);
+  };
+  burger?.addEventListener("click", () => setMenu(!sidebar.classList.contains("is-open")));
+  scrim?.addEventListener("click", () => setMenu(false));
+  document.getElementById("adm-sidebar-close")?.addEventListener("click", () => setMenu(false));
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") setMenu(false); });
+
   document.querySelectorAll(".adm-nav-item[data-panel]").forEach((item) => {
     item.addEventListener("click", () => {
+      setMenu(false);
       switchPanel(item.dataset.panel);
       if (item.dataset.panel === "panel-articles") showArticleList();
       if (item.dataset.panel === "panel-events") showEventList();

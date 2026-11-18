@@ -4209,4 +4209,101 @@ body.adm-is-locked {
 @media (max-width: 800px) {
   .about-hero-bg { background-image: url("../pictures/foule-Assise-800.webp"); }
   .history-hero-bg { background-image: url("../pictures/home-galerie/galerie-3-800.webp"); }
+
+/* ─── Admin sur mobile et tablette ────────────────────────────────── */
+.adm-burger, .adm-sidebar-close { display: none; }
+.adm-scrim[hidden] { display: none; }
+
+@media (max-width: 900px) {
+  .adm-layout { grid-template-columns: 1fr; }
+
+  .adm-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(290px, 86vw);
+    height: 100dvh;
+    transform: translateX(-102%);
+    transition: transform .25s ease;
+    box-shadow: 0 0 60px rgba(0, 0, 0, .5);
+    z-index: 120;
+  }
+  .adm-sidebar.is-open { transform: none; }
+  .adm-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: rgba(2, 6, 16, .6);
+  }
+  body.adm-menu-open { overflow: hidden; }
+  .adm-sidebar-close {
+    display: inline-flex;
+    align-self: flex-end;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: .5rem .5rem 0 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .06);
+    color: inherit;
+    font-size: 1.1rem;
+  }
+  .adm-nav-item { min-height: 46px; }
+
+  .adm-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    gap: .6rem;
+    padding: .7rem .9rem;
+    backdrop-filter: blur(10px);
+  }
+  .adm-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .04);
+    color: inherit;
+    font-size: 1.1rem;
+  }
+  .adm-topbar-left { min-width: 0; flex: 1; }
+  .adm-topbar-left h1 { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .adm-topbar-left p { display: none; }
+  .adm-topbar-right { gap: .45rem; }
+  .adm-topbar-right > a.btn { display: none; }      /* « Voir le site » : présent dans le menu */
+  .adm-topbar-user span { display: none; }
+  .adm-bell { width: 44px; height: 44px; }
+  .adm-bell-panel {
+    position: fixed;
+    left: .6rem;
+    right: .6rem;
+    top: 4.2rem;
+    width: auto;
+  }
+
+  .adm-content { padding: 1rem .9rem 2rem; }
+  .adm-home-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+  .adm-home-row { grid-template-columns: 1fr; }
+  .adm-stat-card { padding: .85rem; gap: .6rem; }
+
+  .adm-list-tools { flex-wrap: wrap; gap: .5rem; }
+  .adm-list-tools input[type="search"] { flex: 1 1 100%; min-width: 0; }
+  .member-tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem; -webkit-overflow-scrolling: touch; }
+  .member-tab { flex-shrink: 0; min-height: 40px; }
+  .u-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .adm-articles-heading { flex-direction: column; align-items: flex-start; gap: .8rem; }
+  .adm-alert-delete li { flex-direction: column; align-items: flex-start; gap: .4rem; }
+  .adm-stats-row { grid-template-columns: minmax(0, 1fr) 80px auto; }
+  .adm-stats-total strong { font-size: 2rem; }
+}
+
+@media (max-width: 420px) {
+  .adm-home-stats { grid-template-columns: 1fr 1fr; }
+  .adm-stat-body strong { font-size: 1.2rem; }
 }
