@@ -1,0 +1,10 @@
+# enavant.org
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /membre
+Disallow: /login
+Disallow: /mot-de-passe
+Disallow: /api/
+
+Sitemap: https://enavant.org/sitemap.xml

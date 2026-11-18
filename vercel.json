@@ -18,6 +18,7 @@
     { "source": "/api/auth/verify-pin",   "destination": "/api/auth?action=verify-pin" },
     { "source": "/api/auth/touch-pin",    "destination": "/api/auth?action=touch-pin" },
     { "source": "/api/auth/change-pin",   "destination": "/api/auth?action=change-pin" },
+    { "source": "/sitemap.xml",           "destination": "/api/articles?format=sitemap" },
     { "source": "/api/admin/dashboard",   "destination": "/api/admin?action=dashboard" },
     { "source": "/api/admin/notifications", "destination": "/api/admin?action=notifications" },
     { "source": "/api/admin/push",        "destination": "/api/admin?action=push" },

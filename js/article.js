@@ -48,6 +48,62 @@
     } catch { return ""; }
   };
 
+  /** Met à jour une balise meta (créée au besoin). */
+  function setMeta(attr, key, value) {
+    if (!value) return;
+    let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+    if (!el) {
+      el = document.createElement("meta");
+      el.setAttribute(attr, key);
+      document.head.appendChild(el);
+    }
+    el.setAttribute("content", value);
+  }
+
+  /** SEO de l'article : titre, description, canonique, aperçu de partage, données structurées. */
+  function applySeo(article) {
+    const url = `https://enavant.org/article-details?slug=${encodeURIComponent(article.slug || "")}`;
+    const desc = (article.excerpt || bodyEl.textContent || "").replace(/\s+/g, " ").trim().slice(0, 160);
+    const image = /^https:\/\//.test(article.image_url || "") ? article.image_url : "https://enavant.org/pictures/og-banner.jpg";
+    setMeta("name", "description", desc);
+    setMeta("property", "og:type", "article");
+    setMeta("property", "og:title", `${article.titre} | En Avant`);
+    setMeta("property", "og:description", desc);
+    setMeta("property", "og:url", url);
+    setMeta("property", "og:image", image);
+    setMeta("name", "twitter:title", `${article.titre} | En Avant`);
+    setMeta("name", "twitter:description", desc);
+    setMeta("name", "twitter:image", image);
+    let canonical = document.head.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = url;
+
+    const ld = document.createElement("script");
+    ld.type = "application/ld+json";
+    ld.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      headline: String(article.titre || "").slice(0, 110),
+      description: desc,
+      image: [image],
+      datePublished: article.published_at || undefined,
+      articleSection: article.categorie || undefined,
+      inLanguage: "fr",
+      mainEntityOfPage: url,
+      author: { "@type": "Organization", name: "En Avant", url: "https://enavant.org/" },
+      publisher: {
+        "@type": "Organization",
+        name: "En Avant",
+        logo: { "@type": "ImageObject", url: "https://enavant.org/pictures/logo/logo.png" },
+      },
+    });
+    document.head.appendChild(ld);
+  }
+
   function render(article) {
     document.title = `${article.titre} | En Avant`;
     titleEl.textContent = article.titre;
@@ -69,6 +125,7 @@
       coverEl.hidden = false;
     }
 
+    applySeo(article);
   }
 
   async function loadRecent() {
