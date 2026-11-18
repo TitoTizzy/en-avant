@@ -1,3 +1,4 @@
+import { sendPush } from './push.js';
 // Notifications du tableau de bord (cloche, pastilles, push).
 // createNotification ne lève jamais d'exception : une notification ratée ne
 // doit jamais faire échouer l'action (inscription, don, etc.).
@@ -9,9 +10,6 @@ export const BADGE_GROUPS = {
   articles: ['article'],
 };
 
-let pushHook = null;
-/** Permet à la couche push (PR 3) de s'abonner aux nouvelles notifications. */
-export function onNotificationCreated(hook) { pushHook = hook; }
 
 /**
  * @param {object} supabase  client service_role
@@ -33,7 +31,7 @@ export async function createNotification(supabase, n) {
       if (error.code === '23505') return null; // déjà notifié (même type + référence)
       throw error;
     }
-    if (pushHook && data) await Promise.resolve(pushHook(supabase, data)).catch((e) => console.error('[push]', e?.message || e));
+    if (data) await sendPush(supabase, data); // ne lève jamais d'exception
     return data;
   } catch (error) {
     console.error('[notifications] échec :', n?.type, error?.message || error);

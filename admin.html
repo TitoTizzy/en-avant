@@ -8,6 +8,8 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NJEJ3FDKXY"></script>
   <script src="/js/gtag.js"></script>
   <title>Dashboard | En Avant</title>
+  <link rel="manifest" href="/admin.webmanifest">
+  <link rel="apple-touch-icon" href="/pictures/logo/admin-icon-192.png">
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -177,6 +179,14 @@
               <button class="btn btn-ghost btn-xs" id="adm-bell-readall" type="button">Tout marquer comme lu</button>
             </div>
             <ul class="adm-bell-list" id="adm-bell-list"><li class="adm-bell-empty">Chargement…</li></ul>
+            <div class="adm-bell-push" id="adm-bell-push">
+              <p id="adm-push-status">Recevez ces alertes sur cet appareil, même quand l'admin est fermé.</p>
+              <div>
+                <button class="btn btn-primary btn-xs" id="adm-push-enable" type="button"><i class="fa-solid fa-mobile-screen" aria-hidden="true"></i> Activer sur cet appareil</button>
+                <button class="btn btn-ghost btn-xs" id="adm-push-test" type="button" hidden>Tester</button>
+                <button class="btn btn-ghost btn-xs" id="adm-push-disable" type="button" hidden>Désactiver</button>
+              </div>
+            </div>
           </div>
         </div>
         <a href="/index.html" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">

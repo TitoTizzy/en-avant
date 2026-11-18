@@ -4131,3 +4131,10 @@ body.adm-is-locked {
 }
 .adm-bell-item.is-unread > i { color: #ff6a2a; }
 .adm-bell-empty { padding: 1.2rem 1rem; opacity: .6; font-size: .85rem; }
+.adm-bell-push {
+  padding: .9rem 1rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  font-size: .8rem;
+}
+.adm-bell-push p { margin: 0 0 .6rem; opacity: .7; }
+.adm-bell-push div { display: flex; flex-wrap: wrap; gap: .4rem; }
