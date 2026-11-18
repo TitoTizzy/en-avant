@@ -400,10 +400,103 @@
       });
     });
 
+    setupPush();
+
+    // Arrivée depuis une notification push : « admin.html?n=members:en_attente ».
+    const fromPush = new URLSearchParams(window.location.search).get("n");
+    if (fromPush) {
+      openNotificationLink(fromPush);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
     loadNotifications();
     clearInterval(notifTimer);
     notifTimer = setInterval(() => { if (!document.hidden) loadNotifications(); }, 60000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) loadNotifications(); });
+  }
+
+  /* ----- Notifications push (cet appareil) ----- */
+  const urlB64ToUint8 = (b64) => {
+    const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  };
+
+  async function setupPush() {
+    const status = document.getElementById("adm-push-status");
+    const enable = document.getElementById("adm-push-enable");
+    const test = document.getElementById("adm-push-test");
+    const disable = document.getElementById("adm-push-disable");
+    if (!status || !enable) return;
+
+    const show = (subscribed) => {
+      enable.hidden = subscribed;
+      test.hidden = !subscribed;
+      disable.hidden = !subscribed;
+      status.textContent = subscribed
+        ? "Notifications activées sur cet appareil."
+        : "Recevez ces alertes sur cet appareil, même quand l'admin est fermé.";
+    };
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      enable.hidden = true;
+      status.textContent = /iphone|ipad/i.test(navigator.userAgent)
+        ? "Sur iPhone : ouvrez enavant.org/admin dans Safari, Partager → « Sur l'écran d'accueil », puis activez les notifications depuis l'icône."
+        : "Ce navigateur ne prend pas en charge les notifications push.";
+      return;
+    }
+
+    let registration;
+    try {
+      registration = await navigator.serviceWorker.register("/admin-sw.js", { scope: "/admin" });
+      show(Boolean(await registration.pushManager.getSubscription()));
+    } catch (error) {
+      console.error("Service worker :", error);
+      enable.hidden = true;
+      status.textContent = "Notifications push indisponibles sur cet appareil.";
+      return;
+    }
+
+    enable.addEventListener("click", async () => {
+      enable.disabled = true;
+      try {
+        if (Notification.permission === "denied") throw new Error("Notifications bloquées : autorisez-les dans les réglages du navigateur pour enavant.org.");
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") throw new Error("Autorisation refusée.");
+        const { publicKey } = await api("/api/admin/push");
+        const sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8(publicKey),
+        });
+        await api("/api/admin/push", { method: "POST", body: JSON.stringify({ subscription: sub.toJSON() }) });
+        show(true);
+      } catch (error) {
+        status.textContent = error.message || "Activation impossible.";
+      } finally {
+        enable.disabled = false;
+      }
+    });
+
+    test.addEventListener("click", async () => {
+      test.disabled = true;
+      try {
+        await api("/api/admin/push", { method: "POST", body: JSON.stringify({ action: "test" }) });
+        status.textContent = "Notification de test envoyée : elle doit apparaître dans quelques secondes.";
+      } catch (error) {
+        status.textContent = error.message || "Test impossible.";
+      } finally {
+        test.disabled = false;
+      }
+    });
+
+    disable.addEventListener("click", async () => {
+      const sub = await registration.pushManager.getSubscription();
+      if (sub) {
+        await api("/api/admin/push", { method: "DELETE", body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+        await sub.unsubscribe().catch(() => {});
+      }
+      show(false);
+    });
   }
 
   let viewerIsSuperAdmin = false;

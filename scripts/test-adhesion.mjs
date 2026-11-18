@@ -179,3 +179,11 @@ test('Notifications : visibilité par permission, doublon ignoré, jamais d’ex
   assert.equal(await createNotification(fake({ code: '23505' }), { type: 'a_supprimer', title: 't' }), null);
   assert.equal(await createNotification(fake({ code: 'XX000', message: 'boom' }), { type: 'don', title: 't' }), null);
 });
+
+test('Push : charge utile courte, lien vers l’admin du site, sans NINU ni téléphone', async () => {
+  const { pushPayload } = await import('../api/_lib/push.js');
+  const p = JSON.parse(pushPayload({ type: 'adhesion', title: 'Nouvelle demande — Ana', body: 'Jacmel', link: 'members:en_attente' }));
+  assert.equal(p.url, 'https://enavant.org/admin.html?n=members%3Aen_attente');
+  assert.equal(p.tag, 'adhesion');
+  assert.deepEqual(Object.keys(p).sort(), ['body', 'tag', 'title', 'url']);
+});

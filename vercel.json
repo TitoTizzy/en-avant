@@ -20,6 +20,7 @@
     { "source": "/api/auth/change-pin",   "destination": "/api/auth?action=change-pin" },
     { "source": "/api/admin/dashboard",   "destination": "/api/admin?action=dashboard" },
     { "source": "/api/admin/notifications", "destination": "/api/admin?action=notifications" },
+    { "source": "/api/admin/push",        "destination": "/api/admin?action=push" },
     { "source": "/api/admin/articles",    "destination": "/api/admin?action=articles" },
     { "source": "/api/admin/events",      "destination": "/api/admin?action=events" },
     { "source": "/api/admin/media",       "destination": "/api/admin?action=media" },
@@ -53,6 +54,13 @@
       "source": "/pictures/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/admin-sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     },
     {
