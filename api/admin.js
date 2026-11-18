@@ -12,6 +12,7 @@ import usersHandler from './_admin/users.js';
 import digestHandler from './_admin/digest.js';
 import notificationsHandler from './_admin/notifications.js';
 import pushHandler from './_admin/push.js';
+import statsHandler from './_admin/stats.js';
 import { json } from './_lib/http.js';
 
 export default async function handler(req, res) {
@@ -29,6 +30,7 @@ export default async function handler(req, res) {
     case 'digest':       return digestHandler(req, res);
     case 'notifications': return notificationsHandler(req, res);
     case 'push':         return pushHandler(req, res);
+    case 'stats':        return statsHandler(req, res);
     default:             return json(res, 404, { error: 'Route inconnue.' });
   }
 }

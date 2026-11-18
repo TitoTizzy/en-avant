@@ -21,6 +21,7 @@
     { "source": "/api/admin/dashboard",   "destination": "/api/admin?action=dashboard" },
     { "source": "/api/admin/notifications", "destination": "/api/admin?action=notifications" },
     { "source": "/api/admin/push",        "destination": "/api/admin?action=push" },
+    { "source": "/api/admin/stats",       "destination": "/api/admin?action=stats" },
     { "source": "/api/admin/articles",    "destination": "/api/admin?action=articles" },
     { "source": "/api/admin/events",      "destination": "/api/admin?action=events" },
     { "source": "/api/admin/media",       "destination": "/api/admin?action=media" },

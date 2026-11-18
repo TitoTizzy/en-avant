@@ -187,3 +187,17 @@ test('Push : charge utile courte, lien vers l’admin du site, sans NINU ni tél
   assert.equal(p.tag, 'adhesion');
   assert.deepEqual(Object.keys(p).sort(), ['body', 'tag', 'title', 'url']);
 });
+
+test('Statistiques : série sur 30 jours et répartition regroupée', async () => {
+  const { dailySeries, breakdown } = await import('../api/_admin/stats.js');
+  const now = Date.parse('2026-11-18T18:00:00Z');
+  const s = dailySeries([
+    { d: '2026-11-18T15:00:00Z' }, { d: '2026-11-18T16:00:00Z' }, { d: '2026-11-01T15:00:00Z' }, { d: '2026-09-01T15:00:00Z' },
+  ], 'd', now);
+  assert.equal(s.days.length, 30);
+  assert.equal(s.values[29], 2);
+  assert.equal(s.total, 3, 'hors fenêtre ignoré');
+  const b = breakdown(['a', 'a', 'B', 'b', 'c', 'd'].map((v) => ({ v })), (r) => r.v, { limit: 3 });
+  assert.deepEqual(b.map((x) => x.value), [2, 2, 2]);
+  assert.equal(b[2].label, 'Autres');
+});

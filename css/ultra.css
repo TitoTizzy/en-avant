@@ -4138,3 +4138,46 @@ body.adm-is-locked {
 }
 .adm-bell-push p { margin: 0 0 .6rem; opacity: .7; }
 .adm-bell-push div { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* ─── Cartes statistiques cliquables + vue détaillée ──────────────── */
+.adm-stat-link {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.adm-stat-link:hover, .adm-stat-link:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--stat-color, #ff6a2a);
+  outline: none;
+}
+.adm-stats-total { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 1.2rem; }
+.adm-stats-total strong { font-size: 2.4rem; font-family: "Space Grotesk", sans-serif; }
+.adm-stats-total span { opacity: .6; }
+.adm-stats-chart {
+  padding: 1rem 1.2rem;
+  margin: 0 0 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, .03);
+}
+.adm-stats-chart p { margin: 0 0 .6rem; font-size: .85rem; opacity: .7; }
+.adm-chart-bar { fill: #ff6a2a; opacity: .85; }
+.adm-chart-bar:hover { opacity: 1; }
+.adm-chart-axis { stroke: rgba(255, 255, 255, .15); }
+.adm-chart-tick { fill: rgba(255, 255, 255, .5); font-size: 12px; }
+.adm-stats-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.adm-stats-group {
+  padding: 1rem 1.2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, .03);
+}
+.adm-stats-group h4 { margin: 0 0 .8rem; font-size: .95rem; }
+.adm-stats-row { display: grid; grid-template-columns: minmax(0, 1.2fr) 1fr auto; gap: .7rem; align-items: center; font-size: .84rem; margin-bottom: .5rem; }
+.adm-stats-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-stats-meter { height: .45rem; border-radius: 999px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.adm-stats-meter i { display: block; height: 100%; border-radius: 999px; background: #ff6a2a; }
+.adm-stats-empty { margin: 0; opacity: .6; font-size: .85rem; }

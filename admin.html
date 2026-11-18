@@ -216,34 +216,34 @@
 
         <!-- Stats -->
         <div class="adm-home-stats">
-          <div class="adm-stat-card" style="--stat-color:#ff6a2a;">
+          <button type="button" class="adm-stat-card adm-stat-link" data-stat="members" title="Voir le détail" style="--stat-color:#ff6a2a;">
             <div class="adm-stat-icon"><i class="fa-solid fa-id-card"></i></div>
             <div class="adm-stat-body"><strong id="st-members">—</strong><span>Adhésions</span></div>
-          </div>
-          <div class="adm-stat-card" style="--stat-color:#22c55e;">
+          </button>
+          <button type="button" class="adm-stat-card adm-stat-link" data-stat="donations" title="Voir le détail" style="--stat-color:#22c55e;">
             <div class="adm-stat-icon" style="background:rgba(34,197,94,.1);"><i class="fa-solid fa-hand-holding-heart"></i></div>
             <div class="adm-stat-body"><strong id="st-donations">—</strong><span>Dons</span></div>
-          </div>
-          <div class="adm-stat-card" style="--stat-color:#3b82f6;">
+          </button>
+          <button type="button" class="adm-stat-card adm-stat-link" data-stat="leads" title="Voir le détail" style="--stat-color:#3b82f6;">
             <div class="adm-stat-icon" style="background:rgba(59,130,246,.1);"><i class="fa-solid fa-envelope-open-text"></i></div>
             <div class="adm-stat-body"><strong id="st-leads">—</strong><span>Leads</span></div>
-          </div>
-          <div class="adm-stat-card" style="--stat-color:#a855f7;">
+          </button>
+          <button type="button" class="adm-stat-card adm-stat-link" data-stat="trivia" title="Voir le détail" style="--stat-color:#a855f7;">
             <div class="adm-stat-icon" style="background:rgba(168,85,247,.1);"><i class="fa-solid fa-brain"></i></div>
             <div class="adm-stat-body"><strong id="st-trivia">—</strong><span>Questions Trivia</span></div>
-          </div>
-          <div class="adm-stat-card" style="--stat-color:#ec4899;">
+          </button>
+          <button type="button" class="adm-stat-card adm-stat-link" data-stat="articles" title="Voir le détail" style="--stat-color:#ec4899;">
             <div class="adm-stat-icon" style="background:rgba(236,72,153,.1);"><i class="fa-solid fa-newspaper"></i></div>
             <div class="adm-stat-body"><strong id="st-articles">—</strong><span>Articles</span></div>
-          </div>
-          <div class="adm-stat-card" style="--stat-color:#f59e0b;">
+          </button>
+          <button type="button" class="adm-stat-card adm-stat-link" data-stat="events" title="Voir le détail" style="--stat-color:#f59e0b;">
             <div class="adm-stat-icon" style="background:rgba(245,158,11,.1);"><i class="fa-solid fa-calendar-days"></i></div>
             <div class="adm-stat-body"><strong id="st-events">—</strong><span>Événements</span></div>
-          </div>
-          <div class="adm-stat-card" style="--stat-color:#06b6d4;">
+          </button>
+          <button type="button" class="adm-stat-card adm-stat-link" data-stat="media" title="Voir le détail" style="--stat-color:#06b6d4;">
             <div class="adm-stat-icon" style="background:rgba(6,182,212,.1);"><i class="fa-solid fa-photo-film"></i></div>
             <div class="adm-stat-body"><strong id="st-media">—</strong><span>Médias</span></div>
-          </div>
+          </button>
         </div>
 
         <!-- Actions rapides + Infos -->
@@ -489,6 +489,28 @@
       </section>
 
       <!-- ════════════════════ MEMBRES ════════════════════════════════ -->
+      <!-- ════════════════════ DÉTAIL D'UNE STATISTIQUE ═══════════════ -->
+      <section class="adm-panel" id="panel-stats" hidden>
+        <div class="adm-articles-heading">
+          <div>
+            <button class="adm-back-button" type="button" id="stats-back">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au tableau de bord
+            </button>
+            <h3 id="stats-title">Statistiques</h3>
+            <p id="stats-highlight"></p>
+          </div>
+          <button class="btn btn-primary" type="button" id="stats-open-list">
+            <i class="fa-solid fa-list" aria-hidden="true"></i> Voir la liste
+          </button>
+        </div>
+        <div class="adm-stats-total"><strong id="stats-total">—</strong><span>au total</span></div>
+        <div class="adm-stats-chart">
+          <p id="stats-series-label"></p>
+          <div id="stats-chart" role="img" aria-label="Évolution sur 30 jours"></div>
+        </div>
+        <div class="adm-stats-groups" id="stats-groups"></div>
+      </section>
+
       <section class="adm-panel" id="panel-members" hidden>
         <div class="adm-list-tools" data-dataset="members">
           <input type="search" id="members-search" placeholder="Rechercher nom, NINU, email ou ville">

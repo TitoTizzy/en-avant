@@ -247,6 +247,7 @@
 
   const PANEL_TITLES = {
     "panel-home":         "Tableau de bord",
+    "panel-stats":        "Statistiques",
     "panel-articles":     "Articles",
     "panel-events":       "Événements",
     "panel-gallery":      "Galerie",
@@ -498,6 +499,76 @@
       show(false);
     });
   }
+
+  /* ----- Détail des cartes de statistiques ----- */
+  let statsLink = "home";
+
+  /** Histogramme SVG des 30 derniers jours (sans bibliothèque externe). */
+  function renderStatsChart(series) {
+    const host = document.getElementById("stats-chart");
+    const values = series?.values || [];
+    const days = series?.days || [];
+    const max = Math.max(1, ...values);
+    const w = 900;
+    const h = 220;
+    const pad = 28;
+    const bw = (w - pad * 2) / Math.max(values.length, 1);
+    const bars = values.map((v, i) => {
+      const bh = Math.round((v / max) * (h - pad * 2));
+      const x = pad + i * bw + 2;
+      const y = h - pad - bh;
+      const label = new Date(`${days[i]}T12:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+      return `<g><title>${label} : ${v}</title><rect x="${x.toFixed(1)}" y="${y}" width="${Math.max(bw - 4, 2).toFixed(1)}" height="${Math.max(bh, v ? 2 : 0)}" rx="3" class="adm-chart-bar"></rect></g>`;
+    }).join("");
+    const ticks = [0, 9, 19, 29].filter((i) => days[i]).map((i) => {
+      const label = new Date(`${days[i]}T12:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+      return `<text x="${(pad + i * bw + bw / 2).toFixed(1)}" y="${h - 8}" text-anchor="middle" class="adm-chart-tick">${label}</text>`;
+    }).join("");
+    host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="${h}">
+      <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" class="adm-chart-axis"></line>
+      <text x="${pad}" y="16" class="adm-chart-tick">max ${max}</text>${bars}${ticks}</svg>`;
+  }
+
+  function renderStatsGroups(groups) {
+    document.getElementById("stats-groups").innerHTML = (groups || []).map((g) => {
+      const total = g.items.reduce((a, b) => a + b.value, 0) || 1;
+      return `<div class="adm-stats-group"><h4>${esc(g.title)}</h4>${g.items.length ? g.items.map((it) => `
+        <div class="adm-stats-row">
+          <span>${esc(it.label)}</span>
+          <div class="adm-stats-meter"><i style="width:${Math.round((100 * it.value) / total)}%"></i></div>
+          <strong>${esc(it.value)}</strong>
+        </div>`).join("") : '<p class="adm-stats-empty">Aucune donnée.</p>'}</div>`;
+    }).join("");
+  }
+
+  async function openStats(kind) {
+    switchPanel("panel-stats");
+    document.getElementById("stats-title").textContent = "Chargement…";
+    document.getElementById("stats-highlight").textContent = "";
+    document.getElementById("stats-total").textContent = "—";
+    document.getElementById("stats-chart").innerHTML = "";
+    document.getElementById("stats-groups").innerHTML = "";
+    try {
+      const d = await api(`/api/admin/stats?kind=${encodeURIComponent(kind)}`);
+      statsLink = d.link;
+      document.getElementById("stats-title").textContent = d.title;
+      document.getElementById("stats-highlight").textContent = d.highlight || `${d.series.total} sur les 30 derniers jours`;
+      document.getElementById("stats-total").textContent = String(d.total);
+      document.getElementById("stats-series-label").textContent = `${d.series.label} — 30 derniers jours (total : ${d.series.total})`;
+      renderStatsChart(d.series);
+      renderStatsGroups(d.groups);
+    } catch (error) {
+      document.getElementById("stats-title").textContent = error.message || "Statistiques indisponibles.";
+    }
+  }
+
+  document.querySelectorAll(".adm-stat-link[data-stat]").forEach((card) => {
+    card.addEventListener("click", () => openStats(card.dataset.stat));
+  });
+  document.getElementById("stats-back")?.addEventListener("click", () => {
+    document.querySelector('.adm-nav-item[data-panel="panel-home"]')?.click();
+  });
+  document.getElementById("stats-open-list")?.addEventListener("click", () => openNotificationLink(statsLink));
 
   let viewerIsSuperAdmin = false;
 
