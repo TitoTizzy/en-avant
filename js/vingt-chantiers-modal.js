@@ -16,7 +16,11 @@
     const bgDiv = document.createElement("div");
     bgDiv.className = "card-bg-img";
     const img = document.createElement("img");
-    img.src = card.dataset.img;
+    // Vignette légère (800 px) pour la carte ; l'image complète reste pour la fenêtre de détail.
+    img.src = card.dataset.img.replace(/\.webp$/, "-800.webp");
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.onerror = () => { img.onerror = null; img.src = card.dataset.img; };
     img.alt = "";
     img.setAttribute("aria-hidden", "true");
     bgDiv.appendChild(img);
