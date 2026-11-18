@@ -61,10 +61,11 @@
   }
 
   function open(setting, source) {
-    const overlay = el("div", { class: "ea-intro", role: "dialog", "aria-modal": "true", "aria-labelledby": "ea-intro-title" });
+    const overlay = el("div", { class: "ea-intro", role: "dialog", "aria-modal": "true", "aria-label": setting.headline || "Vidéo En Avant" });
 
-    const skip = el("button", { class: "ea-intro-skip", type: "button" });
-    skip.innerHTML = 'Entrer sur le site <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>';
+    // Seul élément en dehors de la vidéo : une petite croix pour fermer.
+    const close = el("button", { class: "ea-intro-close", type: "button", "aria-label": "Fermer la vidéo et entrer sur le site" });
+    close.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
 
     // Maquette de téléphone
     const phone = el("div", { class: "ea-phone" });
@@ -84,22 +85,12 @@
     }
     phone.appendChild(screen);
 
-    const text = el("div", { class: "ea-intro-text" });
-    text.appendChild(el("img", { src: "/pictures/logo/logo.png", alt: "En Avant", class: "ea-intro-logo", width: "180", height: "66" }));
-    text.appendChild(el("h1", { id: "ea-intro-title" }, setting.headline || "En Avant — Pour changer Haïti ensemble"));
-    if (setting.subtext) text.appendChild(el("p", {}, setting.subtext));
-    const actions = el("div", { class: "ea-intro-actions" });
-    const enter = el("button", { class: "btn btn-primary btn-lg", type: "button" }, "Découvrir le site");
-    actions.appendChild(enter);
-    actions.appendChild(el("a", { href: "/adherer", class: "btn btn-ghost btn-lg" }, "Rejoindre le mouvement"));
-    text.appendChild(actions);
-
-    overlay.append(skip, phone, text);
+    overlay.append(close, phone);
     document.body.appendChild(overlay);
     document.body.classList.add("ea-intro-open");
     reveal(); // le site existe derrière, mais l'intro opaque le recouvre
     requestAnimationFrame(() => overlay.classList.add("is-visible"));
-    enter.focus({ preventScroll: true });
+    close.focus({ preventScroll: true });
 
     const dismiss = () => {
       overlay.classList.add("is-leaving");
@@ -117,8 +108,8 @@
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       }
     };
-    skip.addEventListener("click", dismiss);
-    enter.addEventListener("click", dismiss);
+    close.addEventListener("click", dismiss);
+    overlay.addEventListener("click", (event) => { if (event.target === overlay) dismiss(); });
     document.addEventListener("keydown", onKey);
   }
 
