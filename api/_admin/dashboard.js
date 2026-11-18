@@ -90,6 +90,29 @@ async function relanceTargets(supabase) {
     && (!p.relance_adhesion_at || new Date(p.relance_adhesion_at).getTime() < limit));
 }
 
+export const MEMBER_TABS = ['en_attente', 'non_envoye', 'attente_activation', 'actifs', 'rejetes'];
+
+/** Onglet d'une fiche selon son statut et l'état de son compte. */
+export function memberTab(member, lastSignIn) {
+  if (member.status === 'pending') return 'en_attente';
+  if (member.status === 'rejected') return 'rejetes';
+  if (!member.user_id) return 'non_envoye';
+  return lastSignIn.get(member.user_id) ? 'actifs' : 'attente_activation';
+}
+
+/** Date de dernière connexion de chaque compte (auth.users). */
+async function lastSignIns(supabase) {
+  const map = new Map();
+  for (let page = 1; page <= 10; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    const users = data?.users || [];
+    users.forEach((u) => map.set(u.id, u.last_sign_in_at || null));
+    if (users.length < 1000) break;
+  }
+  return map;
+}
+
 async function loadMember(supabase, memberId) {
   const { data, error } = await supabase
     .from('members')
@@ -337,6 +360,41 @@ export default async function handler(req, res) {
           filters: ['nom', 'email', 'ville'],
         },
       };
+
+      // Membres : classement par onglet (statut + état du compte), puis pagination.
+      if (dataset === 'members') {
+        let membersQuery = supabase
+          .from('members')
+          .select(configs.members.fields)
+          .order('created_at', { ascending: false })
+          .limit(5000);
+        if (search) {
+          membersQuery = membersQuery.or(configs.members.filters.map((field) => `${field}.ilike.%${search}%`).join(','));
+        }
+        const [{ data: all, error: allError }, signIns] = await Promise.all([membersQuery, lastSignIns(supabase)]);
+        if (allError) throw allError;
+
+        const counts = Object.fromEntries(MEMBER_TABS.map((t) => [t, 0]));
+        const tab = MEMBER_TABS.includes(clean(req.query?.tab)) ? clean(req.query.tab) : 'en_attente';
+        const inTab = [];
+        for (const m of all || []) {
+          const t = memberTab(m, signIns);
+          counts[t] += 1;
+          if (t === tab) inTab.push(m);
+        }
+        const pageRows = inTab.slice(from, to + 1);
+        const records = maskMembers(pageRows, identity, await rolesFor(supabase, pageRows))
+          .map((r, i) => ({ ...r, tab: memberTab(pageRows[i], signIns) }));
+        return json(res, 200, {
+          records,
+          total: inTab.length,
+          counts,
+          tab,
+          page: exporting ? 1 : page,
+          page_size: pageSize,
+          truncated: exporting && inTab.length > pageSize,
+        });
+      }
 
       const config = configs[dataset];
       let query = supabase
