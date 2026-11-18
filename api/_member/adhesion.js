@@ -5,6 +5,7 @@
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 import { notifyTeam } from '../_lib/notify.js';
+import { createNotification } from '../_lib/notifications.js';
 import { validateFiche, duplicateFicheMessage } from '../_lib/adhesion.js';
 
 // « pending » est volontairement absent : pas d'accès avant approbation.
@@ -86,6 +87,13 @@ export default async function handler(req, res) {
       throw error;
     }
 
+    await createNotification(supabase, {
+      type: 'fiche',
+      title: `Fiche d’adhésion complétée — ${finalNom}`,
+      body: 'Compte existant : accès maintenu, fiche à examiner.',
+      link: 'members:en_attente',
+      permission: 'voir_membres',
+    });
     await notifyTeam({
       subject: `Fiche d'adhésion complétée — ${finalNom}`,
       title: 'Un membre a complété sa fiche d’adhésion',

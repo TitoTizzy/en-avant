@@ -4057,3 +4057,77 @@ body.adm-is-locked {
 .adm-alert-delete p { margin: .25rem 0 .6rem; font-size: .86rem; opacity: .75; }
 .adm-alert-delete ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
 .adm-alert-delete li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: .88rem; }
+
+/* ─── Cloche de notifications (admin) ─────────────────────────────── */
+.adm-bell-wrap { position: relative; }
+.adm-bell {
+  position: relative;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .04);
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.adm-bell:hover { background: rgba(255, 255, 255, .09); }
+.adm-bell-count {
+  position: absolute;
+  top: -.3rem;
+  right: -.3rem;
+  min-width: 1.25rem;
+  padding: .05rem .35rem;
+  border-radius: 999px;
+  background: #ff6a2a;
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 800;
+  line-height: 1.15rem;
+}
+.adm-bell-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + .6rem);
+  z-index: 60;
+  width: min(380px, 90vw);
+  max-height: 70vh;
+  overflow: auto;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: #0b1730;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+}
+.adm-bell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .9rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.adm-bell-list { list-style: none; margin: 0; padding: .3rem 0; }
+.adm-bell-item {
+  display: flex;
+  gap: .8rem;
+  padding: .75rem 1rem;
+  cursor: pointer;
+  font-size: .85rem;
+}
+.adm-bell-item:hover, .adm-bell-item:focus { background: rgba(255, 255, 255, .05); outline: none; }
+.adm-bell-item > i { margin-top: .2rem; color: rgba(255, 255, 255, .55); width: 1rem; text-align: center; }
+.adm-bell-item div { display: flex; flex-direction: column; gap: .15rem; }
+.adm-bell-item span { opacity: .7; }
+.adm-bell-item time { font-size: .72rem; opacity: .5; }
+.adm-bell-item.is-unread strong::before {
+  content: "";
+  display: inline-block;
+  width: .45rem;
+  height: .45rem;
+  margin-right: .45rem;
+  border-radius: 999px;
+  background: #ff6a2a;
+  vertical-align: middle;
+}
+.adm-bell-item.is-unread > i { color: #ff6a2a; }
+.adm-bell-empty { padding: 1.2rem 1rem; opacity: .6; font-size: .85rem; }

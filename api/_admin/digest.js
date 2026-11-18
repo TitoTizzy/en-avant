@@ -8,6 +8,7 @@ import { getServiceClient } from '../_lib/supabase.js';
 import { json, handleError } from '../_lib/http.js';
 import { notifyTeam } from '../_lib/notify.js';
 import { sendDueRelances, accountsToDelete, displayName } from '../_lib/relances.js';
+import { createNotification } from '../_lib/notifications.js';
 
 function authorized(req) {
   const secret = process.env.CRON_SECRET || '';
@@ -40,6 +41,17 @@ export default async function handler(req, res) {
     // Relances automatiques (avant le résumé, pour qu'il en rende compte).
     const relances = await sendDueRelances(supabase);
     const toDelete = await accountsToDelete(supabase);
+    // Une notification SuperAdmin par compte (jamais en double grâce à ref_id).
+    for (const p of toDelete) {
+      await createNotification(supabase, {
+        type: 'a_supprimer',
+        title: `Compte à supprimer — ${displayName(p)}`,
+        body: '5 relances sans fiche d’adhésion.',
+        link: 'home',
+        permission: null,
+        refId: `a_supprimer:${p.id}`,
+      });
+    }
 
     const nLeads = leads.count || 0;
     if (nLeads === 0 && !members.count && !donations.count && !relances.sent && !relances.failed && !toDelete.length) {

@@ -295,6 +295,117 @@
     });
   });
 
+  /* ----- Notifications (cloche + pastilles) ----- */
+  const NOTIF_ICONS = {
+    adhesion: "fa-user-plus", fiche: "fa-id-card", a_supprimer: "fa-user-xmark",
+    don: "fa-hand-holding-heart", don_alerte: "fa-triangle-exclamation", article: "fa-newspaper",
+  };
+  const PANEL_GROUP = { "panel-members": "members", "panel-donations": "donations" };
+  let notifTimer = null;
+
+  const timeAgo = (iso) => {
+    const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 1) return "à l'instant";
+    if (min < 60) return `il y a ${min} min`;
+    const h = Math.round(min / 60);
+    if (h < 24) return `il y a ${h} h`;
+    return fmtDate(iso);
+  };
+
+  function setNavBadge(id, n) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = !n;
+    el.textContent = n > 99 ? "99+" : String(n);
+  }
+
+  async function loadNotifications() {
+    try {
+      const data = await api("/api/admin/notifications");
+      const count = document.getElementById("adm-bell-count");
+      count.hidden = !data.unread;
+      count.textContent = data.unread > 99 ? "99+" : String(data.unread);
+      setNavBadge("members-nav-badge", data.badges?.members || 0);
+      setNavBadge("donations-nav-badge", data.badges?.donations || 0);
+      document.title = data.unread ? `(${data.unread}) Dashboard | En Avant` : "Dashboard | En Avant";
+
+      const list = document.getElementById("adm-bell-list");
+      list.innerHTML = data.items.length
+        ? data.items.map((n) => `
+          <li class="adm-bell-item${n.read ? "" : " is-unread"}" data-id="${esc(n.id)}" data-link="${esc(n.link)}" tabindex="0">
+            <i class="fa-solid ${NOTIF_ICONS[n.type] || "fa-bell"}" aria-hidden="true"></i>
+            <div><strong>${esc(n.title)}</strong>${n.body ? `<span>${esc(n.body)}</span>` : ""}<time>${timeAgo(n.created_at)}</time></div>
+          </li>`).join("")
+        : '<li class="adm-bell-empty">Aucune notification.</li>';
+    } catch (error) {
+      console.error("Notifications :", error);
+    }
+  }
+
+  /** Ouvre la section liée à une notification (ex. « members:en_attente »). */
+  function openNotificationLink(link) {
+    const [panel, tab] = String(link || "").split(":");
+    const panelId = panel === "home" ? "panel-home" : `panel-${panel}`;
+    const navItem = document.querySelector(`.adm-nav-item[data-panel="${panelId}"]`);
+    if (navItem) navItem.click(); else switchPanel(panelId);
+    if (panel === "members" && tab) {
+      document.querySelector(`.member-tab[data-tab="${tab}"]`)?.click();
+    }
+  }
+
+  function markRead(body) {
+    return api("/api/admin/notifications", { method: "POST", body: JSON.stringify(body) })
+      .then(loadNotifications)
+      .catch((error) => console.error(error));
+  }
+
+  function startNotifications() {
+    const bell = document.getElementById("adm-bell");
+    const panel = document.getElementById("adm-bell-panel");
+    if (!bell || !panel) return;
+
+    bell.addEventListener("click", (event) => {
+      event.stopPropagation();
+      panel.hidden = !panel.hidden;
+      bell.setAttribute("aria-expanded", String(!panel.hidden));
+      if (!panel.hidden) loadNotifications();
+    });
+    document.addEventListener("click", (event) => {
+      if (!panel.hidden && !panel.contains(event.target) && event.target !== bell) {
+        panel.hidden = true;
+        bell.setAttribute("aria-expanded", "false");
+      }
+    });
+    document.getElementById("adm-bell-readall")?.addEventListener("click", () => markRead({ action: "read_all" }));
+
+    const openItem = (item) => {
+      if (!item) return;
+      markRead({ action: "read", id: item.dataset.id });
+      panel.hidden = true;
+      bell.setAttribute("aria-expanded", "false");
+      openNotificationLink(item.dataset.link);
+    };
+    const list = document.getElementById("adm-bell-list");
+    list.addEventListener("click", (event) => openItem(event.target.closest(".adm-bell-item")));
+    list.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") openItem(event.target.closest(".adm-bell-item"));
+    });
+
+    // Ouvrir Membres ou Dons marque leurs notifications comme lues.
+    document.querySelectorAll(".adm-nav-item[data-panel]").forEach((item) => {
+      item.addEventListener("click", () => {
+        const group = PANEL_GROUP[item.dataset.panel];
+        const badge = document.getElementById(`${group}-nav-badge`);
+        if (group && badge && !badge.hidden) markRead({ action: "read_all", group });
+      });
+    });
+
+    loadNotifications();
+    clearInterval(notifTimer);
+    notifTimer = setInterval(() => { if (!document.hidden) loadNotifications(); }, 60000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) loadNotifications(); });
+  }
+
   let viewerIsSuperAdmin = false;
 
   const ACCOUNT_LABELS = {
@@ -2730,6 +2841,7 @@
 
     // Wire des interactions UI
     bindListTools();
+    startNotifications();
     bindArticleLibrary();
     bindEventLibrary();
     bindGallery();

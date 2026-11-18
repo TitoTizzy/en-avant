@@ -109,9 +109,11 @@
       <p class="adm-nav-section">Membres &amp; Dons</p>
       <button class="adm-nav-item" data-panel="panel-members" type="button">
         <i class="fa-solid fa-id-card" aria-hidden="true"></i> Membres
+        <span class="adm-nav-badge" id="members-nav-badge" hidden>0</span>
       </button>
       <button class="adm-nav-item" data-panel="panel-donations" type="button">
         <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> Dons
+        <span class="adm-nav-badge" id="donations-nav-badge" hidden>0</span>
       </button>
       <button class="adm-nav-item" data-panel="panel-leads" type="button">
         <i class="fa-solid fa-envelope-open-text" aria-hidden="true"></i> Leads
@@ -164,6 +166,19 @@
         <p>Administration / <span id="adm-topbar-section">Accueil</span></p>
       </div>
       <div class="adm-topbar-right">
+        <div class="adm-bell-wrap">
+          <button class="adm-bell" id="adm-bell" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+            <i class="fa-solid fa-bell" aria-hidden="true"></i>
+            <span class="adm-bell-count" id="adm-bell-count" hidden>0</span>
+          </button>
+          <div class="adm-bell-panel" id="adm-bell-panel" hidden role="dialog" aria-label="Notifications">
+            <div class="adm-bell-head">
+              <strong>Notifications</strong>
+              <button class="btn btn-ghost btn-xs" id="adm-bell-readall" type="button">Tout marquer comme lu</button>
+            </div>
+            <ul class="adm-bell-list" id="adm-bell-list"><li class="adm-bell-empty">Chargement…</li></ul>
+          </div>
+        </div>
         <a href="/index.html" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
           <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Voir le site
         </a>

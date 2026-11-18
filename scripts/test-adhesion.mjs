@@ -163,3 +163,19 @@ test('Email de suppression : jamais de donnée sensible, lien pour adhérer à n
   assert.equal(m.cta.url, 'https://enavant.org/adherer');
   assert.ok(!/ninu|téléphone/i.test(m.paragraphs.join(' ')));
 });
+
+test('Notifications : visibilité par permission, doublon ignoré, jamais d’exception', async () => {
+  const { createNotification, visibleTo } = await import('../api/_lib/notifications.js');
+  const sa = { isSuperAdmin: true, permissions: [] };
+  const ed = { isSuperAdmin: false, permissions: ['voir_membres'] };
+  assert.equal(visibleTo(sa, { permission: null }), true);
+  assert.equal(visibleTo(ed, { permission: null }), false, 'à supprimer : SuperAdmin seulement');
+  assert.equal(visibleTo(ed, { permission: 'voir_membres' }), true);
+  assert.equal(visibleTo(ed, { permission: 'voir_dons' }), false);
+
+  const fake = (error) => ({
+    from: () => ({ insert: () => ({ select: () => ({ maybeSingle: async () => ({ data: null, error }) }) }) }),
+  });
+  assert.equal(await createNotification(fake({ code: '23505' }), { type: 'a_supprimer', title: 't' }), null);
+  assert.equal(await createNotification(fake({ code: 'XX000', message: 'boom' }), { type: 'don', title: 't' }), null);
+});

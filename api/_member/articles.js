@@ -6,6 +6,7 @@ import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
 import { sanitizeArticleHtml } from '../_lib/sanitize.js';
 import { notifyTeam } from '../_lib/notify.js';
+import { createNotification } from '../_lib/notifications.js';
 
 const CATEGORIES = [
   'actualite', 'politique', 'economie', 'societe',
@@ -79,6 +80,13 @@ export default async function handler(req, res) {
           .single();
 
         if (!error) {
+          await createNotification(supabase, {
+            type: 'article',
+            title: `Article soumis — ${titre}`,
+            body: `Par ${authorName || 'un membre'} · ${categorie}`,
+            link: 'articles',
+            permission: 'gerer_articles',
+          });
           await notifyTeam({
             subject: `Article soumis à validation — ${titre}`,
             title: 'Un membre a soumis un article',
