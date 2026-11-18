@@ -4209,6 +4209,7 @@ body.adm-is-locked {
 @media (max-width: 800px) {
   .about-hero-bg { background-image: url("../pictures/foule-Assise-800.webp"); }
   .history-hero-bg { background-image: url("../pictures/home-galerie/galerie-3-800.webp"); }
+}
 
 /* ─── Admin sur mobile et tablette ────────────────────────────────── */
 .adm-burger, .adm-sidebar-close { display: none; }
