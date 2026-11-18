@@ -218,3 +218,17 @@ test('Mot de passe oublié : email invalide refusé, honeypot neutre', async () 
   assert.equal(hp.status, 200);
   assert.match(hp.body.message, /Si cette adresse correspond/);
 });
+
+test('Feuilles de style : accolades équilibrées (sinon la fin du fichier est ignorée)', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs');
+  for (const f of readdirSync('css').filter((n) => n.endsWith('.css'))) {
+    const css = readFileSync(`css/${f}`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    let depth = 0;
+    for (const ch of css) {
+      if (ch === '{') depth += 1;
+      if (ch === '}') depth -= 1;
+      assert.ok(depth >= 0, `${f} : accolade fermante en trop`);
+    }
+    assert.equal(depth, 0, `${f} : accolade non fermée`);
+  }
+});
