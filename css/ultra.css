@@ -4204,3 +4204,9 @@ body.adm-is-locked {
   img, video, iframe { max-width: 100%; }
   .u-table, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
+
+/* Mobile : fonds de bandeau en 800 px */
+@media (max-width: 800px) {
+  .about-hero-bg { background-image: url("../pictures/foule-Assise-800.webp"); }
+  .history-hero-bg { background-image: url("../pictures/home-galerie/galerie-3-800.webp"); }
+}
