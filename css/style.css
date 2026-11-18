@@ -416,7 +416,7 @@ blockquote {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background: url("../pictures/hero.jpeg") center 35% / cover no-repeat;
+  background: url("../pictures/hero.webp") center 35% / cover no-repeat;
   filter: brightness(0.92);
   transform: scale(0.98);
 }
@@ -1436,7 +1436,7 @@ blockquote {
 .history-hero-bg {
   position: absolute;
   inset: 0;
-  background: url("../pictures/home-galerie/galerie-3.jpeg") center center / cover no-repeat;
+  background: url("../pictures/home-galerie/galerie-3.webp") center center / cover no-repeat;
   filter: brightness(0.8);
   transform: scale(1.02);
 }

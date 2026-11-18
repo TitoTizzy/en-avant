@@ -1250,8 +1250,8 @@ html.ea-returning .page-loader { display: none !important; }
   filter: saturate(0.7);
 }
 
-.about-hero-bg { background-image: url("../pictures/about-hero.jpeg"); }
-.history-hero-bg { background-image: url("../pictures/home-galerie/galerie-3.jpeg"); }
+.about-hero-bg { background-image: url("../pictures/foule-Assise.webp"); }
+.history-hero-bg { background-image: url("../pictures/home-galerie/galerie-3.webp"); }
 
 .about-hero-overlay, .history-hero-overlay, .hero-overlay {
   position: absolute;
@@ -4181,3 +4181,26 @@ body.adm-is-locked {
 .adm-stats-meter { height: .45rem; border-radius: 999px; background: rgba(255, 255, 255, .08); overflow: hidden; }
 .adm-stats-meter i { display: block; height: 100%; border-radius: 999px; background: #ff6a2a; }
 .adm-stats-empty { margin: 0; opacity: .6; font-size: .85rem; }
+
+/* ─── Mobile : cibles tactiles confortables (≥ 44 px) et débordements ─ */
+@media (max-width: 768px) {
+  .u-footer { overflow: hidden; }
+  .u-footer a,
+  .u-footer-bottom a {
+    display: inline-block;
+    padding-block: .6rem;
+  }
+  .text-link,
+  .mini-news-card a {
+    display: inline-block;
+    padding-block: .55rem;
+  }
+  .btn, button.btn { min-height: 44px; }
+  input[type="checkbox"], input[type="radio"] {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex-shrink: 0;
+  }
+  img, video, iframe { max-width: 100%; }
+  .u-table, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

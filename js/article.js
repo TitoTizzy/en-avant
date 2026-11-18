@@ -24,7 +24,7 @@
     titre: "Le parti En Avant annonce ses 20 chantiers prioritaires",
     categorie: "Programme",
     published_at: "2026-03-12T12:00:00Z",
-    image_url: "/pictures/foule-Assise.jpg",
+    image_url: "/pictures/foule-Assise.webp",
     contenu: [
       "<p>Le parti En Avant présente à la nation son programme des vingt chantiers prioritaires : une architecture de relèvement national couvrant la sécurité, la justice, la production, la jeunesse, les institutions, l'énergie, les territoires et la dignité collective.</p>",
       "<p>Cette annonce ne présente pas une simple liste. Le slogan « Pour changer Haïti ensemble » appelle à une mobilisation large : jeunesse, femmes, diaspora, enseignants, agriculteurs, policiers, artistes, ouvriers, cadres, entrepreneurs et collectivités.</p>",
