@@ -310,31 +310,82 @@
     ? '<button class="btn btn-ghost btn-xs" data-action="promote" type="button" title="Passer ce membre en Éditeur (visible dans Utilisateurs)">Promouvoir</button>'
     : "");
 
+  // Onglet Membres affiché (piloté par les onglets au-dessus du tableau).
+  let currentMemberTab = "en_attente";
+  const TAB_EMPTY = {
+    en_attente: "Aucune demande en attente.",
+    non_envoye: "Toutes les personnes approuvées ont reçu leur accès.",
+    attente_activation: "Personne n'attend d'activer son compte.",
+    actifs: "Aucun membre actif pour le moment.",
+    rejetes: "Aucune demande rejetée.",
+  };
+
+  /** Boutons d'action selon l'onglet. */
+  function memberActions(member) {
+    const btn = (action, label, title = "") => `<button class="btn btn-ghost btn-xs" data-action="${action}" type="button"${title ? ` title="${title}"` : ""}>${label}</button>`;
+    const del = '<button class="btn btn-ghost btn-xs" data-action="delete" type="button" title="Supprimer définitivement la demande et son compte" aria-label="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>';
+    switch (member.tab) {
+      case "en_attente":
+        return btn("approved", "Approuver") + btn("rejected", "Rejeter") + del;
+      case "non_envoye":
+        return btn("access_link", "Lien d'accès", "Crée le compte et envoie l'email pour choisir le mot de passe") + btn("rejected", "Rejeter") + del;
+      case "attente_activation":
+        return btn("access_link", "Renvoyer l'accès", "Renvoie un lien pour choisir le mot de passe") + btn("rejected", "Rejeter") + del;
+      case "actifs":
+        return promoteButton(member.can_promote) + btn("rejected", "Rejeter") + del;
+      case "rejetes":
+        return btn("approved", "Approuver", "Revenir sur le rejet : ouvre l'accès et envoie l'email") + del;
+      default:
+        return del;
+    }
+  }
+
   function renderMembers(members) {
     const tbody = document.getElementById("tbl-members");
+    const selectable = currentMemberTab === "non_envoye";
+    document.getElementById("members-check-col").hidden = !selectable;
+    document.getElementById("members-bulk").hidden = !selectable;
+    const checkAll = document.getElementById("members-check-all");
+    if (checkAll) checkAll.checked = false;
+    updateBulkCount();
+
     if (!members.length) {
-      tbody.innerHTML = '<tr><td colspan="8">Aucune adhésion pour le moment.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="9">${TAB_EMPTY[currentMemberTab] || "Aucune adhésion."}</td></tr>`;
       return;
     }
 
     tbody.innerHTML = members.map((member) => `
       <tr data-id="${esc(member.id)}">
-        <td>${esc(member.nom)}</td>
+        <td${selectable ? "" : " hidden"}><input type="checkbox" class="member-check" aria-label="Sélectionner ${esc(member.nom)}"></td>
+        <td class="member-name">${esc(member.nom)}</td>
         <td style="font-variant-numeric:tabular-nums;">${esc(member.ninu || "—")}</td>
         <td>${esc(member.email)}</td>
         <td>${esc(member.ville)}</td>
         <td>${fmtDate(member.created_at)}</td>
         <td><span class="badge ${esc(member.status)}">${esc(member.status)}</span></td>
         <td>${accountBadge(member.account, member.is_user)}</td>
-        <td style="white-space:nowrap;">
-          <button class="btn btn-ghost btn-xs" data-action="approved" type="button">Approuver</button>
-          <button class="btn btn-ghost btn-xs" data-action="rejected" type="button">Rejeter</button>
-          <button class="btn btn-ghost btn-xs" data-action="access_link" type="button" title="Envoie un lien sécurisé pour choisir son mot de passe"${member.status === "approved" ? "" : " hidden"}>Lien d'accès</button>
-          ${promoteButton(member.can_promote)}
-          <button class="btn btn-ghost btn-xs" data-action="delete" type="button" title="Supprimer définitivement la demande et son compte" aria-label="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
-        </td>
+        <td style="white-space:nowrap;">${memberActions(member)}</td>
       </tr>
     `).join("");
+  }
+
+  function renderMemberCounts(counts) {
+    if (!counts) return;
+    document.querySelectorAll(".member-tab").forEach((tabBtn) => {
+      const n = counts[tabBtn.dataset.tab] ?? 0;
+      tabBtn.querySelector(".member-tab-count").textContent = String(n);
+      const active = tabBtn.dataset.tab === currentMemberTab;
+      tabBtn.classList.toggle("is-active", active);
+      tabBtn.setAttribute("aria-selected", String(active));
+    });
+  }
+
+  function updateBulkCount() {
+    const n = document.querySelectorAll("#tbl-members .member-check:checked").length;
+    const btn = document.getElementById("members-bulk-send");
+    if (!btn) return;
+    btn.disabled = n === 0;
+    btn.querySelector("span").textContent = n ? `Envoyer l'accès à la sélection (${n})` : "Envoyer l'accès à la sélection";
   }
 
   function renderDonations(donations) {
@@ -388,10 +439,11 @@
     document.getElementById("st-events").textContent = payload.stats.events;
     document.getElementById("st-media").textContent = payload.stats.media;
 
-    renderMembers(payload.members);
     renderDonations(payload.donations);
     renderLeads(payload.leads);
   }
+
+  let reloadMembers = () => {};
 
   const listRenderers = {
     members: renderMembers,
@@ -469,10 +521,12 @@
           page_size: String(pageSize),
           search: input.value.trim(),
         });
+        if (dataset === "members") params.set("tab", currentMemberTab);
         try {
           const payload = await api(`/api/admin/dashboard?${params}`);
           total = payload.total;
           listRenderers[dataset](payload.records);
+          if (dataset === "members") renderMemberCounts(payload.counts);
           const pages = Math.max(1, Math.ceil(total / pageSize));
           pageLabel.textContent = `Page ${page}/${pages}`;
           prev.disabled = page <= 1;
@@ -505,6 +559,17 @@
           load();
         }
       });
+      if (dataset === "members") {
+        // Rechargement de l'onglet courant après une action (la fiche change d'onglet).
+        reloadMembers = () => load();
+        document.querySelectorAll(".member-tab").forEach((tabBtn) => {
+          tabBtn.addEventListener("click", () => {
+            currentMemberTab = tabBtn.dataset.tab;
+            page = 1;
+            load();
+          });
+        });
+      }
       // Charge la 1re page avec le total réel (le tableau de bord initial ne le
       // fournit pas : sans cela, « Suivant » restait inactif).
       load();
@@ -517,6 +582,7 @@
             export: "1",
             search: input.value.trim(),
           });
+          if (dataset === "members") params.set("tab", currentMemberTab);
           const payload = await api(`/api/admin/dashboard?${params}`);
           downloadCsv(dataset, payload.records);
           if (payload.truncated) {
@@ -1687,12 +1753,51 @@
     box.textContent = message;
   };
 
+  /** Envoie (ou renvoie) le lien d'accès d'une fiche. Lève une erreur en cas d'échec. */
+  const sendAccess = (memberId) => api("/api/admin/dashboard", {
+    method: "POST",
+    body: JSON.stringify({ action: "access_link", member_id: memberId }),
+  });
+
+  document.getElementById("tbl-members").addEventListener("change", (event) => {
+    if (event.target.classList.contains("member-check")) updateBulkCount();
+  });
+  document.getElementById("members-check-all")?.addEventListener("change", (event) => {
+    document.querySelectorAll("#tbl-members .member-check").forEach((box) => { box.checked = event.target.checked; });
+    updateBulkCount();
+  });
+
+  document.getElementById("members-bulk-send")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const rows = [...document.querySelectorAll("#tbl-members .member-check:checked")].map((box) => box.closest("tr"));
+    if (!rows.length) return;
+    if (!window.confirm(`Créer les comptes et envoyer l'email « Choisir mon mot de passe » à ${rows.length} personne(s) ?`)) return;
+
+    button.disabled = true;
+    let sent = 0;
+    const failed = [];
+    for (const row of rows) {
+      membersStatus("", `Envoi en cours : ${sent + failed.length}/${rows.length}…`);
+      try {
+        await sendAccess(row.dataset.id);
+        sent += 1;
+      } catch (error) {
+        failed.push(row.querySelector(".member-name")?.textContent.trim() || "?");
+      }
+    }
+    membersStatus(failed.length ? "error" : "success", failed.length
+      ? `${sent} accès envoyé(s). Échec pour ${failed.length} : ${failed.join(", ")}. Réessayez plus tard, ces fiches restent dans cet onglet.`
+      : `${sent} accès envoyé(s). Ces fiches passent dans « Approuvés — en attente d'activation ».`);
+    reloadMembers();
+  });
+
   document.getElementById("tbl-members").addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
 
     const row = button.closest("tr");
     const action = button.dataset.action;
+    const nom = row.querySelector(".member-name")?.textContent.trim() || "cette personne";
     if (button.disabled) return; // évite le double envoi pendant la requête
     button.disabled = true;
     button.classList.add("btn-loading");
@@ -1700,53 +1805,35 @@
 
     try {
       if (action === "promote") {
-        const nom = row.querySelector("td")?.textContent.trim() || "ce membre";
         if (!window.confirm(`Promouvoir ${nom} en Éditeur ? Il apparaîtra dans Utilisateurs, sans aucune permission cochée : à vous de les choisir.`)) return;
         await api("/api/admin/dashboard", {
           method: "POST",
           body: JSON.stringify({ action: "promote", member_id: row.dataset.id }),
         });
-        button.remove();
         membersStatus("success", `${nom} est maintenant Éditeur. Cochez ses permissions dans le panneau Utilisateurs.`);
-        return;
-      }
-
-      if (action === "delete") {
-        const nom = row.querySelector("td")?.textContent.trim() || "cette personne";
+      } else if (action === "delete") {
         if (!window.confirm(`Supprimer définitivement la demande de ${nom} et son compte ? Cette action est irréversible.`)) return;
         const result = await api(`/api/admin/dashboard?member_id=${encodeURIComponent(row.dataset.id)}`, {
           method: "DELETE",
           body: JSON.stringify({ member_id: row.dataset.id }),
         });
-        row.remove();
         membersStatus("success", result.account_deleted
           ? `Demande de ${nom} et compte supprimés : l'adresse peut être réutilisée.`
           : `Demande de ${nom} supprimée.`);
-        return;
-      }
-
-      if (action === "access_link") {
-        await api("/api/admin/dashboard", {
-          method: "POST",
-          body: JSON.stringify({ action: "access_link", member_id: row.dataset.id }),
+      } else if (action === "access_link") {
+        await sendAccess(row.dataset.id);
+        membersStatus("success", `Lien d'accès envoyé à ${nom}.`);
+      } else {
+        const payload = await api("/api/admin/dashboard", {
+          method: "PATCH",
+          body: JSON.stringify({ member_id: row.dataset.id, status: action }),
         });
-        membersStatus("success", "Lien d'accès envoyé par email.");
-        return;
+        if (payload.warning) membersStatus("error", payload.warning);
+        else if (action === "approved" && payload.email_sent === true) membersStatus("success", `${nom} approuvé(e) : accès ouvert et email envoyé.`);
+        else if (action === "approved" && payload.email_sent === false) membersStatus("error", `${nom} approuvé(e), mais l'email n'est pas parti. Utilisez « Renvoyer l'accès ».`);
+        else if (action === "rejected") membersStatus("success", `Demande de ${nom} rejetée.`);
       }
-
-      const payload = await api("/api/admin/dashboard", {
-        method: "PATCH",
-        body: JSON.stringify({ member_id: row.dataset.id, status: action }),
-      });
-      const badge = row.querySelector(".badge");
-      badge.className = `badge ${action}`;
-      badge.textContent = action;
-      const linkBtn = row.querySelector('button[data-action="access_link"]');
-      if (linkBtn) linkBtn.hidden = action !== "approved";
-
-      if (payload.warning) membersStatus("error", payload.warning);
-      else if (action === "approved" && payload.email_sent === true) membersStatus("success", "Adhésion approuvée : accès ouvert et email envoyé.");
-      else if (action === "approved" && payload.email_sent === false) membersStatus("error", "Adhésion approuvée et accès ouvert, mais l'email n'est pas parti. Utilisez « Lien d'accès » ou prévenez la personne.");
+      reloadMembers(); // la fiche change d'onglet
     } catch (error) {
       console.error(error);
       membersStatus("error", error.message || "Action impossible.");
@@ -2630,7 +2717,6 @@
       document.getElementById("st-articles").textContent = payload.stats?.articles ?? "—";
       document.getElementById("st-events").textContent = payload.stats?.events ?? "—";
       document.getElementById("st-media").textContent = payload.stats?.media ?? "—";
-      if (payload.members) renderMembers(payload.members);
       if (payload.donations) renderDonations(payload.donations);
       if (payload.leads) renderLeads(payload.leads);
     } catch (_) { /* API indisponible localement — statistiques vides */ }

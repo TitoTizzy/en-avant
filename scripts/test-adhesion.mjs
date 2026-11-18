@@ -130,3 +130,13 @@ test('Formulaire unique : honeypot rempli → réponse neutre', async () => {
   const r = await post({ website: 'spam' });
   assert.equal(r.status, 200);
 });
+
+test('Onglets Membres : classement selon statut, compte et première connexion', async () => {
+  const { memberTab } = await import('../api/_admin/dashboard.js');
+  const signIns = new Map([['u-actif', '2026-11-17T10:00:00Z'], ['u-jamais', null]]);
+  assert.equal(memberTab({ status: 'pending', user_id: 'u-actif' }, signIns), 'en_attente');
+  assert.equal(memberTab({ status: 'rejected', user_id: null }, signIns), 'rejetes');
+  assert.equal(memberTab({ status: 'approved', user_id: null }, signIns), 'non_envoye');
+  assert.equal(memberTab({ status: 'approved', user_id: 'u-jamais' }, signIns), 'attente_activation');
+  assert.equal(memberTab({ status: 'approved', user_id: 'u-actif' }, signIns), 'actifs');
+});
