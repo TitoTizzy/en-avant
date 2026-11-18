@@ -144,4 +144,62 @@
       button.textContent = "Vérifier";
     }
   });
+
+  // ─── Mot de passe oublié ────────────────────────────────────────────
+  const forgotForm = document.getElementById("forgot-form");
+  const forgotOpen = document.getElementById("forgot-open");
+  const forgotBack = document.getElementById("forgot-back");
+  const forgotEmail = document.getElementById("forgot-email");
+  const forgotSubmit = document.getElementById("forgot-submit");
+
+  const showForgot = (open) => {
+    if (!forgotForm) return;
+    forgotForm.hidden = !open;
+    form.hidden = open;
+    statusBox.className = "ea-form-status";
+    statusBox.textContent = "";
+    if (open) {
+      const typed = identifierInput.value.trim();
+      if (typed.includes("@")) forgotEmail.value = typed;
+      forgotEmail.focus();
+    } else {
+      identifierInput.focus();
+    }
+  };
+
+  forgotOpen?.addEventListener("click", () => showForgot(true));
+  forgotBack?.addEventListener("click", () => showForgot(false));
+
+  forgotForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = forgotEmail.value.trim();
+    const field = forgotEmail.closest(".ea-field");
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+    field.classList.toggle("is-invalid", !valid);
+    if (!valid) return;
+
+    forgotSubmit.disabled = true;
+    forgotSubmit.classList.add("btn-loading");
+    try {
+      const response = await fetch("/api/auth/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, website: document.getElementById("forgot-website").value }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        showStatus("error", "Trop de demandes. Réessayez dans quelques minutes.");
+      } else if (!response.ok) {
+        showStatus("error", payload.error || "Envoi impossible pour le moment.");
+      } else {
+        showStatus("success", payload.message);
+        forgotForm.reset();
+      }
+    } catch {
+      showStatus("error", "Connexion impossible. Vérifiez votre réseau.");
+    } finally {
+      forgotSubmit.disabled = false;
+      forgotSubmit.classList.remove("btn-loading");
+    }
+  });
 })();

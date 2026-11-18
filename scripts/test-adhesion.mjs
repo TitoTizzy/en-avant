@@ -201,3 +201,20 @@ test('Statistiques : série sur 30 jours et répartition regroupée', async () =
   assert.deepEqual(b.map((x) => x.value), [2, 2, 2]);
   assert.equal(b[2].label, 'Autres');
 });
+
+test('Mot de passe oublié : email invalide refusé, honeypot neutre', async () => {
+  const { default: forgot } = await import('../api/_auth/forgot.js');
+  const call = (body) => new Promise((resolve) => {
+    const res = {
+      statusCode: 200, headers: {},
+      setHeader(k, v) { this.headers[k] = v; },
+      status(c) { this.statusCode = c; return this; },
+      json(p) { resolve({ status: this.statusCode, body: p }); },
+    };
+    forgot({ method: 'POST', headers: { 'x-forwarded-for': `10.1.0.${Math.floor(Math.random() * 250)}` }, body }, res);
+  });
+  assert.equal((await call({ email: 'pas-un-email' })).status, 422);
+  const hp = await call({ email: 'a@b.org', website: 'bot' });
+  assert.equal(hp.status, 200);
+  assert.match(hp.body.message, /Si cette adresse correspond/);
+});
