@@ -1,10 +1,13 @@
-// GET /api/cron/digest — Résumé quotidien envoyé à l'équipe (déclenché par Vercel Cron).
+// GET /api/cron/digest — Tâche quotidienne (Vercel Cron) :
+//   1. envoie les relances « Complétez votre adhésion » dues (1/semaine, 5 max) ;
+//   2. envoie le résumé quotidien à l'équipe (avec les comptes à supprimer).
 // Authentification : en-tête « Authorization: Bearer <CRON_SECRET> » ajouté par Vercel.
 // Sans CRON_SECRET configuré, la route est fermée (503).
 import { timingSafeEqual } from 'node:crypto';
 import { getServiceClient } from '../_lib/supabase.js';
 import { json, handleError } from '../_lib/http.js';
 import { notifyTeam } from '../_lib/notify.js';
+import { sendDueRelances, accountsToDelete, displayName } from '../_lib/relances.js';
 
 function authorized(req) {
   const secret = process.env.CRON_SECRET || '';
@@ -34,9 +37,13 @@ export default async function handler(req, res) {
     const failure = [leads.error, members.error, donations.error].find(Boolean);
     if (failure) throw failure;
 
+    // Relances automatiques (avant le résumé, pour qu'il en rende compte).
+    const relances = await sendDueRelances(supabase);
+    const toDelete = await accountsToDelete(supabase);
+
     const nLeads = leads.count || 0;
-    if (nLeads === 0 && !members.count && !donations.count) {
-      return json(res, 200, { ok: true, sent: false, reason: 'aucune activité' });
+    if (nLeads === 0 && !members.count && !donations.count && !relances.sent && !relances.failed && !toDelete.length) {
+      return json(res, 200, { ok: true, sent: false, reason: 'aucune activité', relances });
     }
 
     const names = (leads.data || []).map((l) => `${l.nom}${l.ville ? ` (${l.ville})` : ''}`).join(', ');
@@ -48,10 +55,15 @@ export default async function handler(req, res) {
         ['Demandes d’adhésion', String(members.count || 0)],
         ['Dons enregistrés', String(donations.count || 0)],
         ['Derniers lecteurs', names ? `${names}${nLeads > 30 ? '…' : ''}` : '—'],
+        ['Relances d’adhésion envoyées', `${relances.sent}${relances.failed ? ` (${relances.failed} échec(s))` : ''}`],
+        ['Comptes à supprimer (5 relances sans fiche)', toDelete.length
+          ? toDelete.slice(0, 20).map((p) => displayName(p)).join(', ') + (toDelete.length > 20 ? '…' : '')
+          : '—'],
       ],
-      note: 'Les emails et téléphones des lecteurs sont consultables dans le tableau de bord (onglet Leads).',
+      note: 'Les emails et téléphones des lecteurs sont consultables dans le tableau de bord (onglet Leads). '
+        + 'Les comptes à supprimer sont listés sur l’accueil du tableau de bord (SuperAdmin).',
     });
-    return json(res, 200, { ok: true, sent });
+    return json(res, 200, { ok: true, sent, relances, a_supprimer: toDelete.length });
   } catch (error) {
     return handleError(res, error, 'Résumé impossible.');
   }

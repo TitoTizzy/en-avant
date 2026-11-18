@@ -180,6 +180,15 @@
       <!-- ════════════════════ ACCUEIL ════════════════════════════════ -->
       <section class="adm-panel" id="panel-home">
 
+        <div class="adm-alert-delete" id="home-a-supprimer" hidden role="alert">
+          <i class="fa-solid fa-user-xmark" aria-hidden="true"></i>
+          <div>
+            <strong><span id="home-a-supprimer-count">0</span> compte(s) à supprimer</strong>
+            <p>Ces membres n'ont toujours pas rempli leur fiche d'adhésion après 5 relances. Ils recevront un email de suppression.</p>
+            <ul id="home-a-supprimer-list"></ul>
+          </div>
+        </div>
+
         <!-- Stats -->
         <div class="adm-home-stats">
           <div class="adm-stat-card" style="--stat-color:#ff6a2a;">
@@ -492,14 +501,14 @@
         <h3 style="margin:2rem 0 .4rem;">Comptes sans fiche (<span id="sans-fiche-count">…</span>)</h3>
         <p style="margin:0 0 1rem;opacity:.7;font-size:.88rem;">
           Membres qui ont un compte mais n'ont pas encore rempli leur fiche d'adhésion.
-          Leur accès reste ouvert ; « Envoyer la relance » les invite à la compléter.
+          Leur accès reste ouvert. Ils reçoivent automatiquement une relance par semaine (5 au maximum) ; « Envoyer la relance » en envoie une tout de suite et compte dans les 5.
         </p>
         <div class="u-table">
           <table>
             <thead>
-              <tr><th>Nom</th><th>Email</th><th>Inscrit le</th><th>Compte</th><th>Dernière relance</th><th>Actions</th></tr>
+              <tr><th>Nom</th><th>Email</th><th>Inscrit le</th><th>Compte</th><th>Relances</th><th>Dernière relance</th><th>Actions</th></tr>
             </thead>
-            <tbody id="tbl-sans-fiche"><tr><td colspan="6">Chargement…</td></tr></tbody>
+            <tbody id="tbl-sans-fiche"><tr><td colspan="7">Chargement…</td></tr></tbody>
           </table>
         </div>
       </section>

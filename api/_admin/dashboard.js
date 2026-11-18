@@ -1,7 +1,10 @@
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
-import { onApproved, sendAccessLink, relanceEmail } from '../_lib/adhesion.js';
-import { sendBatchToMembers, notifyTeam } from '../_lib/notify.js';
+import { onApproved, sendAccessLink, deletionEmail } from '../_lib/adhesion.js';
+import {
+  accountsWithoutFiche, accountsToDelete, sendDueRelances, isRelanceDue, isToDelete, displayName, RELANCE_MAX,
+} from '../_lib/relances.js';
+import { notifyTeam, sendToMember } from '../_lib/notify.js';
 
 const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -47,47 +50,6 @@ async function rolesFor(supabase, rows) {
   const { data, error } = await supabase.from('profiles').select('id, role').in('id', ids);
   if (error) throw error;
   return new Map((data || []).map((p) => [p.id, p.role]));
-}
-
-/** Comptes membres (ou en attente) sans fiche d'adhésion. */
-async function accountsWithoutFiche(supabase) {
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, email, nom, username, role, created_at, relance_adhesion_at')
-    .in('role', ['member', 'pending'])
-    .order('created_at', { ascending: true })
-    .limit(1000);
-  if (error) throw error;
-  const { data: fiches, error: fichesError } = await supabase.from('members').select('user_id, email').limit(5000);
-  if (fichesError) throw fichesError;
-  const linked = new Set(fiches.map((f) => f.user_id).filter(Boolean));
-  const emails = new Set(fiches.map((f) => String(f.email || '').toLowerCase()));
-  return (profiles || []).filter((p) => !linked.has(p.id) && !emails.has(String(p.email || '').toLowerCase()));
-}
-
-const isUuid = (v) => /^[0-9a-f-]{36}$/i.test(String(v || ''));
-const RELANCE_DELAI_MS = 7 * 24 * 3600 * 1000;
-
-/** Comptes « member » sans fiche d'adhésion, non relancés depuis 7 jours. */
-async function relanceTargets(supabase) {
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, email, nom, relance_adhesion_at')
-    .eq('role', 'member')
-    .limit(1000);
-  if (error) throw error;
-  const { data: fiches, error: fichesError } = await supabase
-    .from('members')
-    .select('user_id, email')
-    .limit(5000);
-  if (fichesError) throw fichesError;
-  const linked = new Set(fiches.map((f) => f.user_id).filter(Boolean));
-  const emails = new Set(fiches.map((f) => String(f.email || '').toLowerCase()));
-  const limit = Date.now() - RELANCE_DELAI_MS;
-  return (profiles || []).filter((p) => p.email
-    && !linked.has(p.id)
-    && !emails.has(String(p.email).toLowerCase())
-    && (!p.relance_adhesion_at || new Date(p.relance_adhesion_at).getTime() < limit));
 }
 
 export const MEMBER_TABS = ['en_attente', 'non_envoye', 'attente_activation', 'actifs', 'rejetes'];
@@ -211,18 +173,13 @@ export default async function handler(req, res) {
       }
 
       if (action === 'relance') {
-        const targets = await relanceTargets(supabase);
-        if (body.preview === true) return json(res, 200, { ok: true, count: targets.length });
-        const sentTo = new Set(await sendBatchToMembers(targets.map(relanceEmail)));
-        const ids = targets.filter((t) => sentTo.has(t.email)).map((t) => t.id);
-        if (ids.length) {
-          const { error } = await supabase
-            .from('profiles')
-            .update({ relance_adhesion_at: new Date().toISOString() })
-            .in('id', ids);
-          if (error) throw error;
+        // Même règle que la relance automatique : 7 jours d'écart, 5 au maximum.
+        if (body.preview === true) {
+          const due = (await accountsWithoutFiche(supabase)).filter((p) => isRelanceDue(p));
+          return json(res, 200, { ok: true, count: due.length });
         }
-        return json(res, 200, { ok: true, sent: ids.length, failed: targets.length - ids.length });
+        const result = await sendDueRelances(supabase);
+        return json(res, 200, { ok: true, ...result });
       }
 
       return json(res, 422, { error: 'Action inconnue.' });
@@ -245,13 +202,20 @@ export default async function handler(req, res) {
         }
         const { error: delUserError } = await supabase.auth.admin.deleteUser(accountId);
         if (delUserError) throw delUserError;
+        const emailSent = target.email
+          ? await sendToMember(deletionEmail({ email: target.email, nom: target.nom, account: true }))
+          : false;
         await notifyTeam({
           subject: `Compte membre supprimé — ${target.nom || target.email}`,
           title: 'Compte membre supprimé',
-          rows: [['Nom', target.nom || target.email], ['Supprimé par', identity.user.email]],
+          rows: [
+            ['Nom', target.nom || target.email],
+            ['Email de suppression', emailSent ? 'envoyé' : 'non envoyé'],
+            ['Supprimé par', identity.user.email],
+          ],
           note: 'Compte sans fiche d’adhésion, supprimé depuis l’onglet Membres.',
         });
-        return json(res, 200, { ok: true, account_deleted: true });
+        return json(res, 200, { ok: true, account_deleted: true, email_sent: emailSent });
       }
 
       if (!isUuid(memberId)) return json(res, 422, { error: 'Adhésion invalide.' });
@@ -284,6 +248,8 @@ export default async function handler(req, res) {
       const { error: delError } = await supabase.from('members').delete().eq('id', memberId);
       if (delError) throw delError;
 
+      const emailSent = await sendToMember(deletionEmail({ email: member.email, nom: member.nom, account: accountDeleted }));
+
       const { data: actor } = await supabase
         .from('profiles')
         .select('nom, username')
@@ -295,12 +261,13 @@ export default async function handler(req, res) {
         rows: [
           ['Nom', member.nom],
           ['Compte de connexion', accountDeleted ? 'supprimé' : (member.user_id ? 'conservé (SuperAdmin)' : 'aucun')],
+          ['Email de suppression', emailSent ? 'envoyé' : 'non envoyé'],
           ['Supprimée par', actor?.nom || actor?.username || identity.user.email],
         ],
         note: 'Action définitive effectuée depuis l’onglet Membres du tableau de bord.',
       });
 
-      return json(res, 200, { ok: true, account_deleted: accountDeleted });
+      return json(res, 200, { ok: true, account_deleted: accountDeleted, email_sent: emailSent });
     }
 
     if (req.method !== 'GET') {
@@ -315,11 +282,14 @@ export default async function handler(req, res) {
       return json(res, 200, {
         records: rows.map((p) => ({
           user_id: p.id,
-          nom: p.nom && !String(p.nom).includes('@') ? p.nom : (p.username || ''),
+          nom: displayName(p),
           email: p.email,
           account: accountState(p.role),
           can_promote: p.role === 'member',
           relance_at: p.relance_adhesion_at,
+          relance_count: p.relance_count || 0,
+          relance_max: RELANCE_MAX,
+          a_supprimer: isToDelete(p),
           created_at: p.created_at,
         })),
       });
@@ -471,8 +441,14 @@ export default async function handler(req, res) {
 
     const totals = seeDonations ? await donationTotals(supabase) : null;
 
+    // Signalement SuperAdmin : comptes sans fiche après 5 relances.
+    const toDelete = identity.isSuperAdmin ? await accountsToDelete(supabase) : [];
+
     return json(res, 200, {
       profile: { email: identity.user.email, role: identity.role },
+      a_supprimer: identity.isSuperAdmin
+        ? toDelete.map((p) => ({ user_id: p.id, nom: displayName(p), email: p.email, relance_at: p.relance_adhesion_at }))
+        : [],
       access: { members: seeMembers, donations: seeDonations, export: identity.isSuperAdmin },
       stats: {
         members: seeMembers ? (membersResult.count || 0) : null,

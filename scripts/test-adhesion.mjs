@@ -140,3 +140,26 @@ test('Onglets Membres : classement selon statut, compte et première connexion',
   assert.equal(memberTab({ status: 'approved', user_id: 'u-jamais' }, signIns), 'attente_activation');
   assert.equal(memberTab({ status: 'approved', user_id: 'u-actif' }, signIns), 'actifs');
 });
+
+test('Relances : 1 par semaine, 5 maximum, puis « à supprimer » 7 jours après la 5e', async () => {
+  const { isRelanceDue, isToDelete } = await import('../api/_lib/relances.js');
+  const now = Date.parse('2026-12-01T12:00:00Z');
+  const days = (n) => new Date(now - n * 86400000).toISOString();
+  const base = { role: 'member', email: 'a@x.org' };
+  assert.equal(isRelanceDue({ ...base, relance_count: 0, relance_adhesion_at: null }, now), true);
+  assert.equal(isRelanceDue({ ...base, relance_count: 2, relance_adhesion_at: days(3) }, now), false);
+  assert.equal(isRelanceDue({ ...base, relance_count: 2, relance_adhesion_at: days(7) }, now), true);
+  assert.equal(isRelanceDue({ ...base, relance_count: 5, relance_adhesion_at: days(30) }, now), false);
+  assert.equal(isRelanceDue({ ...base, role: 'pending', relance_count: 0 }, now), false);
+  assert.equal(isToDelete({ relance_count: 5, relance_adhesion_at: days(6) }, now), false);
+  assert.equal(isToDelete({ relance_count: 5, relance_adhesion_at: days(7) }, now), true);
+  assert.equal(isToDelete({ relance_count: 4, relance_adhesion_at: days(40) }, now), false);
+});
+
+test('Email de suppression : jamais de donnée sensible, lien pour adhérer à nouveau', async () => {
+  const { deletionEmail } = await import('../api/_lib/adhesion.js');
+  const m = deletionEmail({ email: 'z@x.org', nom: 'Zoé', account: true });
+  assert.match(m.subject, /compte/);
+  assert.equal(m.cta.url, 'https://enavant.org/adherer');
+  assert.ok(!/ninu|téléphone/i.test(m.paragraphs.join(' ')));
+});

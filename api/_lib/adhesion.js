@@ -155,17 +155,46 @@ export async function sendAccessLink(supabase, member) {
   return sendPasswordEmail(member, link);
 }
 
-/** Contenu de l'email de relance « complétez votre adhésion ». */
+/** Contenu de l'email de relance « complétez votre adhésion » (relance n sur 5). */
 export function relanceEmail(profile) {
+  const n = profile.relanceNumber || 1;
+  const derniere = n >= 5;
+  const nom = profile.nom && !String(profile.nom).includes('@') ? profile.nom : '';
   return {
     to: profile.email,
-    subject: 'Complétez votre adhésion à En Avant',
-    title: 'Complétez votre adhésion',
+    subject: derniere
+      ? 'Dernier rappel : complétez votre adhésion à En Avant'
+      : 'Complétez votre adhésion à En Avant',
+    title: derniere ? 'Dernier rappel' : 'Complétez votre adhésion',
     paragraphs: [
-      `Bonjour ${profile.nom || ''},`.replace(' ,', ','),
+      `Bonjour ${nom},`.replace(' ,', ','),
       'Vous avez un compte sur enavant.org, mais votre fiche d’adhésion n’est pas encore complète.',
       'Connectez-vous à votre espace membre et renseignez les informations demandées (cela prend une minute). Votre accès reste ouvert pendant ce temps.',
+      ...(derniere
+        ? ['Sans fiche complétée d’ici une semaine, votre compte pourra être supprimé.']
+        : []),
     ],
     cta: { label: 'Compléter mon adhésion', url: `${siteUrl()}/membre` },
+  };
+}
+
+/**
+ * Email envoyé à chaque suppression (fiche et/ou compte).
+ * @param {{ email: string, nom?: string, account: boolean }} p
+ */
+export function deletionEmail({ email, nom, account }) {
+  const prenom = nom && !String(nom).includes('@') ? nom : '';
+  return {
+    to: email,
+    subject: account ? 'Votre compte En Avant a été supprimé' : 'Votre demande d’adhésion à En Avant a été supprimée',
+    title: account ? 'Compte supprimé' : 'Demande d’adhésion supprimée',
+    paragraphs: [
+      `Bonjour ${prenom},`.replace(' ,', ','),
+      account
+        ? 'Votre compte sur enavant.org et les informations associées ont été supprimés.'
+        : 'Votre demande d’adhésion sur enavant.org a été supprimée.',
+      'Si vous pensez qu’il s’agit d’une erreur, ou si vous souhaitez adhérer à nouveau, répondez simplement à cet email ou inscrivez-vous de nouveau sur le site.',
+    ],
+    cta: { label: 'Adhérer à En Avant', url: `${siteUrl()}/adherer` },
   };
 }

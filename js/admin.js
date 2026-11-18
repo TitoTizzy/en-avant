@@ -388,6 +388,44 @@
     btn.querySelector("span").textContent = n ? `Envoyer l'accès à la sélection (${n})` : "Envoyer l'accès à la sélection";
   }
 
+  /** Alerte SuperAdmin : comptes sans fiche après 5 relances. */
+  function renderToDelete(list) {
+    const box = document.getElementById("home-a-supprimer");
+    if (!box) return;
+    const rows = Array.isArray(list) ? list : [];
+    box.hidden = rows.length === 0;
+    document.getElementById("home-a-supprimer-count").textContent = String(rows.length);
+    document.getElementById("home-a-supprimer-list").innerHTML = rows.map((r) => `
+      <li data-user="${esc(r.user_id)}">
+        <span>${esc(r.nom || r.email)} — ${esc(r.email)}</span>
+        <button class="btn btn-ghost btn-xs" data-action="delete-account" type="button">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i> Supprimer
+        </button>
+      </li>`).join("");
+  }
+
+  document.getElementById("home-a-supprimer-list")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-action='delete-account']");
+    if (!button) return;
+    const item = button.closest("li");
+    const label = item.querySelector("span")?.textContent.trim() || "ce compte";
+    if (!window.confirm(`Supprimer définitivement le compte de ${label} ? Un email de suppression lui sera envoyé.`)) return;
+    button.disabled = true;
+    try {
+      await api(`/api/admin/dashboard?user_id=${encodeURIComponent(item.dataset.user)}`, {
+        method: "DELETE",
+        body: JSON.stringify({ user_id: item.dataset.user }),
+      });
+      item.remove();
+      const left = document.querySelectorAll("#home-a-supprimer-list li").length;
+      document.getElementById("home-a-supprimer-count").textContent = String(left);
+      if (!left) document.getElementById("home-a-supprimer").hidden = true;
+    } catch (error) {
+      button.disabled = false;
+      window.alert(error.message || "Suppression impossible.");
+    }
+  });
+
   function renderDonations(donations) {
     const tbody = document.getElementById("tbl-donations");
     if (!donations.length) {
@@ -433,6 +471,7 @@
     document.getElementById("st-members").textContent = payload.stats.members ?? "—";
     document.getElementById("st-donations").textContent =
       fmtMoney(payload.stats.donations_cents, "usd");
+    renderToDelete(payload.a_supprimer);
     document.getElementById("st-leads").textContent = payload.stats.leads ?? "—";
     document.getElementById("st-trivia").textContent = payload.stats.trivia;
     document.getElementById("st-articles").textContent = payload.stats.articles;
@@ -1812,7 +1851,7 @@
         });
         membersStatus("success", `${nom} est maintenant Éditeur. Cochez ses permissions dans le panneau Utilisateurs.`);
       } else if (action === "delete") {
-        if (!window.confirm(`Supprimer définitivement la demande de ${nom} et son compte ? Cette action est irréversible.`)) return;
+        if (!window.confirm(`Supprimer définitivement la demande de ${nom} et son compte ? Un email de suppression lui sera envoyé. Cette action est irréversible.`)) return;
         const result = await api(`/api/admin/dashboard?member_id=${encodeURIComponent(row.dataset.id)}`, {
           method: "DELETE",
           body: JSON.stringify({ member_id: row.dataset.id }),
@@ -1852,7 +1891,7 @@
         body: JSON.stringify({ action: "relance", preview: true }),
       });
       if (!count) {
-        membersStatus("success", "Aucun compte à relancer (tous ont une fiche, ou ont été relancés il y a moins de 7 jours).");
+        membersStatus("success", "Aucun compte à relancer : tous ont une fiche, ont été relancés il y a moins de 7 jours, ou ont déjà reçu leurs 5 relances.");
         return;
       }
       if (!window.confirm(`Envoyer l'email « Complétez votre adhésion » à ${count} compte(s) ?`)) return;
@@ -1880,7 +1919,7 @@
       const { records } = await api("/api/admin/dashboard?dataset=sans_fiche");
       if (counter) counter.textContent = String(records.length);
       if (!records.length) {
-        tbody.innerHTML = '<tr><td colspan="6">Tous les comptes membres ont une fiche d\'adhésion.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">Tous les comptes membres ont une fiche d\'adhésion.</td></tr>';
         return;
       }
       tbody.innerHTML = records.map((r) => `
@@ -1889,6 +1928,7 @@
           <td>${esc(r.email)}</td>
           <td>${fmtDate(r.created_at)}</td>
           <td>${accountBadge(r.account, false)} <span class="badge pending">fiche à compléter</span></td>
+          <td>${esc(r.relance_count)}/${esc(r.relance_max)}${r.a_supprimer ? ' <span class="badge rejected">à supprimer</span>' : ""}</td>
           <td>${r.relance_at ? fmtDate(r.relance_at) : "—"}</td>
           <td style="white-space:nowrap;">
             ${promoteButton(r.can_promote)}
@@ -1896,7 +1936,7 @@
           </td>
         </tr>`).join("");
     } catch (error) {
-      tbody.innerHTML = `<tr><td colspan="6">${esc(error.message)}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7">${esc(error.message)}</td></tr>`;
     }
   }
 
@@ -1914,7 +1954,7 @@
         await api("/api/admin/dashboard", { method: "POST", body: JSON.stringify({ action: "promote", user_id: userId }) });
         membersStatus("success", `${nom} est maintenant Éditeur. Cochez ses permissions dans le panneau Utilisateurs.`);
       } else {
-        if (!window.confirm(`Supprimer définitivement le compte de ${nom} ? Cette action est irréversible.`)) return;
+        if (!window.confirm(`Supprimer définitivement le compte de ${nom} ? Un email de suppression lui sera envoyé. Cette action est irréversible.`)) return;
         await api(`/api/admin/dashboard?user_id=${encodeURIComponent(userId)}`, {
           method: "DELETE",
           body: JSON.stringify({ user_id: userId }),
@@ -2712,6 +2752,7 @@
       document.getElementById("st-members").textContent = payload.stats?.members ?? "—";
       document.getElementById("st-donations").textContent = payload.stats
         ? fmtMoney(payload.stats.donations_cents, "usd") : "—";
+      renderToDelete(payload.a_supprimer);
       document.getElementById("st-leads").textContent = payload.stats?.leads ?? "—";
       document.getElementById("st-trivia").textContent = payload.stats?.trivia ?? "—";
       document.getElementById("st-articles").textContent = payload.stats?.articles ?? "—";
