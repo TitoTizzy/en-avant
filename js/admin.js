@@ -3134,10 +3134,6 @@
         setVal("popup-video-headline", v.headline || "");
         setVal("popup-video-subtext", v.subtext || "");
 
-        const f = settings?.popup_football || {};
-        setChk("popup-football-enabled", f.enabled !== false);
-        setVal("popup-football-interval", f.intervalSec || 60);
-
         const c = settings?.contact || {};
         setVal("set-address", c.address || "44, Impasse Lescot, Laboule 12, Pétionville, Haïti");
         setVal("set-phone",   c.phone   || "+509 4621-2121");
@@ -3170,22 +3166,6 @@
         status("popup-video-status", "success", "Popup vidéo enregistrée.");
       } catch (error) {
         status("popup-video-status", "error", error.message);
-      } finally { btn.classList.remove("btn-loading"); }
-    });
-
-    // Popup Grenadiers
-    document.getElementById("settings-football-form")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("popup-football-submit");
-      btn.classList.add("btn-loading");
-      try {
-        await saveSetting("popup_football", {
-          enabled:     document.getElementById("popup-football-enabled").checked,
-          intervalSec: parseInt(document.getElementById("popup-football-interval").value, 10) || 60,
-        });
-        status("popup-football-status", "success", "Popup Grenadiers enregistrée.");
-      } catch (error) {
-        status("popup-football-status", "error", error.message);
       } finally { btn.classList.remove("btn-loading"); }
     });
 
