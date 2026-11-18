@@ -10,6 +10,7 @@ import integrationsHandler from './_admin/integrations.js';
 import settingsHandler from './_admin/settings.js';
 import usersHandler from './_admin/users.js';
 import digestHandler from './_admin/digest.js';
+import notificationsHandler from './_admin/notifications.js';
 import { json } from './_lib/http.js';
 
 export default async function handler(req, res) {
@@ -25,6 +26,7 @@ export default async function handler(req, res) {
     case 'settings':     return settingsHandler(req, res);
     case 'users':        return usersHandler(req, res);
     case 'digest':       return digestHandler(req, res);
+    case 'notifications': return notificationsHandler(req, res);
     default:             return json(res, 404, { error: 'Route inconnue.' });
   }
 }

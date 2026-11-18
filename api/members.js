@@ -11,6 +11,7 @@ import {
   isEmail, isText, clean, enforceRateLimit,
 } from './_lib/http.js';
 import { notifyTeam, siteUrl } from './_lib/notify.js';
+import { createNotification } from './_lib/notifications.js';
 import { validateFiche, duplicateFicheMessage } from './_lib/adhesion.js';
 
 export default async function handler(req, res) {
@@ -125,6 +126,13 @@ export default async function handler(req, res) {
       throw insertError;
     }
 
+    await createNotification(supabase, {
+      type: 'adhesion',
+      title: `Nouvelle demande d’adhésion — ${nom}`,
+      body: fiche.ville,
+      link: 'members:en_attente',
+      permission: 'voir_membres',
+    });
     await notifyTeam({
       subject: `Nouvelle demande d'adhésion — ${nom}`,
       title: 'Nouvelle demande d’adhésion',

@@ -19,6 +19,7 @@
     { "source": "/api/auth/touch-pin",    "destination": "/api/auth?action=touch-pin" },
     { "source": "/api/auth/change-pin",   "destination": "/api/auth?action=change-pin" },
     { "source": "/api/admin/dashboard",   "destination": "/api/admin?action=dashboard" },
+    { "source": "/api/admin/notifications", "destination": "/api/admin?action=notifications" },
     { "source": "/api/admin/articles",    "destination": "/api/admin?action=articles" },
     { "source": "/api/admin/events",      "destination": "/api/admin?action=events" },
     { "source": "/api/admin/media",       "destination": "/api/admin?action=media" },
