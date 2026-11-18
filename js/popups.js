@@ -1,30 +1,41 @@
 /* ==========================================================================
-   EN AVANT — POPUP VIDÉO DU SITE VITRINE
-   Réglage piloté depuis l'admin (Paramètres → Popup vidéo, table site_settings).
+   EN AVANT — VIDÉO D'ACCUEIL (intro plein écran dans un téléphone)
+   Chargé dans le <head> (sans defer) : masque le site dès le premier rendu
+   tant que la vidéo d'accueil doit être montrée, puis l'affiche dans une
+   maquette de téléphone. Le visiteur entre ensuite sur le site.
+
+   Réglage : Admin → Paramètres → Popup vidéo (table site_settings, lecture publique).
    · Vidéo TikTok (lecteur officiel) ou MP4 hébergé sur Supabase Storage.
-   · S'affiche une seule fois par visiteur et par vidéo (nouvelle vidéo = nouvel affichage).
-   · Fermeture : bouton ×, touche Échap ou clic à côté. Aucun cookie, aucun traceur.
+   · Une seule fois par visiteur et par vidéo (nouvelle vidéo = nouvel accueil).
+   · Aucun cookie, aucun traceur : seulement le stockage local du navigateur.
    ========================================================================== */
 
 (() => {
   "use strict";
 
-  const env = window.EA_ENV || {};
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return;
-  if (window.matchMedia?.("print").matches) return;
-
-  const DELAY_MS = 3500;
+  const html = document.documentElement;
+  const CFG_KEY = "ea_intro_video_cfg";       // dernier réglage connu (évite d'attendre le réseau)
   const seenKey = (url) => `ea_popup_video_vu:${url}`;
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* navigation privée */ } },
   };
+  const readCfg = () => { try { return JSON.parse(store.get(CFG_KEY) || "null"); } catch { return null; } };
 
-  /** Source lisible par la popup (lecteur TikTok ou MP4 Supabase), sinon null. */
+  // 1. Dès le <head> : faut-il cacher le site en attendant la vidéo ?
+  //    Premier passage (réglage inconnu) ou vidéo connue pas encore vue.
+  const cached = readCfg();
+  const mustHide = !cached || (cached.enabled && cached.url && !store.get(seenKey(cached.url)));
+  if (mustHide) html.classList.add("ea-intro-pending");
+  const reveal = () => html.classList.remove("ea-intro-pending");
+  // Filet de sécurité : jamais plus de 3 s d'écran d'attente si le réseau est lent.
+  const safety = setTimeout(reveal, 3000);
+
+  /** Source lisible (lecteur TikTok ou MP4 Supabase), sinon null. */
   function videoSource(url) {
     const tiktok = String(url || "").match(/^https:\/\/(?:www\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/(\d{8,25})/i);
     if (tiktok) {
-      const params = "autoplay=1&music_info=0&description=0&rel=0&closed_caption=1&progress_bar=1";
+      const params = "autoplay=1&music_info=0&description=0&rel=0&controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=0&timestamp=0";
       return { kind: "tiktok", src: `https://www.tiktok.com/player/v1/${tiktok[1]}?${params}`, page: url };
     }
     if (/^https:\/\/[\w.-]+\/storage\/v1\/object\/public\/.+\.(mp4|webm|mov)(\?.*)?$/i.test(url)) {
@@ -33,9 +44,8 @@
     return null;
   }
 
-  async function loadSetting() {
-    const endpoint = `${env.SUPABASE_URL}/rest/v1/site_settings?select=value&key=eq.popup_video`;
-    const response = await fetch(endpoint, {
+  async function loadSetting(env) {
+    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/site_settings?select=value&key=eq.popup_video`, {
       headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
     });
     if (!response.ok) return null;
@@ -51,53 +61,47 @@
   }
 
   function open(setting, source) {
-    const previousFocus = document.activeElement;
-    const overlay = el("div", { class: "ea-vpop", role: "dialog", "aria-modal": "true", "aria-labelledby": "ea-vpop-title" });
-    const card = el("div", { class: "ea-vpop-card" });
-    const close = el("button", { class: "ea-vpop-close", type: "button", "aria-label": "Fermer la vidéo" });
+    const overlay = el("div", { class: "ea-intro", role: "dialog", "aria-modal": "true", "aria-label": setting.headline || "Vidéo En Avant" });
+
+    // Seul élément en dehors de la vidéo : une petite croix pour fermer.
+    const close = el("button", { class: "ea-intro-close", type: "button", "aria-label": "Fermer la vidéo et entrer sur le site" });
     close.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
 
-    const frame = el("div", { class: "ea-vpop-frame" });
+    // Maquette de téléphone
+    const phone = el("div", { class: "ea-phone" });
+    phone.appendChild(el("span", { class: "ea-phone-island", "aria-hidden": "true" }));
+    const screen = el("div", { class: "ea-phone-screen" });
     if (source.kind === "tiktok") {
-      frame.appendChild(el("iframe", {
+      screen.appendChild(el("iframe", {
         src: source.src,
         title: setting.headline || "Vidéo En Avant",
-        allow: "autoplay; encrypted-media; fullscreen; picture-in-picture",
-        allowfullscreen: "",
+        allow: "autoplay; encrypted-media; picture-in-picture",
         referrerpolicy: "strict-origin-when-cross-origin",
       }));
     } else {
-      const video = el("video", { src: source.src, controls: "", autoplay: "", playsinline: "", muted: "", preload: "metadata" });
+      const video = el("video", { src: source.src, controls: "", autoplay: "", playsinline: "", muted: "", preload: "auto" });
       video.muted = true;
-      frame.appendChild(video);
+      screen.appendChild(video);
     }
+    phone.appendChild(screen);
 
-    const body = el("div", { class: "ea-vpop-body" });
-    body.appendChild(el("h2", { id: "ea-vpop-title" }, setting.headline || "En Avant — Pour changer Haïti ensemble"));
-    if (setting.subtext) body.appendChild(el("p", {}, setting.subtext));
-    const actions = el("div", { class: "ea-vpop-actions" });
-    actions.appendChild(el("a", { href: "/adherer", class: "btn btn-primary" }, "Rejoindre le mouvement"));
-    if (source.page) actions.appendChild(el("a", { href: source.page, class: "btn btn-ghost", target: "_blank", rel: "noopener" }, "Voir sur TikTok"));
-    body.appendChild(actions);
-
-    card.append(close, frame, body);
-    overlay.appendChild(card);
+    overlay.append(close, phone);
     document.body.appendChild(overlay);
-    document.body.classList.add("ea-vpop-open");
+    document.body.classList.add("ea-intro-open");
+    reveal(); // le site existe derrière, mais l'intro opaque le recouvre
     requestAnimationFrame(() => overlay.classList.add("is-visible"));
-    close.focus();
+    close.focus({ preventScroll: true });
 
     const dismiss = () => {
-      overlay.classList.remove("is-visible");
-      document.body.classList.remove("ea-vpop-open");
+      overlay.classList.add("is-leaving");
+      document.body.classList.remove("ea-intro-open");
       document.removeEventListener("keydown", onKey);
-      setTimeout(() => overlay.remove(), 250); // retire aussi le lecteur (arrête le son)
-      if (previousFocus?.focus) previousFocus.focus();
+      setTimeout(() => overlay.remove(), 450); // retire aussi le lecteur (arrête le son)
     };
     const onKey = (event) => {
       if (event.key === "Escape") dismiss();
-      if (event.key === "Tab") { // garde le focus dans la fenêtre
-        const items = [...card.querySelectorAll("button, a, iframe, video")];
+      if (event.key === "Tab") {
+        const items = [...overlay.querySelectorAll("button, a, iframe, video")];
         const first = items[0];
         const last = items[items.length - 1];
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
@@ -109,18 +113,22 @@
     document.addEventListener("keydown", onKey);
   }
 
+  // 2. Après le chargement du HTML : lit le réglage (env.js est en bas de page).
   async function start() {
+    const env = window.EA_ENV || {};
     try {
-      const setting = await loadSetting();
-      if (!setting?.enabled || !setting.url) return;
-      const source = videoSource(setting.url);
-      if (!source || store.get(seenKey(setting.url))) return;
-      setTimeout(() => {
-        if (document.querySelector(".ea-vpop")) return;
-        store.set(seenKey(setting.url), new Date().toISOString());
-        open(setting, source);
-      }, DELAY_MS);
-    } catch { /* popup facultative : silencieux */ }
+      if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error("config");
+      const setting = await loadSetting(env);
+      store.set(CFG_KEY, JSON.stringify({ enabled: Boolean(setting?.enabled), url: setting?.url || "" }));
+      const source = setting?.enabled && setting.url ? videoSource(setting.url) : null;
+      if (!source || store.get(seenKey(setting.url))) { clearTimeout(safety); reveal(); return; }
+      store.set(seenKey(setting.url), new Date().toISOString());
+      clearTimeout(safety);
+      open(setting, source);
+    } catch {
+      clearTimeout(safety);
+      reveal();
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
