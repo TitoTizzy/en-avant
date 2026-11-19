@@ -22,6 +22,7 @@ function maskNinu(value, identity) {
   return s.length <= 3 ? '•••' : `${'•'.repeat(Math.max(s.length - 3, 3))}${s.slice(-3)}`;
 }
 
+const isUuid = (v) => /^[0-9a-f-]{36}$/i.test(String(v || ''));
 const STAFF_ROLES = ['superadmin', 'editor', 'readonly'];
 
 /** Statut du compte rattaché à une fiche : aucun | en_attente | actif. */
