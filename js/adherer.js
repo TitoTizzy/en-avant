@@ -20,7 +20,7 @@
 
   const RULES = {
     nom: (v) => v.trim().length >= 2 && v.trim().length <= 120,
-    sexe: (v) => ["femme", "homme", "autre"].includes(v),
+    sexe: (v) => ["femme", "homme"].includes(v),
     ninu: (v) => /^1\d{9}$/.test(v.replace(/\D/g, "")), // NINU = 10 chiffres commençant par 1 (carte ONI)
     email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()),
     telephone: (v) => (v.replace(/\D/g, "").length >= 8 && v.trim().length <= 25),
