@@ -10,7 +10,7 @@
 import { isPhone, isText, clean } from './http.js';
 import { sendToMember, siteUrl } from './notify.js';
 
-export const SEXES = ['femme', 'homme', 'autre'];
+export const SEXES = ['femme', 'homme'];
 
 /** Valide les champs propres à la fiche d'adhésion. */
 export function validateFiche(body) {

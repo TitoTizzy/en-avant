@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       nom, email,
       ville: ville || null,
       telephone: telephone || null,
-      sexe: ['femme', 'homme', 'autre'].includes(sexe) ? sexe : null,
+      sexe: ['femme', 'homme'].includes(sexe) ? sexe : null,
     });
     if (insertError) throw insertError;
 
