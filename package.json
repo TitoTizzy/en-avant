@@ -12,7 +12,8 @@
     "dev:vercel": "vercel dev",
     "check": "node scripts/check-project.mjs",
     "deploy": "vercel --prod",
-    "test": "node --no-experimental-require-module --test scripts/test-imports.mjs scripts/test-donations.mjs scripts/test-notifications.mjs scripts/test-adhesion.mjs"
+    "test": "npm run lint && node --no-experimental-require-module --test scripts/test-imports.mjs scripts/test-donations.mjs scripts/test-notifications.mjs scripts/test-adhesion.mjs",
+    "lint": "eslint --no-eslintrc --env node,es2022 --parser-options=ecmaVersion:2022,sourceType:module --rule 'no-undef: error' api && eslint --no-eslintrc --env browser,es2022 --global supabase,Quill,dataLayer --parser-options=ecmaVersion:2022 --rule 'no-undef: error' js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
@@ -22,5 +23,8 @@
     "sanitize-html": "2.17.0",
     "stripe": "^18.0.0",
     "web-push": "3.6.7"
+  },
+  "devDependencies": {
+    "eslint": "8.57.1"
   }
 }
