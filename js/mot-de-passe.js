@@ -92,6 +92,15 @@
     try {
       const { error } = await client.auth.updateUser({ password: passwordInput.value });
       if (error) throw error;
+      // Marque le compte comme activé (onglet « Actifs » de l'admin). Sans incidence si cela échoue.
+      const { data: { session } } = await client.auth.getSession();
+      if (session) {
+        await fetch("/api/member/adhesion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ action: "activated" }),
+        }).catch(() => {});
+      }
       form.hidden = true;
       showStatus("success", "Mot de passe enregistré. Ouverture de votre espace membre…");
       setTimeout(() => { window.location.href = "/membre.html"; }, 1200);

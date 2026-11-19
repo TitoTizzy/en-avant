@@ -55,21 +55,34 @@ async function rolesFor(supabase, rows) {
 export const MEMBER_TABS = ['en_attente', 'non_envoye', 'attente_activation', 'actifs', 'rejetes'];
 
 /** Onglet d'une fiche selon son statut et l'état de son compte. */
-export function memberTab(member, lastSignIn) {
+export function memberTab(member, activeAccounts) {
   if (member.status === 'pending') return 'en_attente';
   if (member.status === 'rejected') return 'rejetes';
   if (!member.user_id) return 'non_envoye';
-  return lastSignIn.get(member.user_id) ? 'actifs' : 'attente_activation';
+  return activeAccounts.get(member.user_id) ? 'actifs' : 'attente_activation';
 }
 
-/** Date de dernière connexion de chaque compte (auth.users). */
-async function lastSignIns(supabase) {
+/**
+ * Comptes réellement actifs : la personne a un mot de passe et s'en est servie.
+ * - compte créé par le formulaire (pas d'invitation) : première connexion ;
+ * - compte créé par invitation : mot de passe choisi ou connexion par mot de passe
+ *   (profiles.activated_at). Un simple clic sur le lien d'invitation ne suffit pas.
+ */
+async function activeAccounts(supabase) {
+  const { data: activated, error: actError } = await supabase
+    .from('profiles')
+    .select('id')
+    .not('activated_at', 'is', null)
+    .limit(5000);
+  if (actError) throw actError;
+  const confirmed = new Set((activated || []).map((p) => p.id));
+
   const map = new Map();
   for (let page = 1; page <= 10; page += 1) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
     const users = data?.users || [];
-    users.forEach((u) => map.set(u.id, u.last_sign_in_at || null));
+    users.forEach((u) => map.set(u.id, Boolean(u.last_sign_in_at) && (!u.invited_at || confirmed.has(u.id))));
     if (users.length < 1000) break;
   }
   return map;
@@ -341,7 +354,7 @@ export default async function handler(req, res) {
         if (search) {
           membersQuery = membersQuery.or(configs.members.filters.map((field) => `${field}.ilike.%${search}%`).join(','));
         }
-        const [{ data: all, error: allError }, signIns] = await Promise.all([membersQuery, lastSignIns(supabase)]);
+        const [{ data: all, error: allError }, signIns] = await Promise.all([membersQuery, activeAccounts(supabase)]);
         if (allError) throw allError;
 
         const counts = Object.fromEntries(MEMBER_TABS.map((t) => [t, 0]));

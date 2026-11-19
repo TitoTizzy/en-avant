@@ -62,6 +62,10 @@ export default async function handler(req, res) {
       });
     }
 
+    // Connexion par mot de passe réussie : le compte est réellement activé.
+    await service.from('profiles').update({ activated_at: new Date().toISOString() })
+      .eq('id', data.user.id).is('activated_at', null);
+
     return json(res, 200, {
       ok: true,
       role: profile?.role || 'readonly',
