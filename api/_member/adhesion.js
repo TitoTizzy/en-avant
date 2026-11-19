@@ -53,6 +53,14 @@ export default async function handler(req, res) {
       return json(res, 405, { error: 'Méthode non autorisée.' });
     }
 
+    // Appelé par /mot-de-passe juste après le choix du mot de passe.
+    if (clean(getBody(req).action) === 'activated') {
+      const { error } = await supabase.from('profiles').update({ activated_at: new Date().toISOString() })
+        .eq('id', user.id).is('activated_at', null);
+      if (error) throw error;
+      return json(res, 200, { ok: true });
+    }
+
     if (await findFiche(supabase, user)) {
       return json(res, 409, { error: 'Votre fiche d’adhésion est déjà enregistrée.' });
     }
