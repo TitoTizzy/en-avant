@@ -4417,3 +4417,15 @@ body.ea-intro-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .ea-intro, .ea-phone, html.ea-intro-pending body::before { animation: none; transition: none; }
 }
+
+/* ─── Listes déroulantes : options lisibles partout (thème sombre) ──
+   Sans cela, les options héritent du texte blanc sur le fond blanc
+   natif du navigateur et deviennent invisibles (ex. « Sexe »). */
+select { color-scheme: dark; }
+select option,
+select optgroup {
+  background-color: #0b1730;
+  color: #f5f7fb;
+}
+select option:disabled { color: #8b97ad; }
+select option:checked { background-color: #ff6a2a; color: #fff; }
