@@ -122,7 +122,7 @@ function sendPasswordEmail(member, link) {
     paragraphs: [
       `Bonjour ${member.nom || ''},`.replace(' ,', ','),
       'Votre adhésion a été approuvée. Pour accéder à votre espace membre, choisissez votre mot de passe en cliquant sur le bouton ci-dessous.',
-      'Ce lien est personnel et expire rapidement. S’il ne fonctionne plus, répondez à cet email et nous vous en enverrons un nouveau.',
+      'Ce lien est personnel et expire au bout d’une heure. S’il ne fonctionne plus, allez sur enavant.org/login et cliquez sur « Mot de passe oublié ? » pour en recevoir un nouveau.',
     ],
     cta: { label: 'Choisir mon mot de passe', url: link },
   });

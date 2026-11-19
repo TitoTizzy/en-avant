@@ -634,7 +634,8 @@
 
   function renderMembers(members) {
     const tbody = document.getElementById("tbl-members");
-    const selectable = currentMemberTab === "non_envoye";
+    // Envoi groupé : accès jamais envoyé, ou à renvoyer (lien expiré / pas encore utilisé).
+    const selectable = currentMemberTab === "non_envoye" || currentMemberTab === "attente_activation";
     document.getElementById("members-check-col").hidden = !selectable;
     document.getElementById("members-bulk").hidden = !selectable;
     const checkAll = document.getElementById("members-check-all");
@@ -677,7 +678,8 @@
     const btn = document.getElementById("members-bulk-send");
     if (!btn) return;
     btn.disabled = n === 0;
-    btn.querySelector("span").textContent = n ? `Envoyer l'accès à la sélection (${n})` : "Envoyer l'accès à la sélection";
+    const verb = currentMemberTab === "attente_activation" ? "Renvoyer" : "Envoyer";
+    btn.querySelector("span").textContent = n ? `${verb} l'accès à la sélection (${n})` : `${verb} l'accès à la sélection`;
   }
 
   /** Alerte SuperAdmin : comptes sans fiche après 5 relances. */
@@ -2102,7 +2104,10 @@
     const button = event.currentTarget;
     const rows = [...document.querySelectorAll("#tbl-members .member-check:checked")].map((box) => box.closest("tr"));
     if (!rows.length) return;
-    if (!window.confirm(`Créer les comptes et envoyer l'email « Choisir mon mot de passe » à ${rows.length} personne(s) ?`)) return;
+    const resend = currentMemberTab === "attente_activation";
+    if (!window.confirm(resend
+      ? `Renvoyer un nouveau lien « Choisir mon mot de passe » à ${rows.length} personne(s) ? L'ancien lien ne servira plus.`
+      : `Créer les comptes et envoyer l'email « Choisir mon mot de passe » à ${rows.length} personne(s) ?`)) return;
 
     button.disabled = true;
     let sent = 0;
@@ -2118,7 +2123,9 @@
     }
     membersStatus(failed.length ? "error" : "success", failed.length
       ? `${sent} accès envoyé(s). Échec pour ${failed.length} : ${failed.join(", ")}. Réessayez plus tard, ces fiches restent dans cet onglet.`
-      : `${sent} accès envoyé(s). Ces fiches passent dans « Approuvés — en attente d'activation ».`);
+      : resend
+        ? `${sent} nouveau(x) lien(s) envoyé(s). Les fiches passeront dans « Actifs » dès la première connexion.`
+        : `${sent} accès envoyé(s). Ces fiches passent dans « Approuvés — en attente d'activation ».`);
     reloadMembers();
   });
 
