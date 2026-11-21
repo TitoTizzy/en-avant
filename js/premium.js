@@ -342,7 +342,10 @@ document.documentElement.classList.add("js-ready");
   }
 
   /* Sélecteur de langue (FR/EN/Kreyòl/ES) — injecté à côté de « Faire un don ».
-     S'appuie sur le cookie `googtrans` + widget Google Translate masqué. */
+     Moteur : bibliothèque gratuite GTranslate (le widget Google Translate a été
+     retiré par Google le 1er octobre 2026). La langue choisie est gardée par
+     GTranslate dans localStorage (`__GT_TRANSLATE_LANGS`) et réappliquée à
+     chaque page. Le site reste codé une seule fois, en français. */
   function initLanguage() {
     // Jamais de traduction dans l'espace d'administration (connexion, dashboard) :
     // interfaces sensibles, français uniquement — et plus de chevauchement de boutons.
@@ -354,14 +357,44 @@ document.documentElement.classList.add("js-ready");
       ["ht", "Kreyòl Ayisyen"],
       ["es", "Español"],
     ];
+    const GT_LIB = "https://cdn.gtranslate.net/widgets/latest/lib.min.js";
+    const STORE = "__GT_TRANSLATE_LANGS";
+
+    // Nettoyage de l'ancien cookie Google (plus utilisé).
+    const host = window.location.hostname;
+    const expire = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    [`path=/`, `path=/;domain=${host}`, `path=/;domain=.${host}`].forEach((scope) => {
+      document.cookie = `googtrans=;${scope};${expire}`;
+    });
 
     const getLang = () => {
-      const match = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
-      const code = match ? decodeURIComponent(match[1]).split("/")[2] : "fr";
-      return LANGS.some(([c]) => c === code) ? code : "fr";
+      try {
+        const stored = JSON.parse(localStorage.getItem(STORE) || "null");
+        const code = stored && stored.tgtLang;
+        return LANGS.some(([c]) => c === code) ? code : "fr";
+      } catch (e) {
+        return "fr";
+      }
     };
 
-    const current = getLang();
+    let libPromise = null;
+    const loadLib = () => {
+      if (window.__GT && window.__GT.translator) return Promise.resolve();
+      if (!libPromise) {
+        libPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = GT_LIB;
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => {
+            libPromise = null;
+            reject(new Error("GTranslate indisponible"));
+          };
+          document.head.appendChild(script);
+        });
+      }
+      return libPromise;
+    };
 
     const GLOBE =
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
@@ -369,13 +402,13 @@ document.documentElement.classList.add("js-ready");
       '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>' +
       '<path d="M12 2c2.5 2.7 4 6.2 4 10s-1.5 7.3-4 10c-2.5-2.7-4-6.2-4-10s1.5-7.3 4-10z"/></svg>';
 
-    const build = () => {
+    const build = (current) => {
       const wrap = document.createElement("div");
       wrap.className = "ea-lang notranslate";
       wrap.setAttribute("translate", "no");
       wrap.innerHTML =
         '<button type="button" class="ea-lang-btn" aria-haspopup="true" aria-expanded="false" ' +
-        `aria-label="Changer de langue">${GLOBE}<span>${current.toUpperCase()}</span></button>` +
+        `aria-label="Changer de langue">${GLOBE}<span class="ea-lang-code">${current.toUpperCase()}</span></button>` +
         '<div class="ea-lang-menu" role="menu">' +
         LANGS.map(
           ([code, label]) =>
@@ -386,21 +419,27 @@ document.documentElement.classList.add("js-ready");
       return wrap;
     };
 
+    const refreshUi = (code) => {
+      document.querySelectorAll(".ea-lang").forEach((ui) => {
+        const label = ui.querySelector(".ea-lang-code");
+        if (label) label.textContent = code.toUpperCase();
+        ui.querySelectorAll("[data-lang]").forEach((item) =>
+          item.classList.toggle("active", item.dataset.lang === code)
+        );
+      });
+    };
+
+    const translate = (code) =>
+      loadLib()
+        .then(() => {
+          window.__GT.translator.translate("fr", code);
+          refreshUi(code);
+        })
+        .catch(() => refreshUi(getLang()));
+
     const apply = (code) => {
       if (code === getLang()) return;
-
-      const host = window.location.hostname;
-      const expire = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = `googtrans=;path=/;${expire}`;
-      document.cookie = `googtrans=;path=/;domain=${host};${expire}`;
-      document.cookie = `googtrans=;path=/;domain=.${host};${expire}`;
-
-      if (code !== "fr") {
-        document.cookie = `googtrans=/fr/${code};path=/`;
-        document.cookie = `googtrans=/fr/${code};path=/;domain=${host}`;
-      }
-
-      window.location.reload();
+      translate(code);
     };
 
     // Injection : barre desktop (avant « Faire un don ») + menu mobile
@@ -413,8 +452,16 @@ document.documentElement.classList.add("js-ready");
     // Aucun point de montage (page sans nav publique) : pas de sélecteur.
     if (!mounts.length) return;
 
+    const current = getLang();
+
+    const closeAll = () =>
+      document.querySelectorAll(".ea-lang.open").forEach((el) => {
+        el.classList.remove("open");
+        el.querySelector(".ea-lang-btn").setAttribute("aria-expanded", "false");
+      });
+
     mounts.forEach(([parent, before]) => {
-      const ui = build();
+      const ui = build(current);
       parent.insertBefore(ui, before || null);
 
       const toggle = ui.querySelector(".ea-lang-btn");
@@ -425,41 +472,20 @@ document.documentElement.classList.add("js-ready");
       });
 
       ui.querySelectorAll("[data-lang]").forEach((item) =>
-        item.addEventListener("click", () => apply(item.dataset.lang))
+        item.addEventListener("click", () => {
+          closeAll();
+          apply(item.dataset.lang);
+        })
       );
     });
-
-    const closeAll = () =>
-      document.querySelectorAll(".ea-lang.open").forEach((el) => {
-        el.classList.remove("open");
-        el.querySelector(".ea-lang-btn").setAttribute("aria-expanded", "false");
-      });
 
     document.addEventListener("click", closeAll);
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeAll();
     });
 
-    // Le widget reste invisible mais est chargé sur chaque page. Le site est
-    // codé une seule fois en français ; Google traduit le DOM à la demande.
-    if (!document.getElementById("ea-gt")) {
-      const slot = document.createElement("div");
-      slot.id = "ea-gt";
-      document.body.appendChild(slot);
-
-      window.eaGtInit = () => {
-        /* global google */
-        new google.translate.TranslateElement(
-          { pageLanguage: "fr", includedLanguages: "fr,en,ht,es", autoDisplay: false },
-          "ea-gt"
-        );
-      };
-
-      const script = document.createElement("script");
-      script.src = "https://translate.google.com/translate_a/element.js?cb=eaGtInit";
-      script.async = true;
-      document.head.appendChild(script);
-    }
+    // Langue déjà choisie sur une page précédente : on la réapplique.
+    if (current !== "fr") translate(current);
   }
 
   /* Chatbot (placeholder en attendant le module IA) */
