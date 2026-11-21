@@ -3690,8 +3690,6 @@ html.ea-returning .page-loader { display: none !important; }
 }
 
 /* Neutralisation du bandeau injecté par Google Translate */
-#ea-gt { position: fixed; left: -9999px; top: 0; height: 0; overflow: hidden; }
-.skiptranslate iframe, #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
 body { top: 0 !important; }
 
 /* ─── Galerie admin ─────────────────────────────────────────────────── */
