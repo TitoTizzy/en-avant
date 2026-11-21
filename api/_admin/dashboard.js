@@ -1,168 +1,87 @@
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
+import { can, assertPermission } from '../_lib/permissions.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 
-const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
+export function datasetConfig(identity, dataset) {
+  return {
+    members: { permission: 'voir_membres', table: 'members',
+      fields: ['id', 'nom', ...(can(identity, 'voir_ninu') ? ['ninu'] : []), 'email', 'ville', 'status', 'created_at'].join(', '),
+      order: 'created_at', filters: ['nom', 'email', 'ville', ...(can(identity, 'voir_ninu') ? ['ninu'] : [])] },
+    donations: { permission: 'voir_dons', table: 'donations',
+      fields: 'montant, refunded_cents, devise, provider, email, transaction_id, statut, created_at',
+      order: 'created_at', filters: ['provider', 'email', 'transaction_id', 'statut'] },
+    leads: { permission: 'voir_leads', table: 'leads_livreblanc', fields: 'nom, email, ville, downloaded_at',
+      order: 'downloaded_at', filters: ['nom', 'email', 'ville'] },
+  }[dataset];
+}
 
-export default async function handler(req, res) {
+export function createDashboardHandler({ authenticate = requirePermission, serviceClient = getServiceClient } = {}) {
+return async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
   try {
-    res.setHeader('Cache-Control', 'no-store');
-    const identity = await requirePermission(req, 'acces_dashboard');
-    const supabase = getServiceClient();
-
+    const identity = await authenticate(req, 'acces_dashboard');
+    const supabase = serviceClient();
     if (req.method === 'PATCH') {
+      assertPermission(identity, 'traiter_membres');
       const body = getBody(req);
-      const memberId = clean(body.member_id);
-      const status = clean(body.status);
-
-      if (!/^[0-9a-f-]{36}$/i.test(memberId) || !MEMBER_STATUSES.includes(status)) {
+      if (!/^[0-9a-f-]{36}$/i.test(clean(body.member_id)) || !['pending', 'approved', 'rejected'].includes(body.status)) {
         return json(res, 422, { error: 'Mise à jour invalide.' });
       }
-
-      const { error } = await supabase
-        .from('members')
-        .update({ status })
-        .eq('id', memberId);
+      const { data, error } = await supabase.from('members').update({ status: body.status })
+        .eq('id', body.member_id).select('id').maybeSingle();
       if (error) throw error;
-
-      return json(res, 200, { ok: true });
+      return json(res, data ? 200 : 404, data ? { ok: true } : { error: 'Adhésion introuvable.' });
     }
-
     if (req.method !== 'GET') {
       res.setHeader('Allow', 'GET, PATCH');
       return json(res, 405, { error: 'Méthode non autorisée.' });
     }
-
     const dataset = clean(req.query?.dataset);
-    if (['members', 'donations', 'leads'].includes(dataset)) {
-      const page = Math.max(parseInt(req.query?.page, 10) || 1, 1);
+    if (dataset) {
+      const config = datasetConfig(identity, dataset);
+      if (!config) return json(res, 400, { error: 'Jeu de données inconnu.' });
+      assertPermission(identity, config.permission);
       const exporting = req.query?.export === '1';
-      const pageSize = exporting
-        ? 1000
-        : Math.min(Math.max(parseInt(req.query?.page_size, 10) || 25, 10), 100);
-      const from = exporting ? 0 : (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      const search = clean(req.query?.search)
-        .replace(/[%(),]/g, '')
-        .slice(0, 80);
-
-      const configs = {
-        members: {
-          table: 'members',
-          fields: 'id, nom, ninu, email, ville, status, created_at',
-          order: 'created_at',
-          filters: ['nom', 'ninu', 'email', 'ville'],
-        },
-        donations: {
-          table: 'donations',
-          fields: 'montant, devise, provider, email, transaction_id, statut, created_at',
-          order: 'created_at',
-          filters: ['provider', 'email', 'transaction_id', 'statut'],
-        },
-        leads: {
-          table: 'leads_livreblanc',
-          fields: 'nom, email, ville, downloaded_at',
-          order: 'downloaded_at',
-          filters: ['nom', 'email', 'ville'],
-        },
-      };
-
-      const config = configs[dataset];
-      let query = supabase
-        .from(config.table)
-        .select(config.fields, { count: 'exact' })
-        .order(config.order, { ascending: false })
-        .range(from, to);
-
-      if (search) {
-        query = query.or(config.filters.map((field) => `${field}.ilike.%${search}%`).join(','));
-      }
-
+      if (exporting) assertPermission(identity, 'exporter_donnees');
+      const page = exporting ? 1 : Math.min(Math.max(parseInt(req.query?.page, 10) || 1, 1), 100000);
+      const pageSize = exporting ? 1000 : Math.min(Math.max(parseInt(req.query?.page_size, 10) || 25, 10), 100);
+      let query = supabase.from(config.table).select(config.fields, { count: 'exact' })
+        .order(config.order, { ascending: false }).range((page - 1) * pageSize, page * pageSize - 1);
+      const search = clean(req.query?.search).replace(/[^\p{L}\p{N}@ .+_-]/gu, '').slice(0, 80);
+      if (search) query = query.or(config.filters.map(field => `${field}.ilike.%${search}%`).join(','));
       const { data, error, count } = await query;
       if (error) throw error;
-      return json(res, 200, {
-        records: data || [],
-        total: count || 0,
-        page: exporting ? 1 : page,
-        page_size: pageSize,
-        truncated: exporting && (count || 0) > pageSize,
-      });
+      return json(res, 200, { records: data || [], total: count || 0, page, page_size: pageSize,
+        truncated: exporting && (count || 0) > pageSize });
     }
-
-    const [
-      membersResult,
-      donationsResult,
-      donationsSumResult,
-      leadsResult,
-      triviaCountResult,
-      articlesCountResult,
-      eventsCountResult,
-      mediaCountResult,
-    ] = await Promise.all([
-      supabase
-        .from('members')
-        .select('id, nom, ninu, email, ville, status, created_at', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .limit(25),
-      supabase
-        .from('donations')
-        .select('montant, devise, provider, email, transaction_id, statut, created_at')
-        .order('created_at', { ascending: false })
-        .limit(25),
-      // Total réel : la liste ci-dessus est tronquée à 25 lignes.
-      supabase
-        .from('donations')
-        .select('montant')
-        .eq('statut', 'completed')
-        .limit(5000),
-      supabase
-        .from('leads_livreblanc')
-        .select('nom, email, ville, downloaded_at', { count: 'exact' })
-        .order('downloaded_at', { ascending: false })
-        .limit(25),
-      supabase
-        .from('trivia_questions')
-        .select('id', { count: 'exact', head: true }),
-      supabase
-        .from('articles')
-        .select('id', { count: 'exact', head: true }),
-      supabase
-        .from('events')
-        .select('id', { count: 'exact', head: true }),
-      supabase
-        .from('media_gallery')
-        .select('id', { count: 'exact', head: true }),
-    ]);
-
-    const failure = [
-      membersResult.error,
-      donationsResult.error,
-      donationsSumResult.error,
-      leadsResult.error,
-      triviaCountResult.error,
-      articlesCountResult.error,
-      eventsCountResult.error,
-      mediaCountResult.error,
-    ].find(Boolean);
-    if (failure) throw failure;
-
-    const donations = donationsResult.data || [];
-    return json(res, 200, {
-      profile: { email: identity.user.email, role: identity.role },
-      stats: {
-        members: membersResult.count || 0,
-        donations_cents: (donationsSumResult.data || [])
-          .reduce((sum, item) => sum + (item.montant || 0), 0),
-        leads: leadsResult.count || 0,
-        trivia: triviaCountResult.count || 0,
-        articles: articlesCountResult.count || 0,
-        events: eventsCountResult.count || 0,
-        media: mediaCountResult.count || 0,
-      },
-      members: membersResult.data || [],
-      donations,
-      leads: leadsResult.data || [],
-    });
-  } catch (error) {
-    return handleError(res, error, 'Chargement du dashboard impossible.');
-  }
+    const stats = {};
+    const lists = { members: [], donations: [], leads: [] };
+    for (const name of Object.keys(lists)) {
+      const config = datasetConfig(identity, name);
+      if (!can(identity, config.permission)) { stats[name] = null; continue; }
+      const { data, error, count } = await supabase.from(config.table)
+        .select(config.fields, { count: 'exact' }).order(config.order, { ascending: false }).limit(25);
+      if (error) throw error;
+      lists[name] = data || [];
+      stats[name] = count || 0;
+    }
+    stats.donation_totals = null;
+    if (can(identity, 'voir_dons')) {
+      const { data, error } = await supabase.rpc('ea_donation_totals');
+      if (error) throw error;
+      stats.donation_totals = data || [];
+    }
+    for (const [name, table, permission] of [
+      ['trivia', 'trivia_questions', 'gerer_trivia'], ['articles', 'articles', 'gerer_articles'],
+      ['events', 'events', 'gerer_evenements'], ['media', 'media_gallery', 'gerer_galerie'],
+    ]) {
+      if (!can(identity, permission)) { stats[name] = null; continue; }
+      const { count, error } = await supabase.from(table).select('id', { count: 'exact', head: true });
+      if (error) throw error;
+      stats[name] = count || 0;
+    }
+    return json(res, 200, { profile: { email: identity.user.email, role: identity.role }, stats, ...lists });
+  } catch (error) { return handleError(res, error, 'Chargement du dashboard impossible.'); }
 }
+}
+export default createDashboardHandler();

@@ -38,3 +38,13 @@
   .don-amount--custom { grid-column: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .don-amount { transition: none; } }
+
+/* Fréquence du don (unique / mensuel) */
+.don-frequency { display: inline-flex; gap: .25rem; padding: .25rem; margin-bottom: 1.25rem;
+  border: 2px solid #d7deea; border-radius: 999px; background: #fff; }
+.don-frequency-btn { border: 0; background: transparent; color: #142641; font: inherit; font-weight: 700;
+  padding: .55rem 1.1rem; border-radius: 999px; cursor: pointer; }
+.don-frequency-btn[aria-pressed="true"] { background: #bd470b; color: #fff; }
+.don-frequency-btn:focus-visible { outline: 3px solid #173f83; outline-offset: 3px; }
+.don-amount[hidden] { display: none; }
+.don-payment-security a { color: inherit; text-decoration: underline; }

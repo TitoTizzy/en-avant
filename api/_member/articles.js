@@ -1,16 +1,16 @@
+import { sanitizeArticle } from '../_lib/content.js';
 // /api/member/articles — Articles soumis par les membres.
 // GET   : liste les articles de l'utilisateur connecté
 // POST  : { titre, categorie, contenu, excerpt? } → soumet un article (pending)
 // PATCH : { id, titre?, categorie?, contenu?, excerpt? } → modifie un brouillon personnel
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
 
 const CATEGORIES = [
   'actualite', 'politique', 'economie', 'societe',
   'diaspora', 'programme', 'communique',
 ];
-
-const ALL_MEMBER_ROLES = ['member', 'editor', 'readonly', 'admin', 'superadmin'];
 
 const isUuid = (v) => /^[0-9a-f-]{36}$/i.test(String(v || ''));
 
@@ -28,7 +28,10 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store');
 
     // Tous les membres authentifiés (pas de PIN requis)
-    const { user } = await requireRole(req, ALL_MEMBER_ROLES, { requirePin: false });
+    const { user } = await requirePermission(req, 'espace_membre', { requirePin: false });
+    if (['POST', 'PATCH'].includes(req.method) && !await enforceDurableRateLimit(req, res, {
+      key: 'member-articles-day', subject: user.id, limit: 30, windowMs: 86400000,
+    })) return;
     const supabase = getServiceClient();
     const body = getBody(req);
 
@@ -46,12 +49,12 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const titre   = clean(body.titre);
       const categorie = clean(body.categorie);
-      const contenu = String(body.contenu || '').trim();
+      const contenu = sanitizeArticle(body.contenu).trim();
       const excerpt = clean(body.excerpt).slice(0, 300) || null;
 
       if (!isText(titre, 3, 200))         return json(res, 422, { error: 'Titre requis (3 à 200 caractères).' });
       if (!CATEGORIES.includes(categorie)) return json(res, 422, { error: 'Catégorie inconnue.' });
-      if (contenu.length < 20)             return json(res, 422, { error: 'Contenu trop court (20 caractères minimum).' });
+      if (contenu.length < 20 || contenu.length > 100000)             return json(res, 422, { error: 'Contenu trop court (20 caractères minimum).' });
 
       const meta   = user.user_metadata || {};
       const authorName = clean(meta.nom || meta.pseudo || user.email?.split('@')[0] || '').slice(0, 120) || null;
@@ -89,13 +92,13 @@ export default async function handler(req, res) {
       // Vérifier que l'article appartient bien à ce membre et est encore modifiable
       const { data: existing, error: fetchErr } = await supabase
         .from('articles')
-        .select('submitted_by, review_status')
+        .select('submitted_by, review_status, published')
         .eq('id', body.id)
         .single();
 
       if (fetchErr || !existing) return json(res, 404, { error: 'Article introuvable.' });
       if (existing.submitted_by !== user.id) return json(res, 403, { error: 'Cet article ne vous appartient pas.' });
-      if (existing.review_status === 'approved') return json(res, 403, { error: 'Impossible de modifier un article déjà approuvé.' });
+      if (existing.published || existing.review_status === 'approved') return json(res, 403, { error: 'Impossible de modifier un article déjà approuvé.' });
 
       const updates = { review_status: 'pending' }; // re-soumettre après modification
       if ('titre' in body) {
@@ -109,8 +112,8 @@ export default async function handler(req, res) {
       }
       if ('excerpt' in body) updates.excerpt = clean(body.excerpt).slice(0, 300) || null;
       if ('contenu' in body) {
-        const contenu = String(body.contenu || '').trim();
-        if (contenu.length < 20) return json(res, 422, { error: 'Contenu trop court.' });
+        const contenu = sanitizeArticle(body.contenu).trim();
+        if (contenu.length < 20 || contenu.length > 100000) return json(res, 422, { error: 'Contenu requis : 20 à 100 000 caractères.' });
         updates.contenu = contenu;
       }
 
@@ -118,6 +121,9 @@ export default async function handler(req, res) {
         .from('articles')
         .update(updates)
         .eq('id', body.id)
+        .eq('submitted_by', user.id)
+        .eq('published', false)
+        .neq('review_status', 'approved')
         .select('id, titre, review_status')
         .single();
       if (error) throw error;

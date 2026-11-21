@@ -205,6 +205,10 @@
           <p>Une contribution, un pas de plus pour Haïti.</p>
         </div>
         <div class="don-online-body">
+          <div class="don-frequency" role="group" aria-label="Fréquence du don">
+            <button class="don-frequency-btn" type="button" data-frequency="unique" aria-pressed="true">Don unique</button>
+            <button class="don-frequency-btn" type="button" data-frequency="mensuel" aria-pressed="false">Don mensuel</button>
+          </div>
           <div class="don-online-label">
             <h3 id="don-amount-label">Choisissez votre montant</h3>
             <span>Dollars américains · USD</span>
@@ -217,12 +221,12 @@
             <button class="don-amount" type="button" data-donation="250" aria-pressed="false"><span>250 $</span><small>Bientôt disponible</small></button>
             <button class="don-amount" type="button" data-donation="500" aria-pressed="false"><span>500 $</span><small>Bientôt disponible</small></button>
             <button class="don-amount" type="button" data-donation="1000" aria-pressed="false"><span>1 000 $</span><small>Bientôt disponible</small></button>
-            <button class="don-amount don-amount--custom" type="button" data-donation="custom" aria-pressed="false"><span>Autre montant</span><small>Bientôt disponible</small></button>
+            <button class="don-amount don-amount--custom" type="button" data-donation="libre" aria-pressed="false"><span>Autre montant</span><small>Bientôt disponible</small></button>
           </div>
-          <p class="don-payment-notice" id="don-payment-notice"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Les liens de paiement seront bientôt disponibles. Les montants non encore activés ne permettent aucun paiement pour le moment.</span></p>
+          <p class="don-payment-notice" id="don-payment-notice"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Les dons en ligne seront ouverts prochainement. Aucun paiement n'est possible pour le moment.</span></p>
           <div class="don-payment-selection" id="don-payment-selection" role="status" aria-live="polite" aria-atomic="true">Sélectionnez un montant pour soutenir le mouvement.</div>
-          <button class="don-payment-submit" id="don-payment-submit" type="button" disabled>Liens de paiement bientôt disponibles</button>
-          <p class="don-payment-security"><i class="fa-solid fa-lock" aria-hidden="true"></i> Lorsqu'il sera disponible, le paiement s'effectuera sur la page sécurisée de Stripe.</p>
+          <button class="don-payment-submit" id="don-payment-submit" type="button" disabled>Dons en ligne bientôt disponibles</button>
+          <p class="don-payment-security"><i class="fa-solid fa-lock" aria-hidden="true"></i> Paiement sur la page sécurisée de Stripe. Les dons financent les activités du parti En Avant en Haïti et sont collectés par En Avant Miami Inc, association à but non lucratif de Floride. Ils ne sont pas déductibles des impôts. <a href="/mentions-legales#dons">En savoir plus</a></p>
           <noscript><p class="don-payment-notice">Activez JavaScript pour sélectionner un montant. Les coordonnées Cash App et Zelle restent accessibles ci-dessous.</p></noscript>
         </div>
       </section>
@@ -400,8 +404,8 @@
       <div class="u-shell u-footer-bottom-row">
         <p>© 2026 Parti Politique En Avant. Tous droits réservés.</p>
         <ul class="legal-links">
-          <li><a href="#">Mentions légales</a></li>
-          <li><a href="#">Politique de confidentialité</a></li>
+          <li><a href="/mentions-legales#mentions">Mentions légales</a></li>
+          <li><a href="/mentions-legales#confidentialite">Politique de confidentialité</a></li>
         </ul>
       </div>
     </div>
@@ -411,7 +415,6 @@
 
   <script src="/js/premium.js"></script>
   <script src="/js/app.js"></script>
-  <script src="/js/donation-links.js"></script>
   <script src="/js/don.js"></script>
   <script src="/js/env.js"></script>
 </body>

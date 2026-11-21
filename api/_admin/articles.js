@@ -1,3 +1,4 @@
+import { sanitizeArticle } from '../_lib/content.js';
 // /api/admin/articles — CRUD des articles du blog (SuperAdmin + PIN requis).
 // GET    : ?review=pending → soumissions membres en attente ; sinon liste admin
 // POST   : { titre, categorie, contenu, excerpt?, is_featured? }  → crée un brouillon
@@ -54,7 +55,7 @@ export default async function handler(req, res) {
           .eq('review_status', 'pending')
           .order('updated_at', { ascending: false })
           .limit(50);
-        if (error) return json(res, 200, { articles: [] }); // colonnes absentes → liste vide
+        if (error) throw error;
         return json(res, 200, { articles: data || [] });
       }
 
@@ -80,12 +81,12 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const titre = clean(body.titre);
       const categorie = clean(body.categorie);
-      const contenu = String(body.contenu || '').trim();
+      const contenu = sanitizeArticle(body.contenu).trim();
       const excerpt = clean(body.excerpt).slice(0, 300) || null;
 
       if (!isText(titre, 3, 200)) return json(res, 422, { error: 'Titre requis (3 à 200 caractères).' });
       if (!CATEGORIES.includes(categorie)) return json(res, 422, { error: 'Catégorie inconnue.' });
-      if (contenu.length < 20) return json(res, 422, { error: 'Contenu trop court.' });
+      if (contenu.length < 20 || contenu.length > 100000) return json(res, 422, { error: 'Contenu requis : 20 à 100 000 caractères.' });
 
       const isFeatured = body.is_featured === true;
 
@@ -129,8 +130,8 @@ export default async function handler(req, res) {
       }
       if ('excerpt' in body) updates.excerpt = clean(body.excerpt).slice(0, 300) || null;
       if ('contenu' in body) {
-        const contenu = String(body.contenu || '').trim();
-        if (contenu.length < 20) return json(res, 422, { error: 'Contenu trop court.' });
+        const contenu = sanitizeArticle(body.contenu).trim();
+        if (contenu.length < 20 || contenu.length > 100000) return json(res, 422, { error: 'Contenu requis : 20 à 100 000 caractères.' });
         updates.contenu = contenu;
       }
 
@@ -166,6 +167,7 @@ export default async function handler(req, res) {
           return json(res, 422, { error: 'review_status invalide.' });
         }
         updates.review_status = body.review_status;
+        if (body.review_status !== 'approved') updates.published = false;
         if (body.review_status === 'approved') {
           updates.published = true;
           const { data: current } = await supabase
@@ -178,6 +180,14 @@ export default async function handler(req, res) {
       }
       if ('review_note' in body) {
         updates.review_note = body.review_note ? String(body.review_note).slice(0, 500) : null;
+      }
+
+      // Sanitize older stored content too when it is approved or published.
+      if (updates.published && !('contenu' in updates)) {
+        const { data: stored, error: contentError } = await supabase.from('articles')
+          .select('contenu').eq('id', body.id).single();
+        if (contentError) throw contentError;
+        updates.contenu = sanitizeArticle(stored.contenu);
       }
 
       // Image de couverture (base64 → bucket public assets/articles/)

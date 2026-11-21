@@ -1,10 +1,13 @@
 // GET /api/trivia/questions?count=8 — Questions mélangées pour le quiz public.
 // Lecture seule ; les questions sont générées au préalable par /api/trivia/generate.
 import { getServiceClient } from '../_lib/supabase.js';
+import { createTriviaSession } from '../_lib/trivia-session.js';
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import { json, methodGuard, handleError } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'GET')) return;
+  if (!await enforceDurableRateLimit(req, res, { key: 'trivia-start', limit: 20 })) return;
 
   try {
     const count = Math.min(Math.max(parseInt(req.query.count, 10) || 10, 1), 12);
@@ -26,7 +29,8 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Cache-Control', 'no-store');
-    return json(res, 200, { questions: pool.slice(0, count) });
+    if (!pool.length) return json(res, 503, { error: "Aucune question disponible." });
+    return json(res, 200, await createTriviaSession(supabase, pool.slice(0, count)));
   } catch (error) {
     return handleError(res, error);
   }

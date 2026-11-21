@@ -451,6 +451,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/env.js"></script>
+  <script src="/js/vendor/purify.min.js"></script>
+  <script src="/js/content-security.js"></script>
   <script src="/js/premium.js"></script>
   <script>
     (() => {
@@ -575,14 +577,14 @@
         }
         list.innerHTML = articles.map((a) => {
           const st = statusLabel(a.review_status);
-          const note = a.review_note ? `<p class="membre-submission-note">Note admin : ${a.review_note}</p>` : "";
+          const note = a.review_note ? `<p class="membre-submission-note">Note admin : ${window.EASecurity.escapeText(a.review_note)}</p>` : "";
           return `<div class="membre-submission-card">
             <div class="membre-submission-meta">
               <span class="mbadge ${st.cls}">${st.txt}</span>
               <span style="font-size:.78rem;color:rgba(255,255,255,.4);">${fmtDate(a.updated_at)}</span>
             </div>
-            <p class="membre-submission-title">${a.titre}</p>
-            <p style="font-size:.82rem;color:rgba(255,255,255,.45);margin:0;">${a.excerpt || ""}</p>
+            <p class="membre-submission-title">${window.EASecurity.escapeText(a.titre)}</p>
+            <p style="font-size:.82rem;color:rgba(255,255,255,.45);margin:0;">${window.EASecurity.escapeText(a.excerpt || "")}</p>
             ${note}
           </div>`;
         }).join("");

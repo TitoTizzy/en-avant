@@ -3,6 +3,7 @@
 // POST   : { email, password, nom, username, role } → crée un compte Auth + rôle
 // PATCH  : { id, role }                              → change le rôle
 // DELETE : { id }                                    → supprime le compte
+import { PERMISSIONS } from '../_lib/permissions.js';
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isEmail, isText } from '../_lib/http.js';
 
@@ -83,6 +84,7 @@ export default async function handler(req, res) {
 
       if ('permissions' in body) {
         if (!Array.isArray(body.permissions)) return json(res, 422, { error: 'permissions doit être un tableau.' });
+        if (body.permissions.some(p => !PERMISSIONS.includes(p))) return json(res, 422, { error: 'Permission inconnue.' });
         updates.permissions = body.permissions
           .filter((p) => typeof p === 'string' && p.length <= 60)
           .slice(0, 50);

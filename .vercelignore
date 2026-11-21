@@ -1,19 +1,17 @@
-# Schéma SQL : à exécuter dans Supabase, inutile sur le CDN
-supabase
-
-# Outils locaux (tests de connexion) : jamais servis publiquement
-scripts
-
-# Rapports et documentation technique : versionnes, jamais servis publiquement
-audit
-docs/CONFIGURATION-DONS.md
-
-# Dépendances (Vercel les réinstalle lui-même)
-node_modules
-
-# Fichiers locaux et secrets
+# Internal source, audits and tooling are not public website assets.
+node_modules/
 .env
 .env.*
-.vscode
-.claude
+.vscode/
+.claude/
 *.log
+supabase/
+scripts/
+audit/
+Claude outputs/
+.agents/
+.codex/
+.aws/
+README.md
+DEPLOYMENT.md
+docs/*.md

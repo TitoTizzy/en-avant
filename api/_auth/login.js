@@ -1,11 +1,12 @@
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import { getAnonClient, getServiceClient } from '../_lib/supabase.js';
 import {
-  json, methodGuard, getBody, handleError, clean, enforceRateLimit,
+  json, methodGuard, getBody, handleError, clean,
 } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
-  if (!enforceRateLimit(req, res, { key: 'admin-login', limit: 8 })) return;
+  if (!await enforceDurableRateLimit(req, res, { key: 'admin-login', limit: 8 })) return;
 
   try {
     const body = getBody(req);
@@ -15,6 +16,9 @@ export default async function handler(req, res) {
     if (!identifier || !password || identifier.length > 160 || password.length > 200) {
       return json(res, 422, { error: 'Identifiant et mot de passe requis.' });
     }
+    if (!await enforceDurableRateLimit(req, res, {
+      key: 'login-account', subject: identifier, limit: 8,
+    })) return;
 
     let email = identifier;
     if (!identifier.includes('@')) {

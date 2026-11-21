@@ -18,7 +18,7 @@
   function deny(message, withLogin = true) {
     guard.hidden = false;
     app.hidden = true;
-    guardMsg.innerHTML = `<i class="fa-solid fa-shield-halved" aria-hidden="true"></i> ${message}`;
+    guardMsg.textContent = message;
     guardAction.hidden = !withLogin;
   }
 
@@ -48,7 +48,7 @@
   const esc = (value) => {
     const span = document.createElement("span");
     span.textContent = value ?? "";
-    return span.innerHTML;
+    return span.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   };
 
   const fmtDate = (iso) =>
@@ -292,6 +292,8 @@
     });
   });
 
+  let grantedPermissions = [];
+  let superAdminAccess = false;
   function renderMembers(members) {
     const tbody = document.getElementById("tbl-members");
     if (!members.length) {
@@ -308,8 +310,8 @@
         <td>${fmtDate(member.created_at)}</td>
         <td><span class="badge ${esc(member.status)}">${esc(member.status)}</span></td>
         <td style="white-space:nowrap;">
-          <button class="btn btn-ghost btn-xs" data-action="approved" type="button">Approuver</button>
-          <button class="btn btn-ghost btn-xs" data-action="rejected" type="button">Rejeter</button>
+          <button class="btn btn-ghost btn-xs" data-action="approved" type="button" ${superAdminAccess || grantedPermissions.includes("traiter_membres") ? "" : "hidden"}>Approuver</button>
+          <button class="btn btn-ghost btn-xs" data-action="rejected" type="button" ${superAdminAccess || grantedPermissions.includes("traiter_membres") ? "" : "hidden"}>Rejeter</button>
         </td>
       </tr>
     `).join("");
@@ -351,6 +353,11 @@
     `).join("");
   }
 
+  function formatDonationTotals(totals) {
+    return totals === null || totals === undefined ? '—'
+      : totals.length ? totals.map(row => fmtMoney(Number(row.net_cents), row.devise)).join(' · ') : fmtMoney(0, 'usd');
+  }
+
   function renderDashboard(payload) {
     document.getElementById("adm-email").textContent = payload.profile.email;
     const roleBadge = document.getElementById("adm-role");
@@ -359,7 +366,7 @@
 
     document.getElementById("st-members").textContent = payload.stats.members;
     document.getElementById("st-donations").textContent =
-      fmtMoney(payload.stats.donations_cents, "usd");
+      formatDonationTotals(payload.stats.donation_totals);
     document.getElementById("st-leads").textContent = payload.stats.leads;
     document.getElementById("st-trivia").textContent = payload.stats.trivia;
     document.getElementById("st-articles").textContent = payload.stats.articles;
@@ -847,7 +854,7 @@
         </div>
         <h4>${esc(article.titre)}</h4>
         <p>${esc(article.excerpt || "Aucun résumé.")}</p>
-        <div class="adm-pending-preview">${article.contenu || ""}</div>
+        <div class="adm-pending-preview">${window.EASecurity.article(article.contenu)}</div>
         <div class="adm-record-actions adm-pending-card-actions">
           <button class="btn btn-primary btn-xs pending-approve" type="button">
             <i class="fa-solid fa-check" aria-hidden="true"></i> Approuver &amp; publier
@@ -941,7 +948,7 @@
 
     if (articleQuill) {
       articleQuill.setContents([]);
-      if (article?.contenu) articleQuill.clipboard.dangerouslyPasteHTML(article.contenu);
+      if (article?.contenu) articleQuill.clipboard.dangerouslyPasteHTML(window.EASecurity.article(article.contenu));
     }
 
     setModuleStatus("article-status", "", "");
@@ -2360,14 +2367,17 @@
       .maybeSingle();
 
     const isSuperAdmin = profileRow?.role === "superadmin";
-    const userPerms = Array.isArray(profileRow?.permissions) ? profileRow.permissions : [];
+    const defaults = { member: ['espace_membre','jouer_trivia','voir_reserves'], editor: ['espace_membre','voir_public'], readonly: ['espace_membre','voir_public'] };
+    const userPerms = Array.isArray(profileRow?.permissions) ? profileRow.permissions : (defaults[profileRow?.role] || []);
     const canDo = (perm) => isSuperAdmin || userPerms.includes(perm);
+    grantedPermissions = userPerms; superAdminAccess = isSuperAdmin;
 
     if (profileErr || (!isSuperAdmin && !userPerms.includes("acces_dashboard"))) {
       deny("Accès réservé aux administrateurs. Demandez à un SuperAdmin de vous accorder la permission «Accès au dashboard».", false);
       return;
     }
 
+    document.querySelectorAll('.list-export').forEach(el => { el.hidden = !canDo('exporter_donnees'); });
     // Affichage immédiat — accès confirmé
     const meta = session.user.user_metadata || {};
     const display =
@@ -2398,8 +2408,8 @@
         "panel-settings":     "gerer_parametres",
         "panel-members":      "voir_membres",
         "panel-donations":    "voir_dons",
-        "panel-leads":        "voir_membres",
-        "panel-equipe":       "gerer_utilisateurs",
+        "panel-leads":        "voir_leads",
+
       };
       Object.entries(panelPerms).forEach(([panel, perm]) => {
         if (!canDo(perm)) {
@@ -2407,7 +2417,7 @@
         }
       });
       // Panneaux strictement superadmin (gestion clés API, sécurité, logs)
-      ["panel-integrations", "panel-security", "panel-logs"].forEach((panel) => {
+      ["panel-integrations", "panel-security", "panel-logs", "panel-equipe"].forEach((panel) => {
         document.querySelector(`[data-panel="${panel}"]`)?.style.setProperty("display", "none");
       });
     }
@@ -2458,7 +2468,7 @@
       // Enrichit les stats si l'API répond
       document.getElementById("st-members").textContent = payload.stats?.members ?? "—";
       document.getElementById("st-donations").textContent = payload.stats
-        ? fmtMoney(payload.stats.donations_cents, "usd") : "—";
+        ? formatDonationTotals(payload.stats.donation_totals) : "—";
       document.getElementById("st-leads").textContent = payload.stats?.leads ?? "—";
       document.getElementById("st-trivia").textContent = payload.stats?.trivia ?? "—";
       document.getElementById("st-articles").textContent = payload.stats?.articles ?? "—";
@@ -2469,12 +2479,12 @@
       if (payload.leads) renderLeads(payload.leads);
     } catch (_) { /* API indisponible localement — statistiques vides */ }
 
-    loadArticleLibrary();
-    loadEventLibrary();
-    loadGallery();
-    loadIntegrations();
-    loadTriviaBank();
-    loadTeam();
+    if (canDo('gerer_articles')) loadArticleLibrary();
+    if (canDo('gerer_evenements')) loadEventLibrary();
+    if (canDo('gerer_galerie')) loadGallery();
+    if (isSuperAdmin) loadIntegrations();
+    if (canDo('gerer_trivia')) loadTriviaBank();
+    if (canDo('gerer_organigramme')) loadTeam();
   })();
 
   /* ─── Organigramme : sections éditables ──────────────────────────── */
@@ -2643,8 +2653,12 @@
       { key: "gerer_galerie",      label: "Gérer la galerie" },
       { key: "gerer_organigramme", label: "Gérer l'organigramme" },
       { key: "gerer_trivia",       label: "Gérer le Trivia" },
-      { key: "voir_membres",       label: "Voir et traiter les membres" },
-      { key: "voir_dons",          label: "Voir les dons et les leads" },
+      { key: "voir_membres",       label: "Voir les membres" },
+      { key: "traiter_membres",    label: "Valider les adhésions" },
+      { key: "voir_ninu",          label: "Consulter les NINU" },
+      { key: "exporter_donnees",   label: "Exporter les données autorisées" },
+      { key: "voir_leads",         label: "Voir les demandes de livre blanc" },
+      { key: "voir_dons",          label: "Voir les dons" },
       { key: "gerer_parametres",   label: "Gérer les paramètres et la sécurité" },
       { key: "espace_membre",      label: "Accès à l'espace membre" },
       { key: "jouer_trivia",       label: "Participer au Trivia" },
@@ -2652,7 +2666,7 @@
       { key: "voir_reserves",      label: "Contenus réservés aux membres" },
     ];
     const ROLE_DEFAULTS = {
-      superadmin: ["acces_dashboard","gerer_utilisateurs","gerer_articles","gerer_evenements","gerer_galerie","gerer_organigramme","gerer_trivia","voir_membres","voir_dons","gerer_parametres","espace_membre","jouer_trivia","voir_public","voir_reserves"],
+      superadmin: ["acces_dashboard","gerer_utilisateurs","gerer_articles","gerer_evenements","gerer_galerie","gerer_organigramme","gerer_trivia","voir_membres","traiter_membres","voir_ninu","exporter_donnees","voir_leads","voir_dons","gerer_parametres","espace_membre","jouer_trivia","voir_public","voir_reserves"],
       editor:    ["espace_membre","voir_public"],
       readonly:  ["espace_membre","voir_public"],
       member:    ["espace_membre","jouer_trivia","voir_reserves"],

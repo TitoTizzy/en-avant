@@ -24,42 +24,6 @@ export function handleError(res, error, fallback = 'Erreur interne du serveur.')
   json(res, status, { error: status >= 500 ? fallback : error.message });
 }
 
-/* ----- Anti-abus best effort -----
- * Une instance serverless ne partage pas sa mémoire avec les autres instances :
- * ce garde-fou complète, sans remplacer, le rate limiting Cloudflare/Vercel.
- */
-const rateBuckets = new Map();
-
-export function enforceRateLimit(req, res, {
-  key = 'default',
-  limit = 10,
-  windowMs = 10 * 60 * 1000,
-} = {}) {
-  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  const ip = forwarded || req.socket?.remoteAddress || 'unknown';
-  const bucketKey = `${key}:${ip}`;
-  const now = Date.now();
-  const current = rateBuckets.get(bucketKey);
-
-  if (rateBuckets.size > 1000) {
-    for (const [storedKey, bucket] of rateBuckets) {
-      if (bucket.resetAt <= now) rateBuckets.delete(storedKey);
-    }
-  }
-
-  if (!current || current.resetAt <= now) {
-    rateBuckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  current.count += 1;
-  if (current.count <= limit) return true;
-
-  res.setHeader('Retry-After', String(Math.ceil((current.resetAt - now) / 1000)));
-  json(res, 429, { error: 'Trop de tentatives. Réessayez dans quelques minutes.' });
-  return false;
-}
-
 /* ----- Validation ----- */
 
 export const isEmail = (value) =>

@@ -1,15 +1,17 @@
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import { createPinCookie } from '../_lib/admin-pin.js';
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import {
-  json, methodGuard, getBody, handleError, clean, enforceRateLimit,
+  json, methodGuard, getBody, handleError, clean,
 } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
-  if (!enforceRateLimit(req, res, { key: 'admin-pin', limit: 6 })) return;
+  if (!await enforceDurableRateLimit(req, res, { key: 'admin-pin', limit: 6 })) return;
 
   try {
     const { user } = await requireRole(req, ['superadmin'], { requirePin: false });
+    if (!await enforceDurableRateLimit(req, res, { key: 'pin-account', subject: user.id, limit: 6 })) return;
     const pin = clean(getBody(req).pin);
 
     if (!/^\d{4,8}$/.test(pin)) {

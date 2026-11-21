@@ -1,14 +1,17 @@
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 // POST /api/auth/register
 // Inscription libre d'un membre (rôle "member").
-// Le trigger handle_new_user crée le profil ; on met ensuite le rôle à "member".
-import { getServiceClient } from '../_lib/supabase.js';
+// Le trigger handle_new_user crée le profil member dans la transaction Auth.
+import { getServiceClient, getAnonClient } from '../_lib/supabase.js';
 import {
-  json, methodGuard, getBody, handleError, isEmail, isText, clean, enforceRateLimit,
+  json, methodGuard, getBody, handleError, isEmail, isText, clean,
 } from '../_lib/http.js';
 
-export default async function handler(req, res) {
+export function createRegisterHandler({ rateLimit = enforceDurableRateLimit,
+  anonClient = getAnonClient, serviceClient = getServiceClient,
+} = {}) { return async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
-  if (!enforceRateLimit(req, res, { key: 'register', limit: 5 })) return;
+  if (!await rateLimit(req, res, { key: 'register', limit: 5 })) return;
 
   try {
     const body     = getBody(req);
@@ -28,31 +31,25 @@ export default async function handler(req, res) {
       return json(res, 422, { error: 'Formulaire invalide.', fields: errors });
     }
 
-    const supabase = getServiceClient();
-
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { nom, pseudo },
+    // Supabase sends the confirmation email; never auto-confirm public signups.
+    const siteUrl = new URL(process.env.SITE_URL);
+    const { data, error } = await anonClient().auth.signUp({
+      email, password,
+      options: { data: { nom, pseudo }, emailRedirectTo: new URL('/login', siteUrl).href },
     });
-
-    if (error) {
-      const msg = error.message || '';
-      if (/already registered|already been registered/i.test(msg)) {
-        return json(res, 409, { error: 'Cette adresse email est déjà utilisée.' });
-      }
-      throw error;
+    if (error) throw error;
+    if (data.session) {
+      // Fail closed when the project has accidentally disabled email confirmation.
+      const { error: cleanupError } = await serviceClient().auth.admin.deleteUser(data.user.id);
+      if (cleanupError) throw cleanupError;
+      return json(res, 503, { error: 'La vérification des adresses email doit être activée.' });
     }
-
-    // Mettre à jour le profil créé par le trigger : rôle member + nom
-    await supabase
-      .from('profiles')
-      .update({ role: 'member', nom })
-      .eq('id', data.user.id);
-
-    return json(res, 201, { ok: true });
+    // The SQL trigger creates the member profile atomically with Auth.
+    return json(res, 201, { ok: true, confirmation_required: true });
   } catch (error) {
     return handleError(res, error, 'Inscription momentanément indisponible.');
   }
 }
+
+}
+export default createRegisterHandler();

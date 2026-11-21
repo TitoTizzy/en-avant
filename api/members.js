@@ -1,17 +1,18 @@
+import { enforceDurableRateLimit } from './_lib/rate-limit.js';
 // POST /api/members — Inscription adhérent (DAT Branche 1 §3)
 // Formulaire HTML natif → validation serveur → INSERT Supabase `members`.
 // La table est protégée par RLS : seule cette route (service_role) peut écrire.
 import { getServiceClient } from './_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError,
-  isEmail, isText, isPhone, clean, enforceRateLimit,
+  isEmail, isText, isPhone, clean,
 } from './_lib/http.js';
 
 const SEXES = ['femme', 'homme', 'autre'];
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
-  if (!enforceRateLimit(req, res, { key: 'members', limit: 8 })) return;
+  if (!await enforceDurableRateLimit(req, res, { key: 'members', limit: 8 })) return;
 
   try {
     const body = getBody(req);

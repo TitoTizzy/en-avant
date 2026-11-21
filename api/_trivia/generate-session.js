@@ -1,8 +1,11 @@
+import { validQuestion } from '../_lib/trivia-session.js';
+import { createTriviaSession } from '../_lib/trivia-session.js';
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 // POST /api/trivia/generate-session
 // Génère 8 questions IA depuis le Livre Blanc pour un membre connecté.
 // Chaque question générée est stockée dans trivia_questions → banque pour l'app mobile future.
 import Anthropic from '@anthropic-ai/sdk';
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, methodGuard, handleError } from '../_lib/http.js';
 
 const SAVE_QUESTIONS_TOOL = {
@@ -37,12 +40,16 @@ export default async function handler(req, res) {
 
   try {
     // Membre ou superadmin — pas de PIN requis pour le quiz
-    await requireRole(req, ['member', 'superadmin'], { requirePin: false });
+    const { user } = await requirePermission(req, 'jouer_trivia', { requirePin: false });
+    if (!await enforceDurableRateLimit(req, res, { key: 'ai-user-day', subject: user.id, limit: 5, windowMs: 86400000 })) return;
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return json(res, 503, { error: 'Service temporairement indisponible.' });
     }
 
+    if (!await enforceDurableRateLimit(req, res, {
+      key: 'ai-global-day', subject: 'all', limit: Math.min(Math.max(Math.floor(Number(process.env.AI_DAILY_LIMIT)) || 100, 1), 1000), windowMs: 86400000,
+    })) return;
     const supabase = getServiceClient();
 
     // Charger le Livre Blanc depuis le bucket privé
@@ -88,17 +95,12 @@ export default async function handler(req, res) {
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');
-    if (!toolUse?.input?.questions) {
+    if (!Array.isArray(toolUse?.input?.questions)) {
       return json(res, 502, { error: 'Génération échouée. Réessayez.' });
     }
 
-    const rows = toolUse.input.questions
-      .filter((q) =>
-        q.question &&
-        Array.isArray(q.options) &&
-        q.options.length === 4 &&
-        q.options.includes(q.correct_answer)
-      )
+    const rows = toolUse.input.questions.slice(0, 12)
+      .filter(validQuestion)
       .map((q) => ({
         question:           q.question,
         options:            q.options,
@@ -111,12 +113,9 @@ export default async function handler(req, res) {
       return json(res, 502, { error: 'Génération insuffisante. Réessayez.' });
     }
 
-    // Stocker dans la banque de questions (future app mobile)
-    supabase.from('trivia_questions').insert(rows).then(({ error }) => {
-      if (error) console.error('[generate-session] insert:', error.message);
-    });
-
-    return json(res, 200, { ok: true, questions: rows, source: 'ai' });
+    const { error: saveError } = await supabase.from('trivia_questions').insert(rows);
+    if (saveError) throw saveError;
+    return json(res, 200, { ok: true, ...await createTriviaSession(supabase, rows), source: 'ai' });
   } catch (error) {
     return handleError(res, error, 'Échec de la génération du quiz.');
   }

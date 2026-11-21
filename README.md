@@ -48,6 +48,8 @@ La procédure complète de production et les commandes PowerShell sont dans
    `update public.profiles set role = 'superadmin' where id = '<son-uuid>';`
 4. Configurer l'identifiant et le PIN chiffré du SuperAdmin avec
    `supabase/setup-superadmin.sql`.
+   Suivre aussi l'ordre complet des migrations dans `DEPLOYMENT.md`, notamment
+   `supabase/security-hardening.sql`, avant d'utiliser la nouvelle API.
 5. Storage → bucket `documents` : uploader `livre-blanc.pdf` et `livre-blanc.txt`
    (texte brut servant de source au générateur de quiz).
 
@@ -73,6 +75,7 @@ La procédure complète de production et les commandes PowerShell sont dans
 npm install
 npm run dev      # sert le statique + les fonctions /api sur localhost:4886
 npm run check    # contrôle local avant déploiement
+npm test         # sécurité, PostgreSQL embarqué et parcours DOM, sans services réels
 ```
 
 ## Règles de sécurité (non négociables)
@@ -86,3 +89,6 @@ npm run check    # contrôle local avant déploiement
 - Le PIN SuperAdmin est haché dans PostgreSQL et peut être modifié depuis
   l'onglet Sécurité du dashboard ; il n'est jamais renvoyé au navigateur.
 - Webhook Stripe : signature vérifiée sur le corps brut (`bodyParser` désactivé).
+- Les quotas sont atomiques en base. Les scores du quiz sont calculés depuis
+  les réponses verrouillées côté serveur ; le navigateur ne choisit pas son score.
+- Les contenus éditoriaux sont assainis côté serveur et au rendu navigateur.

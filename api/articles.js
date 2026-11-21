@@ -1,5 +1,6 @@
 // GET /api/articles?categorie=X&limit=12&offset=0 — Filtrage AJAX du blog (DAT)
 // Lecture seule des articles publiés, avec cache CDN court.
+import { sanitizeArticle } from './_lib/content.js';
 import { getServiceClient } from './_lib/supabase.js';
 import { json, methodGuard, handleError, clean } from './_lib/http.js';
 
@@ -23,12 +24,13 @@ export default async function handler(req, res) {
         .eq('slug', slug)
         .single();
 
-      if (error || !article) {
+      if (error && error.code !== 'PGRST116') throw error;
+      if (!article) {
         return json(res, 404, { error: 'Article introuvable.' });
       }
 
       res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
-      return json(res, 200, { article });
+      return json(res, 200, { article: { ...article, contenu: sanitizeArticle(article.contenu) } });
     }
     let query = supabase
       .from('articles')

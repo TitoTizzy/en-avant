@@ -24,6 +24,7 @@ if (existsSync(envPath)) {
   }
 }
 
+const ROUTES = JSON.parse(readFileSync(join(ROOT, 'vercel.json'), 'utf8')).rewrites || [];
 const PORT = Number(process.env.PORT) || 4886;
 if (!process.env.SITE_URL) process.env.SITE_URL = `http://localhost:${PORT}`;
 
@@ -48,7 +49,7 @@ const MIME = {
 };
 
 /* Dossiers jamais servis en statique (secrets / outils / interne) */
-const BLOCKED = ['scripts', 'supabase', 'node_modules', '.claude', 'api'];
+const BLOCKED = ['scripts', 'supabase', 'node_modules', 'audit', 'Claude outputs', 'api'];
 
 const moduleCache = new Map();
 
@@ -86,7 +87,12 @@ function vercelify(req, res, searchParams) {
 
 async function parseJsonBody(req) {
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > 4 * 1024 * 1024) throw Object.assign(new Error('Corps trop volumineux.'), { status: 413 });
+    chunks.push(chunk);
+  }
   const raw = Buffer.concat(chunks);
   if (!raw.length) return {};
   const type = String(req.headers['content-type'] || '');
@@ -102,13 +108,21 @@ const server = createServer(async (req, res) => {
   try {
     /* ----- Fonctions /api ----- */
     if (url.pathname.startsWith('/api/')) {
-      const mod = await loadApiModule(url.pathname.slice(5).replace(/\/+$/, ''));
+      const route = ROUTES.find(route => route.source === url.pathname);
+      const target = route ? new URL(route.destination, url.origin) : url;
+      const params = new URLSearchParams(url.searchParams);
+      target.searchParams.forEach((value, key) => params.set(key, value));
+      const apiPath = target.pathname.slice(5).replace(/\/+$/, '');
+      if (apiPath.split('/').some(part => part.startsWith('_'))) {
+        res.writeHead(404); return res.end();
+      }
+      const mod = await loadApiModule(apiPath);
       if (!mod?.default) {
         res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end('{"error":"Endpoint introuvable."}');
       }
 
-      vercelify(req, res, url.searchParams);
+      vercelify(req, res, params);
 
       // Comme Vercel : corps parsé sauf si la fonction exporte bodyParser:false
       const parseBody = mod.config?.api?.bodyParser !== false;
@@ -125,11 +139,12 @@ const server = createServer(async (req, res) => {
     let pathname = decodeURIComponent(url.pathname);
     if (pathname === '/') pathname = '/index.html';
 
+    if (!extname(pathname) && existsSync(join(ROOT, pathname + '.html'))) pathname += '.html';
     const file = normalize(join(ROOT, pathname));
     const relative = file.slice(ROOT.length + 1);
     const topFolder = relative.split(sep)[0];
 
-    if (!file.startsWith(ROOT) || relative.startsWith('.env') || BLOCKED.includes(topFolder)) {
+    if (!file.startsWith(ROOT + sep) || relative.split(sep).some(part => part.startsWith('.')) || BLOCKED.includes(topFolder)) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('404 — Introuvable');
     }
@@ -156,7 +171,7 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
   const supabaseOk = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
   console.log('────────────────────────────────────────────────');
   console.log(`▶ En Avant — dev sur http://localhost:${PORT}`);

@@ -1,6 +1,8 @@
 // POST /api/leads-livreblanc — Lead Magnet (DAT Branche 1 §3)
 // INSERT Supabase `leads_livreblanc` → envoi du lien PDF (URL signée 7 jours
 // sur le bucket privé `documents`) par email via Resend.
+import { escapeText } from './_lib/content.js';
+import { enforceDurableRateLimit } from './_lib/rate-limit.js';
 import { Resend } from 'resend';
 import { getServiceClient } from './_lib/supabase.js';
 import {
@@ -12,6 +14,7 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 jours
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
+  if (!await enforceDurableRateLimit(req, res, { key: 'leads', limit: 3 })) return;
 
   try {
     const body = getBody(req);
@@ -44,7 +47,7 @@ export default async function handler(req, res) {
     if (insertError) throw insertError;
 
     // URL signée du PDF (bucket privé) — fallback : copie statique du site.
-    let downloadUrl = '/docs/livre-blanc.pdf';
+    let downloadUrl = new URL('/docs/livre-blanc.pdf', process.env.SITE_URL).href;
     const pdfPath = process.env.LIVRE_BLANC_PDF_PATH || 'livre-blanc.pdf';
     const { data: signed } = await supabase.storage
       .from('documents')
@@ -56,13 +59,13 @@ export default async function handler(req, res) {
     if (process.env.RESEND_API_KEY) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
+        const { error: deliveryError } = await resend.emails.send({
           from: process.env.RESEND_FROM || 'En Avant <onboarding@resend.dev>',
           to: email,
           subject: 'Votre exemplaire du Livre Blanc — En Avant',
           html: `
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#0e1726">
-              <h2 style="color:#e0551f">Merci infiniment, ${nom} !</h2>
+              <h2 style="color:#e0551f">Merci infiniment, ${escapeText(nom)} !</h2>
               <p>Merci de votre intérêt pour le projet <strong>En Avant</strong>.</p>
               <p>Voici votre lien de téléchargement du Livre Blanc — une vision
               sur 30 ans pour redresser Haïti (lien valable 7 jours) :</p>
@@ -77,6 +80,7 @@ export default async function handler(req, res) {
               </p>
             </div>`,
         });
+        if (deliveryError) throw deliveryError;
         emailSent = true;
       } catch (mailError) {
         console.error('Resend:', mailError);

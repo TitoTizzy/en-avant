@@ -18,30 +18,6 @@
   const coverImg = document.getElementById("art-cover-img");
   const recentEl = document.getElementById("art-recent");
 
-  /* Démonstration (statique / API absente) — texte issu des pages du site. */
-  const FALLBACK_ARTICLE = {
-    id: null,
-    titre: "Le parti En Avant annonce ses 20 chantiers prioritaires",
-    categorie: "Programme",
-    published_at: "2026-03-12T12:00:00Z",
-    image_url: "/pictures/foule-Assise.jpg",
-    contenu: [
-      "<p>Le parti En Avant présente à la nation son programme des vingt chantiers prioritaires : une architecture de relèvement national couvrant la sécurité, la justice, la production, la jeunesse, les institutions, l'énergie, les territoires et la dignité collective.</p>",
-      "<p>Cette annonce ne présente pas une simple liste. Le slogan « Pour changer Haïti ensemble » appelle à une mobilisation large : jeunesse, femmes, diaspora, enseignants, agriculteurs, policiers, artistes, ouvriers, cadres, entrepreneurs et collectivités.</p>",
-      "<blockquote>« La reconstruction d'Haïti ne peut pas reposer sur un homme providentiel. Elle suppose une alliance entre la jeunesse, l'expérience, la diaspora, les territoires et les forces vives du pays. »</blockquote>",
-      "<h2>Trois piliers, un cap</h2>",
-      "<p>Les vingt chantiers s'organisent autour de trois piliers : l'ordre public et la sécurité, l'État de droit et la confiance, la production et la prospérité. Le cap est posé : faire d'Haïti une économie émergente à l'horizon 2054, année des 250 ans de l'indépendance.</p>",
-      "<p>Parmi les mesures phares : rétablir la sécurité sur l'ensemble du territoire, garantir l'accès gratuit à l'école primaire, associer la diaspora aux décisions d'avenir, établir un pouvoir judiciaire fort et indépendant, et lancer un plan ambitieux d'infrastructures.</p>",
-      "<p>Le détail des vingt chantiers est disponible sur la page dédiée et dans le Livre blanc, qui présente un synopsis d'état des lieux ainsi que la feuille de route complète du redressement national.</p>",
-    ].join(""),
-  };
-
-  const FALLBACK_RECENT = [
-    { titre: "Rencontre historique avec la diaspora haïtienne à Boston", href: "blog.html" },
-    { titre: "Lancement officiel de la grande campagne de recrutement nationale", href: "blog.html" },
-    { titre: "Renforcement des coordinations régionales", href: "blog.html" },
-  ];
-
   const fmtDate = (iso) => {
     try {
       return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -55,7 +31,7 @@
     dateEl.textContent = fmtDate(article.published_at);
 
     // Contenu : éditorial maîtrisé (rédigé par les éditeurs du parti via le Dashboard).
-    bodyEl.innerHTML = article.contenu || "<p>Contenu indisponible.</p>";
+    bodyEl.innerHTML = window.EASecurity.article(article.contenu) || "<p>Contenu indisponible.</p>";
 
     const words = bodyEl.textContent.trim().split(/\s+/).length;
     readingEl.textContent = `${Math.max(1, Math.round(words / 200))} min de lecture`;
@@ -69,7 +45,7 @@
   }
 
   async function loadRecent() {
-    let items = FALLBACK_RECENT;
+    let items = [];
     try {
       const response = await fetch("/api/articles?limit=4", { signal: AbortSignal.timeout(4000) });
       const payload = await response.json();
@@ -93,22 +69,24 @@
   }
 
   async function load() {
-    const slug = new URLSearchParams(window.location.search).get("slug");
-
-    if (slug) {
-      try {
-        const response = await fetch(`/api/articles?slug=${encodeURIComponent(slug)}`, {
-          signal: AbortSignal.timeout(5000),
-        });
-        const payload = await response.json();
-        if (response.ok && payload.article) {
-          render(payload.article);
-          return;
-        }
-      } catch { /* on retombe sur la démo */ }
-    }
-
-    render(FALLBACK_ARTICLE);
+    const slug = new URLSearchParams(window.location.search).get('slug');
+    const showError = (title, message) => {
+      document.title = title + ' | En Avant';
+      titleEl.textContent = title;
+      bodyEl.textContent = message;
+      catEl.textContent = ''; dateEl.textContent = ''; readingEl.textContent = '';
+      coverEl.hidden = true;
+      document.querySelectorAll('[id^="share-"]').forEach(el => { el.hidden = true; });
+    };
+    if (!slug) { showError('Article introuvable', 'Choisissez un article depuis la page Actualités.'); return; }
+    try {
+      const response = await fetch('/api/articles?slug=' + encodeURIComponent(slug), { signal: AbortSignal.timeout(5000) });
+      if (response.status === 404) { showError('Article introuvable', 'Cet article est absent ou n’est plus publié.'); return; }
+      if (!response.ok) throw new Error();
+      const payload = await response.json();
+      if (!payload.article) throw new Error();
+      render(payload.article);
+    } catch { showError('Article temporairement indisponible', 'Le chargement a échoué. Réessayez dans quelques instants.'); }
   }
 
   function setupShare() {

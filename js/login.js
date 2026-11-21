@@ -28,7 +28,7 @@
   // Message de succès après une inscription réussie
   if (sessionStorage.getItem("ea-register-success")) {
     sessionStorage.removeItem("ea-register-success");
-    showStatus("success", "Compte créé avec succès. Connectez-vous dès maintenant.");
+    showStatus("success", "Consultez votre messagerie et confirmez votre adresse avant de vous connecter.");
   }
 
   if (!configured) {

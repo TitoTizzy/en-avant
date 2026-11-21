@@ -1,3 +1,5 @@
+import { validQuestion } from '../_lib/trivia-session.js';
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 // POST /api/trivia/generate — Génération du quiz via l'API Anthropic (DAT Corr. 3)
 // Flux : SuperAdmin (token Supabase vérifié) → texte du Livre Blanc (bucket
 // privé `documents`) → Claude génère via tool use (JSON strict garanti)
@@ -38,7 +40,8 @@ export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
 
   try {
-    await requireRole(req, ['superadmin']);
+    const { user } = await requireRole(req, ['superadmin']);
+    if (!await enforceDurableRateLimit(req, res, { key: 'ai-user-day', subject: user.id, limit: 5, windowMs: 86400000 })) return;
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return json(res, 503, { error: 'ANTHROPIC_API_KEY non configurée.' });
@@ -49,6 +52,9 @@ export default async function handler(req, res) {
 
     // Source : texte fourni dans la requête, sinon le Livre Blanc du Storage.
     let source = typeof body.source_text === 'string' ? body.source_text.trim() : '';
+    if (!await enforceDurableRateLimit(req, res, {
+      key: 'ai-global-day', subject: 'all', limit: Math.min(Math.max(Math.floor(Number(process.env.AI_DAILY_LIMIT)) || 100, 1), 1000), windowMs: 86400000,
+    })) return;
     const supabase = getServiceClient();
 
     if (!source) {
@@ -95,18 +101,13 @@ export default async function handler(req, res) {
     });
 
     const toolUse = response.content.find((block) => block.type === 'tool_use');
-    if (!toolUse?.input?.questions) {
+    if (!Array.isArray(toolUse?.input?.questions)) {
       return json(res, 502, { error: 'Génération invalide, veuillez réessayer.' });
     }
 
     // Garde-fou : on n'insère que les questions structurellement valides.
-    const rows = toolUse.input.questions
-      .filter(
-        (q) =>
-          Array.isArray(q.options) &&
-          q.options.length === 4 &&
-          q.options.includes(q.correct_answer)
-      )
+    const rows = toolUse.input.questions.slice(0, 12)
+      .filter(validQuestion)
       .map((q) => ({
         question:           q.question,
         options:            q.options,

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFile, access } from 'node:fs/promises';
+import { readFile, access, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -20,6 +20,8 @@ const requiredFiles = [
   'api/_lib/supabase.js', 'api/auth.js', 'api/admin.js',
   'api/_auth/login.js', 'api/_admin/dashboard.js',
   'supabase/schema.sql', 'supabase/verify.sql',
+  'supabase/security-hardening.sql', 'supabase/donations-stripe.sql',
+  'js/vendor/purify.min.js', 'js/content-security.js',
 ];
 
 for (const file of requiredFiles) {
@@ -56,12 +58,16 @@ for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'RESEND_API_KE
   check(`Intégration ${name}`, Boolean(env[name]), env[name] ? '' : 'à configurer avant le test du service');
 }
 
-const publicFiles = [
-  'js/env.js', 'js/app.js', 'js/admin.js', 'js/login.js',
-  'index.html', 'admin.html', 'login.html',
-];
+const publicFiles = (await readdir(root)).filter(name => name.endsWith('.html'));
+for (const directory of ['js', 'css']) {
+  const files = await readdir(resolve(root, directory), { recursive: true });
+  publicFiles.push(...files.filter(name => /\.(js|css)$/.test(name)).map(name => `${directory}/${name}`));
+}
 const publicContent = (await Promise.all(
-  publicFiles.map((file) => readFile(resolve(root, file), 'utf8').catch(() => ''))
+  publicFiles.map(async (file) => {
+    try { return await readFile(resolve(root, file), 'utf8'); }
+    catch { check(`Lecture frontend ${file}`, false); return ''; }
+  })
 )).join('\n');
 
 for (const name of ['SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY', 'ANTHROPIC_API_KEY', 'RESEND_API_KEY']) {
