@@ -2192,6 +2192,17 @@ html.ea-returning .page-loader { display: none !important; }
     letter-spacing: -0.02em;
     color: var(--ink-200);
     padding: 0.45rem 0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    text-decoration: none;
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 2px;
+  }
+
+  .u-links:is(.open, .menu-open, .is-open) > a:is(:hover, :focus-visible) {
+    text-decoration-line: underline;
+    text-decoration-color: var(--orange);
   }
 
   .u-links.open .u-links-cta,
