@@ -1,3 +1,4 @@
+import { processStripeEvent } from '../_lib/stripe-events.js';
 // POST /api/webhooks/stripe — Événements Stripe des dons (En Avant Miami Inc)
 //
 // Signature vérifiée sur le corps BRUT (bodyParser désactivé). Chaque
@@ -20,14 +21,6 @@ export const config = { api: { bodyParser: false } };
 
 const API_VERSION = '2025-08-27.basil';
 
-/** Retourne true si le don est nouveau (false si rejeu Stripe déjà enregistré). */
-async function insertDonation(supabase, row) {
-  const { error } = await supabase.from('donations').insert({ provider: 'stripe', ...row });
-  // 23505 = doublon (rejeu Stripe) → déjà enregistré, on acquitte.
-  if (error && error.code !== '23505') throw error;
-  return !error;
-}
-
 const money = (cents, currency) =>
   `${((Number(cents) || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} ${String(currency || 'usd').toUpperCase()}`;
 
@@ -45,38 +38,6 @@ async function notifyDonation(supabase, row) {
     rows: [['Montant', money(row.montant, row.devise)], ['Donateur', row.nom || '—'], ['Pays', row.pays || '—']],
     note: 'Détails et reçu dans le tableau de bord Stripe et l’onglet Dons.',
   });
-}
-
-async function setStatus(supabase, transactionIds, statut) {
-  const ids = transactionIds.filter(Boolean);
-  if (!ids.length) return 0;
-  const { data, error } = await supabase
-    .from('donations').update({ statut }).in('transaction_id', ids).select('id');
-  if (error) throw error;
-  return data?.length || 0;
-}
-
-/** Retrouve l'identifiant de facture associé à un PaymentIntent (dons mensuels). */
-async function invoiceIdForPaymentIntent(stripe, paymentIntentId) {
-  if (!paymentIntentId) return null;
-  try {
-    const list = await stripe.invoicePayments.list({
-      payment: { type: 'payment_intent', payment_intent: paymentIntentId },
-      limit: 1,
-    });
-    const inv = list.data[0]?.invoice;
-    return typeof inv === 'string' ? inv : inv?.id || null;
-  } catch {
-    return null;
-  }
-}
-
-function donorFields(details) {
-  return {
-    email: details?.email || null,
-    nom: details?.name || null,
-    pays: details?.address?.country || null,
-  };
 }
 
 export default async function handler(req, res) {
@@ -104,48 +65,15 @@ export default async function handler(req, res) {
   try {
     const supabase = getServiceClient();
     const obj = event.data.object;
-
+    const { record, fresh } = await processStripeEvent(event, stripe, supabase);
+    if (!fresh) return res.status(200).json({ received: true });
     switch (event.type) {
       case 'checkout.session.completed':
-      case 'checkout.session.async_payment_succeeded': {
-        // Les dons mensuels sont enregistrés par invoice.paid (1re échéance incluse).
-        if (obj.mode === 'payment' && obj.payment_status === 'paid') {
-          const row = {
-            montant: obj.amount_total,
-            devise: obj.currency || 'usd',
-            transaction_id: String(obj.payment_intent || obj.id),
-            frequence: 'unique',
-            statut: 'completed',
-            ...donorFields(obj.customer_details),
-          };
-          if (await insertDonation(supabase, row)) await notifyDonation(supabase, row);
-        }
+      case 'checkout.session.async_payment_succeeded':
+      case 'invoice.paid':
+        await notifyDonation(supabase, record.p_row);
         break;
-      }
-
-      case 'invoice.paid': {
-        if (obj.amount_paid > 0 && obj.parent?.type === 'subscription_details') {
-          const row = {
-            montant: obj.amount_paid,
-            devise: obj.currency || 'usd',
-            transaction_id: obj.id,
-            frequence: 'mensuel',
-            statut: 'completed',
-            email: obj.customer_email || null,
-            nom: obj.customer_name || null,
-            pays: obj.customer_address?.country || null,
-          };
-          if (await insertDonation(supabase, row)) await notifyDonation(supabase, row);
-        }
-        break;
-      }
-
       case 'charge.refunded': {
-        const pi = typeof obj.payment_intent === 'string' ? obj.payment_intent : obj.payment_intent?.id;
-        const updated = await setStatus(supabase, [pi], 'refunded');
-        if (!updated) {
-          await setStatus(supabase, [await invoiceIdForPaymentIntent(stripe, pi)], 'refunded');
-        }
         await createNotification(supabase, {
           type: 'don_alerte',
           title: `Don remboursé — ${money(obj.amount_refunded, obj.currency)}`,
@@ -162,11 +90,6 @@ export default async function handler(req, res) {
       }
 
       case 'charge.dispute.created': {
-        const pi = typeof obj.payment_intent === 'string' ? obj.payment_intent : obj.payment_intent?.id;
-        const updated = await setStatus(supabase, [pi], 'disputed');
-        if (!updated) {
-          await setStatus(supabase, [await invoiceIdForPaymentIntent(stripe, pi)], 'disputed');
-        }
         console.warn('Litige Stripe ouvert:', obj.id);
         await createNotification(supabase, {
           type: 'don_alerte',

@@ -71,16 +71,17 @@ const KINDS = {
     title: 'Dons',
     link: 'donations',
     async build(supabase, now) {
-      const rows = await rowsOf(supabase, 'donations', 'montant, devise, provider, statut, frequence, created_at');
-      const ok = rows.filter((r) => !['refunded', 'disputed', 'failed'].includes(r.statut));
-      const byCurrency = new Map();
-      ok.forEach((r) => byCurrency.set(r.devise || 'usd', (byCurrency.get(r.devise || 'usd') || 0) + (r.montant || 0)));
+      const rows = await rowsOf(supabase, 'donations', 'montant, refunded_cents, devise, provider, statut, frequence, created_at');
+      const ok = rows.filter((r) => ['completed', 'partially_refunded', 'refunded'].includes(r.statut));
+      const { data: totals, error: totalsError } = await supabase.rpc('ea_donation_totals');
+      if (totalsError) throw totalsError;
+      const byCurrency = new Map((totals || []).map(row => [row.devise, Number(row.net_cents)]));
       return {
         total: rows.length,
         highlight: [...byCurrency.entries()].map(([cur, cents]) => money(cents, cur)).join(' · ') || money(0, 'usd'),
         series: {
           label: 'Montant reçu par jour (USD)',
-          ...dailySeries(ok.filter((r) => (r.devise || 'usd') === 'usd'), 'created_at', now, (r) => Math.round((r.montant || 0) / 100)),
+          ...dailySeries(ok.filter((r) => (r.devise || 'usd') === 'usd'), 'created_at', now, (r) => Math.round(((r.montant || 0) - (r.refunded_cents || 0)) / 100)),
         },
         groups: [
           { title: 'Par moyen de paiement', items: breakdown(rows, (r) => r.provider) },

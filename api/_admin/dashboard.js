@@ -101,9 +101,9 @@ async function loadMember(supabase, memberId) {
 
 /** Totaux des dons encaissés, par devise, calculés en base (fonction SQL donations_totals). */
 async function donationTotals(supabase) {
-  const { data, error } = await supabase.rpc('donations_totals');
+  const { data, error } = await supabase.rpc('ea_donation_totals');
   if (error) return null; // migration non exécutée : le total n'est pas affiché plutôt que faux
-  return Object.fromEntries((data || []).map((r) => [r.devise, Number(r.total_cents) || 0]));
+  return Object.fromEntries((data || []).map((r) => [r.devise, Number(r.net_cents) || 0]));
 }
 
 export default async function handler(req, res) {

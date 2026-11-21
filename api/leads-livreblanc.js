@@ -1,3 +1,4 @@
+import { enforceDurableRateLimit } from './_lib/rate-limit.js';
 // POST /api/leads-livreblanc — Lead Magnet (DAT Branche 1 §3)
 // INSERT Supabase `leads_livreblanc` → envoi du lien PDF (URL signée 7 jours
 // sur le bucket privé `documents`) par email via Resend.
@@ -5,7 +6,7 @@ import { Resend } from 'resend';
 import { getServiceClient } from './_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError,
-  isEmail, isText, isPhone, clean, enforceRateLimit,
+  isEmail, isText, isPhone, clean,
 } from './_lib/http.js';
 import { escapeHtml, senderAddress } from './_lib/notify.js';
 
@@ -14,7 +15,7 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 jours
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
   // Chaque demande envoie un email : limite stricte pour éviter l'usage comme relais de spam.
-  if (!enforceRateLimit(req, res, { key: 'livreblanc', limit: 3 })) return;
+  if (!await enforceDurableRateLimit(req, res, { key: 'livreblanc', limit: 3 })) return;
 
   try {
     const body = getBody(req);

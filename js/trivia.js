@@ -30,6 +30,7 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const LETTERS = ["A", "B", "C", "D"];
 
+  let sessionId = null;
   let questions    = [];
   let index        = 0;
   let score        = 0;
@@ -139,6 +140,7 @@
   /* CHARGEMENT DES QUESTIONS                                             */
   /* ------------------------------------------------------------------ */
   async function loadQuestions() {
+    sessionId = null;
     const token = getAuthToken();
 
     // Mode membre : génération IA depuis le Livre Blanc
@@ -154,6 +156,7 @@
         });
         const payload = await response.json().catch(() => ({}));
         if (response.ok && Array.isArray(payload.questions) && payload.questions.length >= 4) {
+          sessionId = payload.session_id;
           isMemberMode = true;
           if (srcLabel) srcLabel.textContent = "Questions générées par l'IA depuis le Livre blanc.";
           return payload.questions;
@@ -170,6 +173,7 @@
       });
       const payload = await response.json();
       if (response.ok && Array.isArray(payload.questions) && payload.questions.length > 0) {
+        sessionId = payload.session_id;
         if (srcLabel) srcLabel.textContent = "Questions tirées du Livre blanc.";
         return payload.questions;
       }
@@ -225,12 +229,31 @@
     });
   }
 
-  function selectOption(clicked, option, q) {
+  async function selectOption(clicked, option, q) {
     if (locked) return;
     locked = true;
 
+    if (sessionId) {
+      optionsEl.querySelectorAll('.tq-opt').forEach(btn => { btn.disabled = true; });
+      try {
+        const response = await fetch('/api/trivia/answer', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, index, option }), signal: AbortSignal.timeout(10000),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Réponse non enregistrée.');
+        Object.assign(q, result);
+        score = result.score;
+      } catch (error) {
+        locked = false;
+        optionsEl.querySelectorAll('.tq-opt').forEach(btn => { btn.disabled = false; });
+        feedbackEl.textContent = error.message + ' Vous pouvez réessayer la même réponse.';
+        feedbackEl.hidden = false;
+        return;
+      }
+    }
     const isCorrect = option === q.correct_answer;
-    if (isCorrect) score++;
+    if (!sessionId && isCorrect) score++;
 
     optionsEl.querySelectorAll(".tq-opt").forEach((btn) => {
       btn.disabled = true;
@@ -294,7 +317,8 @@
 
     launchConfetti(ratio);
     pseudoInput.value = localStorage.getItem("ea-trivia-pseudo") || "";
-    scoreStatus.textContent = "";
+    scoreStatus.textContent = sessionId ? '' : 'Mode découverte : le score reste sur cet appareil.';
+    document.getElementById('tq-save-score').disabled = !sessionId;
     loadLeaderboard();
 
     // CTA Membre uniquement en mode public
@@ -325,6 +349,7 @@
   /* SCORE & LEADERBOARD                                                  */
   /* ------------------------------------------------------------------ */
   async function submitScore() {
+    if (!sessionId) return;
     const total = questions.length;
     const pseudo = pseudoInput.value.trim();
     if (pseudo.length < 2) {
@@ -333,19 +358,13 @@
       return;
     }
 
-    let session = localStorage.getItem("ea-session");
-    if (!session) {
-      session = (crypto.randomUUID && crypto.randomUUID()) || `s-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      localStorage.setItem("ea-session", session);
-    }
-
     const button = document.getElementById("tq-save-score");
     button.classList.add("btn-loading");
     try {
       const response = await fetch("/api/trivia/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_session: session, pseudo, score, total }),
+        body: JSON.stringify({ session_id: sessionId, pseudo }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Enregistrement impossible.");
@@ -428,13 +447,15 @@
   }
 
   beginBtn.addEventListener("click", async () => {
+    beginBtn.disabled = true;
     beginBtn.classList.add("btn-loading");
     beginBtn.innerHTML = getAuthToken()
       ? '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Génération par l\'IA…'
       : '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Chargement…';
 
-    questions = shuffle(await loadQuestions()).slice(0, 8);
+    questions = (await loadQuestions()).slice(0, 8);
 
+    beginBtn.disabled = false;
     beginBtn.classList.remove("btn-loading");
     beginBtn.innerHTML = '<i class="fa-solid fa-play" aria-hidden="true"></i> Commencer le quiz';
 

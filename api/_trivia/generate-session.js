@@ -1,6 +1,7 @@
 // POST /api/trivia/generate-session
 // Génère 8 questions IA depuis le Livre Blanc pour un membre connecté.
 // Chaque question générée est stockée dans trivia_questions → banque pour l'app mobile future.
+import { createTriviaSession, validQuestion } from '../_lib/trivia-session.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, methodGuard, handleError } from '../_lib/http.js';
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
       if (questions.length < 4) {
         return json(res, 429, { error: 'Limite de quiz atteinte pour aujourd\'hui. Réessayez demain.' });
       }
-      return json(res, 200, { ok: true, questions, source: 'bank', reason });
+      return json(res, 200, { ok: true, ...await createTriviaSession(supabase, questions), source: 'bank', reason });
     };
 
     if (!process.env.ANTHROPIC_API_KEY) return serveBank('ia_indisponible');
@@ -131,17 +132,12 @@ export default async function handler(req, res) {
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');
-    if (!toolUse?.input?.questions) {
+    if (!Array.isArray(toolUse?.input?.questions)) {
       return json(res, 502, { error: 'Génération échouée. Réessayez.' });
     }
 
-    const rows = toolUse.input.questions
-      .filter((q) =>
-        q.question &&
-        Array.isArray(q.options) &&
-        q.options.length === 4 &&
-        q.options.includes(q.correct_answer)
-      )
+    const rows = toolUse.input.questions.slice(0, 8)
+      .filter(validQuestion)
       .map((q) => ({
         question:           q.question,
         options:            q.options,
@@ -157,9 +153,9 @@ export default async function handler(req, res) {
     // Stocker dans la banque de questions (attendu : une fonction serverless
     // peut être figée dès que la réponse est envoyée).
     const { error: insertError } = await supabase.from('trivia_questions').insert(rows);
-    if (insertError) console.error('[generate-session] insert:', insertError.message);
+    if (insertError) throw insertError;
 
-    return json(res, 200, { ok: true, questions: rows, source: 'ai' });
+    return json(res, 200, { ok: true, ...await createTriviaSession(supabase, rows), source: 'ai' });
   } catch (error) {
     return handleError(res, error, 'Échec de la génération du quiz.');
   }

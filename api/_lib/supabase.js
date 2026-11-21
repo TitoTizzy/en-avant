@@ -1,6 +1,7 @@
 // Client Supabase « service_role » — réservé aux fonctions serverless.
 // Cette clé bypasse la Row-Level Security : elle ne doit JAMAIS atteindre le client.
 import { createClient } from '@supabase/supabase-js';
+import { effectivePermissions } from './permissions.js';
 import { hasValidPinCookie } from './admin-pin.js';
 
 let cached = null;
@@ -95,7 +96,7 @@ export async function requirePermission(req, permission, { requirePin = true } =
   if (profileError || !profile) throw httpError(403, 'Droits insuffisants pour cette opération.');
 
   const isSuperAdmin = profile.role === 'superadmin';
-  const perms = Array.isArray(profile.permissions) ? profile.permissions : [];
+  const perms = effectivePermissions(profile);
   const hasPermission = isSuperAdmin || perms.includes(permission);
 
   if (!hasPermission) throw httpError(403, 'Droits insuffisants pour cette opération.');

@@ -17,3 +17,10 @@ node_modules
 .vscode
 .claude
 *.log
+
+# Local project artifacts and editor metadata
+Claude outputs/
+.agents/
+.codex/
+.aws/
+docs/DEPLOIEMENT-SECURITE.md

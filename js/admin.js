@@ -49,7 +49,7 @@
   const esc = (value) => {
     const span = document.createElement("span");
     span.textContent = value ?? "";
-    return span.innerHTML;
+    return span.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   };
 
   const fmtDate = (iso) =>
@@ -2990,7 +2990,7 @@
         "panel-settings":     "gerer_parametres",
         "panel-members":      "voir_membres",
         "panel-donations":    "voir_dons",
-        "panel-leads":        "voir_membres",
+        "panel-leads":        "voir_dons",
         "panel-equipe":       "gerer_utilisateurs",
       };
       Object.entries(panelPerms).forEach(([panel, perm]) => {

@@ -1,3 +1,4 @@
+import { enforceDurableRateLimit } from './_lib/rate-limit.js';
 // /api/create-checkout — Dons Stripe Checkout (En Avant Miami Inc)
 //
 // GET  → { enabled, amounts } : état public des dons (aucun secret exposé).
@@ -10,7 +11,7 @@
 // transite par nos serveurs (PCI géré par Stripe).
 import Stripe from 'stripe';
 import {
-  json, getBody, handleError, clean, enforceRateLimit,
+  json, getBody, handleError, clean,
 } from './_lib/http.js';
 
 export const STRIPE_API_VERSION = '2025-08-27.basil';
@@ -41,10 +42,28 @@ export function availablePrices(env = process.env) {
 export function donationsEnabled(env = process.env) {
   return env.DONATIONS_ENABLED === 'true'
     && /^sk_(live|test)_/.test(clean(env.STRIPE_SECRET_KEY))
-    && /^https:\/\//.test(clean(env.SITE_URL));
+    && /^whsec_/.test(clean(env.STRIPE_WEBHOOK_SECRET))
+    && /^https:\/\//.test(clean(env.SITE_URL))
+    && Object.values(availablePrices(env)).some(prices => Object.keys(prices).length > 0);
 }
 
-export default async function handler(req, res) {
+export function validDonationPrice(price, frequency, amount) {
+  if (!price?.active || price.currency !== 'usd') return false;
+  if (frequency === 'mensuel') {
+    if (price.type !== 'recurring' || price.recurring?.interval !== 'month'
+      || price.recurring?.interval_count !== 1) return false;
+  } else if (price.type !== 'one_time') return false;
+  return amount === 'libre'
+    ? !!price.custom_unit_amount && Number.isInteger(price.custom_unit_amount.minimum)
+      && Number.isInteger(price.custom_unit_amount.maximum) && price.custom_unit_amount.minimum >= 100
+      && price.custom_unit_amount.maximum <= 1000000
+    : price.unit_amount === Number(amount) * 100 && !price.custom_unit_amount;
+}
+
+export function createCheckoutHandler({ rateLimit = enforceDurableRateLimit,
+  createStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: STRIPE_API_VERSION }),
+} = {}) {
+return async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.method === 'GET') {
@@ -61,7 +80,6 @@ export default async function handler(req, res) {
     return json(res, 405, { error: 'Méthode non autorisée.' });
   }
 
-  if (!enforceRateLimit(req, res, { key: 'checkout', limit: 10 })) return;
 
   try {
     if (!donationsEnabled()) {
@@ -69,7 +87,7 @@ export default async function handler(req, res) {
     }
 
     // Refuse les appels venant d'un autre site (défense CSRF légère).
-    const siteUrl = clean(process.env.SITE_URL).replace(/\/+$/, '');
+    const siteUrl = new URL(process.env.SITE_URL).origin;
     const origin = clean(req.headers.origin);
     if (origin && origin !== siteUrl && origin !== siteUrl.replace('://', '://www.')) {
       return json(res, 403, { error: 'Origine non autorisée.' });
@@ -85,17 +103,20 @@ export default async function handler(req, res) {
       return json(res, 422, { error: 'Montant ou fréquence invalide.' });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: STRIPE_API_VERSION });
+    if (!await rateLimit(req, res, { key: 'checkout', limit: 10 })) return;
+    const requestId = clean(body.request_id);
+    if (!/^[0-9a-f-]{36}$/i.test(requestId)) return json(res, 422, { error: 'Identifiant de tentative invalide.' });
+    const stripe = createStripe();
+    const price = await stripe.prices.retrieve(priceId);
+    if (!validDonationPrice(price, frequency, amount)) {
+      return json(res, 503, { error: 'Ce montant est temporairement indisponible.' });
+    }
     const isMonthly = frequency === 'mensuel';
     const metadata = { source: 'enavant.org', type: `don_${frequency}`, montant: amount };
 
     const params = {
       mode: isMonthly ? 'subscription' : 'payment',
       line_items: [{ price: priceId, quantity: 1 }],
-      // Carte (Apple Pay et Google Pay inclus) et Link uniquement. Cash App Pay,
-      // PayPal, Klarna… sont exclus : non autorisés pour une organisation
-      // politique (MCC 8651) ou inadaptés à un don.
-      payment_method_types: ['card', 'link'],
       billing_address_collection: 'required',
       custom_text: {
         submit: {
@@ -116,9 +137,13 @@ export default async function handler(req, res) {
       params.payment_intent_data = { description: 'Don unique — En Avant', metadata };
     }
 
-    const session = await stripe.checkout.sessions.create(params);
+    const session = await stripe.checkout.sessions.create(params, { idempotencyKey: `don:${requestId}` });
     return json(res, 200, { url: session.url });
   } catch (error) {
     return handleError(res, error, 'Impossible de créer la session de paiement.');
   }
 }
+
+}
+
+export default createCheckoutHandler();

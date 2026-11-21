@@ -12,6 +12,7 @@
   const notice = document.getElementById("don-payment-notice");
   if (!buttons.length || !submit || !selection || !notice) return;
 
+  let attempt = null;
   const API = "/api/create-checkout";
   const state = { enabled: false, amounts: { unique: [], mensuel: [] }, frequency: "unique", key: null, busy: false };
 
@@ -19,9 +20,13 @@
   const available = (key) => state.enabled && state.amounts[state.frequency]?.includes(key);
 
   function render() {
-    for (const b of freqButtons) b.setAttribute("aria-pressed", String(b.dataset.frequency === state.frequency));
+    for (const b of freqButtons) {
+      b.setAttribute('aria-pressed', String(b.dataset.frequency === state.frequency));
+      b.disabled = state.busy;
+    }
     for (const b of buttons) {
       const key = b.dataset.donation;
+      b.disabled = state.busy || !available(key);
       b.hidden = state.frequency === "mensuel" && key === "libre";
       b.setAttribute("aria-pressed", String(key === state.key));
       const small = b.querySelector("small");
@@ -64,12 +69,15 @@
 
   submit.addEventListener("click", async () => {
     if (submit.disabled || !available(state.key)) return;
+    if (!attempt || attempt.frequency !== state.frequency || attempt.key !== state.key) {
+      attempt = { frequency: state.frequency, key: state.key, id: crypto.randomUUID() };
+    }
     state.busy = true; render();
     try {
       const res = await fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ frequency: state.frequency, amount: state.key }),
+        body: JSON.stringify({ frequency: state.frequency, amount: state.key, request_id: attempt.id }),
       });
       const data = await res.json().catch(() => ({}));
       const url = typeof data.url === "string" ? new URL(data.url) : null;
@@ -86,9 +94,9 @@
   // Un paramètre d'URL ne prouve jamais qu'un don a été encaissé.
   const statut = new URLSearchParams(window.location.search).get("statut");
   if (statut === "succes") {
-    selection.textContent = "Merci ! Stripe vous envoie la confirmation de votre paiement par email.";
+    selection.textContent = "Vous êtes de retour de Stripe. Seule la confirmation de Stripe atteste le paiement.";
   } else if (statut === "annule") {
-    selection.textContent = "Le paiement a été annulé. Aucun montant n'a été prélevé.";
+    selection.textContent = "Vous avez quitté le paiement. Vérifiez son état dans les messages de Stripe.";
   }
 
   render();

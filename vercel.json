@@ -33,6 +33,7 @@
     { "source": "/api/admin/settings",    "destination": "/api/admin?action=settings" },
     { "source": "/api/admin/users",       "destination": "/api/admin?action=users" },
     { "source": "/api/cron/digest",       "destination": "/api/admin?action=digest" },
+    { "source": "/api/trivia/answer", "destination": "/api/trivia?action=answer" },
     { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },

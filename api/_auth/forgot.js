@@ -1,9 +1,10 @@
+import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 // POST /api/auth/forgot — « Mot de passe oublié ».
 // Envoie, si l'adresse correspond à un compte, un email en français avec un
 // lien sécurisé vers /mot-de-passe. Réponse toujours identique : on ne révèle
 // jamais si une adresse est inscrite ou non.
 import { getServiceClient } from '../_lib/supabase.js';
-import { json, methodGuard, getBody, handleError, isEmail, clean, enforceRateLimit } from '../_lib/http.js';
+import { json, methodGuard, getBody, handleError, isEmail, clean } from '../_lib/http.js';
 import { sendToMember, siteUrl } from '../_lib/notify.js';
 import { passwordLinkFrom } from '../_lib/adhesion.js';
 
@@ -14,7 +15,6 @@ const NEUTRAL = {
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
-  if (!enforceRateLimit(req, res, { key: 'forgot', limit: 5 })) return;
 
   try {
     const body = getBody(req);
@@ -23,6 +23,8 @@ export default async function handler(req, res) {
     if (!isEmail(email)) {
       return json(res, 422, { error: 'Adresse email invalide.', fields: { email: 'Adresse email invalide.' } });
     }
+
+  if (!await enforceDurableRateLimit(req, res, { key: 'forgot', limit: 5 })) return;
 
     const supabase = getServiceClient();
     const { data: profile } = await supabase

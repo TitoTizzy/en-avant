@@ -1,5 +1,5 @@
 // Nettoyage HTML côté serveur (articles) — même liste blanche que js/sanitize-html.js.
-import sanitizeHtml from 'sanitize-html';
+import sanitizeHtml from './vendor/sanitize-html.cjs';
 
 const OPTIONS = {
   allowedTags: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'a', 'ul', 'ol', 'li',

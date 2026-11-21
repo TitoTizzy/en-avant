@@ -86,3 +86,9 @@ npm run check    # contrôle local avant déploiement
 - Le PIN SuperAdmin est haché dans PostgreSQL et peut être modifié depuis
   l'onglet Sécurité du dashboard ; il n'est jamais renvoyé au navigateur.
 - Webhook Stripe : signature vérifiée sur le corps brut (`bodyParser` désactivé).
+
+## Intégration de sécurité
+
+Les compléments de sécurité conservent le parcours d’adhésion unifié et les
+fonctionnalités récentes. Avant toute promotion en production, suivre
+[`docs/DEPLOIEMENT-SECURITE.md`](docs/DEPLOIEMENT-SECURITE.md).

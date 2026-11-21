@@ -1,3 +1,4 @@
+import { enforceDurableRateLimit } from './_lib/rate-limit.js';
 // POST /api/members — Formulaire unique d'adhésion (/adherer).
 //
 // Crée en une fois :
@@ -8,7 +9,7 @@
 import { getAnonClient, getServiceClient } from './_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError,
-  isEmail, isText, clean, enforceRateLimit,
+  isEmail, isText, clean,
 } from './_lib/http.js';
 import { notifyTeam, siteUrl } from './_lib/notify.js';
 import { createNotification } from './_lib/notifications.js';
@@ -16,7 +17,6 @@ import { validateFiche, duplicateFicheMessage } from './_lib/adhesion.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
-  if (!enforceRateLimit(req, res, { key: 'members', limit: 8 })) return;
 
   try {
     const body = getBody(req);
@@ -43,6 +43,8 @@ export default async function handler(req, res) {
     if (Object.keys(errors).length > 0) {
       return json(res, 422, { error: 'Formulaire invalide.', fields: errors });
     }
+
+  if (!await enforceDurableRateLimit(req, res, { key: 'members', limit: 8 })) return;
 
     const supabase = getServiceClient();
 
