@@ -117,6 +117,11 @@ return async function handler(req, res) {
     const params = {
       mode: isMonthly ? 'subscription' : 'payment',
       line_items: [{ price: priceId, quantity: 1 }],
+      // Carte (Apple Pay et Google Pay inclus) et Link uniquement. Le compte a
+      // d'autres moyens actifs (Amazon Pay, Pix, Bancontact, ACH…) : sans cette
+      // liste, Stripe les proposerait aux donateurs. Ils sont exclus pour une
+      // organisation qui finance un parti politique, et inadaptés à un don.
+      payment_method_types: ['card', 'link'],
       billing_address_collection: 'required',
       custom_text: {
         submit: {
