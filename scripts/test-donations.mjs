@@ -45,6 +45,9 @@ test('Dons désactivés tant que DONATIONS_ENABLED, la clé et SITE_URL ne sont 
   assert.equal(donationsEnabled(fullEnv()), true);
   assert.equal(donationsEnabled({ ...fullEnv(), DONATIONS_ENABLED: 'false' }), false);
   assert.equal(donationsEnabled({ ...fullEnv(), STRIPE_SECRET_KEY: '' }), false);
+  // Clé restreinte (droits minimaux) acceptée ; clé publique ou invalide refusée.
+  assert.equal(donationsEnabled({ ...fullEnv(), STRIPE_SECRET_KEY: 'rk_live_dummy' }), true);
+  assert.equal(donationsEnabled({ ...fullEnv(), STRIPE_SECRET_KEY: 'pk_live_dummy' }), false);
   assert.equal(donationsEnabled({ ...fullEnv(), SITE_URL: 'http://enavant.org' }), false);
 });
 

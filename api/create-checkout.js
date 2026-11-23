@@ -41,7 +41,7 @@ export function availablePrices(env = process.env) {
 
 export function donationsEnabled(env = process.env) {
   return env.DONATIONS_ENABLED === 'true'
-    && /^sk_(live|test)_/.test(clean(env.STRIPE_SECRET_KEY))
+    && /^(sk|rk)_(live|test)_/.test(clean(env.STRIPE_SECRET_KEY))
     && /^whsec_/.test(clean(env.STRIPE_WEBHOOK_SECRET))
     && /^https:\/\//.test(clean(env.SITE_URL))
     && Object.values(availablePrices(env)).some(prices => Object.keys(prices).length > 0);
