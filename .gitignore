@@ -26,3 +26,6 @@ Thumbs.db
 .vercel
 
 .vercel
+
+# Livrables de travail générés par les assistants IA : jamais versionnés (dépôt public)
+Claude outputs/
