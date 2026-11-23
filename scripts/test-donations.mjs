@@ -92,6 +92,8 @@ test('Dons uniques et mensuels : paramètres Stripe et clé d’idempotence', ()
   assert.equal(calls[1].params.mode, 'subscription');
   assert.equal(calls[1].params.subscription_data.metadata.source, 'enavant.org');
   assert.equal(calls[0].options.idempotencyKey, `don:${request_id}`);
+  // Seuls la carte et Link sont proposés, pour les dons uniques comme mensuels.
+  for (const { params } of calls) assert.deepEqual(params.payment_method_types, ['card', 'link']);
 }));
 
 test('Un prix Stripe mal configuré ne peut pas facturer un autre montant ou une autre périodicité', () => {
