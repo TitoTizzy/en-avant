@@ -33,7 +33,9 @@ export default async function handler(req, res) {
             ? 'STRIPE_SECRET_KEY manquante'
             : !present('STRIPE_WEBHOOK_SECRET')
               ? 'STRIPE_WEBHOOK_SECRET manquante'
-              : stripeKey.startsWith('sk_test_') ? 'Mode test configuré' : 'Mode production configuré',
+              : /^(sk|rk)_test_/.test(stripeKey) ? 'Mode test configuré'
+                : stripeKey.startsWith('rk_live_') ? 'Mode production configuré (clé restreinte)'
+                  : 'Mode production configuré — remplacer par une clé restreinte (rk_live_)',
         },
         {
           id: 'resend',
