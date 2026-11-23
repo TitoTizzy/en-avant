@@ -116,3 +116,16 @@ test('Un quota dépassé bloque Stripe ; une tentative sans identifiant est refu
   assert.equal((await call('POST', { frequency: 'unique', amount: '10' }, {}, endpoint)).status, 429);
   assert.equal((await call('POST', { frequency: 'unique', amount: '10' })).status, 422);
 }));
+
+test('SITE_URL avec un caractère invisible (BOM) ne casse pas la création du paiement', () => withEnv({ ...fullEnv(), SITE_URL: '﻿https://enavant.org ' }, async () => {
+  const endpoint = createCheckoutHandler({ rateLimit: async () => true,
+    createStripe: () => ({ prices: { retrieve: async () => ({ active: true, currency: 'usd', unit_amount: 1000, type: 'one_time' }) },
+      checkout: { sessions: { create: async (params) => {
+        assert.ok(params.success_url.startsWith('https://enavant.org/don?'));
+        return { url: 'https://checkout.stripe.com/test' };
+      } } } }),
+  });
+  const r = await call('POST', { frequency: 'unique', amount: '10', request_id: '22222222-2222-4222-8222-222222222222' },
+    { origin: 'https://enavant.org' }, endpoint);
+  assert.equal(r.status, 200);
+}));
