@@ -23,7 +23,7 @@ export function senderAddress() {
 }
 
 function siteUrl() {
-  return String(process.env.SITE_URL || 'https://enavant.org').replace(/\/+$/, '');
+  return (String(process.env.SITE_URL || '').trim() || 'https://enavant.org').replace(/\/+$/, '');
 }
 
 /**

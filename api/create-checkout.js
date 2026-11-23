@@ -87,7 +87,7 @@ return async function handler(req, res) {
     }
 
     // Refuse les appels venant d'un autre site (défense CSRF légère).
-    const siteUrl = new URL(process.env.SITE_URL).origin;
+    const siteUrl = new URL(clean(process.env.SITE_URL)).origin;
     const origin = clean(req.headers.origin);
     if (origin && origin !== siteUrl && origin !== siteUrl.replace('://', '://www.')) {
       return json(res, 403, { error: 'Origine non autorisée.' });
