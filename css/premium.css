@@ -1202,3 +1202,31 @@ body.eac-open .ea-nudge, body:has(.u-links.open, .u-links.is-open, .u-links.menu
 .quiz-invite-info { margin: 0.4rem 0 0.9rem; }
 .quiz-invite-confirm { display: grid; gap: 0.55rem; max-width: 420px; margin-top: 1rem; padding: 1rem; border-radius: 14px; border: 1px solid rgba(255, 138, 76, 0.35); background: rgba(255, 106, 42, 0.06); }
 .quiz-invite-confirm input { padding: 0.55rem 0.75rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.05); color: #fff; font: inherit; }
+
+/* ─── Journal d'activité (admin) ─── */
+.logs-summary { margin: 0 0 1rem; padding: 0.9rem 1.1rem; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); }
+.logs-summary p { margin: 0 0 0.6rem; color: var(--ink-200, #eef3fa); }
+.logs-alert { color: #ff8f8f; font-weight: 700; }
+.logs-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.logs-chip { padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+.adm-log-day { margin: 1.2rem 0 0.4rem; color: #ff8a4c; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.adm-log-day:first-child { margin-top: 0; }
+.adm-log-row { grid-template-columns: 9.5rem minmax(0, 1fr) auto !important; align-items: start; }
+.adm-log-msg { line-height: 1.5; }
+.adm-log-msg strong { color: #fff; }
+.adm-log-by { color: var(--ink-400, rgba(205, 216, 232, 0.6)); }
+.adm-log--attention { box-shadow: inset 3px 0 0 #f5b041; }
+.adm-log--erreur { box-shadow: inset 3px 0 0 #ff5470; background: rgba(255, 84, 112, 0.06); }
+.adm-log--erreur .adm-log-msg > i { color: #ff8f8f; }
+.adm-log-more { margin-top: 1rem; }
+.adm-log-cat--adhesions { background: rgba(76, 175, 80, 0.16) !important; color: #9be29f !important; }
+.adm-log-cat--dons { background: rgba(255, 106, 42, 0.18) !important; color: #ffc3a3 !important; }
+.adm-log-cat--contenus { background: rgba(88, 166, 255, 0.16) !important; color: #a9cdff !important; }
+.adm-log-cat--newsletter { background: rgba(171, 120, 255, 0.16) !important; color: #d2bbff !important; }
+.adm-log-cat--quiz { background: rgba(245, 176, 65, 0.16) !important; color: #ffd98e !important; }
+.adm-log-cat--equipe { background: rgba(0, 188, 212, 0.14) !important; color: #9be8f2 !important; }
+.adm-log-cat--securite { background: rgba(255, 84, 112, 0.14) !important; color: #ffb3c0 !important; }
+.adm-log-cat--systeme { background: rgba(255, 255, 255, 0.08) !important; color: #cfd8e6 !important; }
+@media (max-width: 700px) {
+  .adm-log-row { grid-template-columns: 1fr !important; gap: 0.3rem !important; }
+}

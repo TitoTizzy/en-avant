@@ -4,6 +4,7 @@ import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError, clean,
 } from '../_lib/http.js';
+import { logTeamAction } from '../_lib/activity.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
@@ -33,6 +34,7 @@ export default async function handler(req, res) {
     if (!changed) return json(res, 401, { error: 'PIN actuel incorrect.' });
 
     res.setHeader('Set-Cookie', createPinCookie(req, user.id));
+    await logTeamAction(supabase, user, { categorie: 'securite', niveau: 'attention', message: 'a modifié son PIN SuperAdmin.' });
     return json(res, 200, { ok: true, message: 'PIN modifié avec succès.' });
   } catch (error) {
     return handleError(res, error, 'Modification du PIN impossible.');

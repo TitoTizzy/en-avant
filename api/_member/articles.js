@@ -7,6 +7,7 @@ import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
 import { sanitizeArticleHtml } from '../_lib/sanitize.js';
 import { notifyTeam } from '../_lib/notify.js';
 import { createNotification } from '../_lib/notifications.js';
+import { logActivity } from '../_lib/activity.js';
 
 const CATEGORIES = [
   'actualite', 'politique', 'economie', 'societe',
@@ -86,6 +87,11 @@ export default async function handler(req, res) {
           .single();
 
         if (!error) {
+          await logActivity(supabase, {
+            categorie: 'contenus',
+            message: `${authorName || 'Un membre'} a proposé l’article « ${titre} » — à relire.`,
+            ref: data?.id ? `proposition:${data.id}` : null,
+          });
           await createNotification(supabase, {
             type: 'article',
             title: `Article soumis — ${titre}`,

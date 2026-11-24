@@ -18,9 +18,32 @@ export function getBody(req) {
   return req.body && typeof req.body === 'object' ? req.body : {};
 }
 
-export function handleError(res, error, fallback = 'Erreur interne du serveur.') {
+/** Traduction en clair des causes techniques les plus courantes (journal d'activité). */
+export function plainCause(error) {
+  const msg = String(error?.message || error || '');
+  if (/resend|api key is invalid|domain is not verified/i.test(msg)) return 'le service d’envoi d’emails (Resend) a refusé la demande';
+  if (/fetch failed|ECONNRESET|ETIMEDOUT|timeout|network/i.test(msg)) return 'un service externe n’a pas répondu à temps';
+  if (/JWT|token|auth/i.test(msg)) return 'un problème d’authentification avec la base de données';
+  if (/relation .* does not exist|column .* does not exist|schema cache/i.test(msg)) return 'la base de données n’est pas à jour (migration manquante)';
+  if (/rate limit|too many/i.test(msg)) return 'trop de demandes en peu de temps';
+  if (/stripe/i.test(msg)) return 'le service de paiement (Stripe) a renvoyé une erreur';
+  if (/anthropic|overloaded|529/i.test(msg)) return 'le service d’IA est momentanément surchargé';
+  return msg ? `cause technique : ${msg.replace(/\s+/g, ' ').slice(0, 140)}` : 'cause inconnue';
+}
+
+export async function handleError(res, error, fallback = 'Erreur interne du serveur.') {
   const status = Number.isInteger(error?.status) ? error.status : 500;
-  if (status >= 500) console.error(error);
+  if (status >= 500) {
+    console.error(error);
+    // Journal d'activité (best effort, jamais bloquant).
+    try {
+      const { logActivity } = await import('./activity.js');
+      await logActivity(null, {
+        categorie: 'systeme', niveau: 'erreur',
+        message: `Incident : « ${fallback.replace(/\.$/, '')} » — ${plainCause(error)}.`,
+      });
+    } catch { /* journal indisponible */ }
+  }
   json(res, status, { error: status >= 500 ? fallback : error.message });
 }
 

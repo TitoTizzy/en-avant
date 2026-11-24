@@ -10,6 +10,7 @@ import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import { cleanLocation } from '../_lib/geo.js';
 import { sendToMember } from '../_lib/notify.js';
 import { tokensFor, unsubscribePageUrl } from '../_lib/newsletter.js';
+import { logActivity, lieu } from '../_lib/activity.js';
 
 const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''));
 const mask = (email) => {
@@ -56,6 +57,7 @@ export default async function handler(req, res) {
       const email = await emailForToken(supabase, body.t || req.query?.t);
       if (!email) return json(res, 404, { error: 'Lien de désinscription invalide.' });
       await unsubscribe(supabase, email, body.t ? 'page' : 'un_clic');
+      await logActivity(supabase, { categorie: 'newsletter', message: `Une personne s’est désinscrite de la newsletter (${mask(email)}).` });
       return json(res, 200, { ok: true, email: mask(email) });
     }
 
@@ -73,10 +75,15 @@ export default async function handler(req, res) {
         .select('id, unsubscribed_at').ilike('email', email).maybeSingle();
       if (findError) throw findError;
       const row = { email, nom, ...location, consent_at: new Date().toISOString(), unsubscribed_at: null };
-      const { error } = existing
-        ? await supabase.from('newsletter_subscribers').update(row).eq('id', existing.id)
-        : await supabase.from('newsletter_subscribers').insert(row);
+      const { data: saved, error } = existing
+        ? await supabase.from('newsletter_subscribers').update(row).eq('id', existing.id).select('id').single()
+        : await supabase.from('newsletter_subscribers').insert(row).select('id').single();
       if (error) throw error;
+      await logActivity(supabase, {
+        categorie: 'newsletter',
+        message: `${existing ? 'Réinscription' : 'Nouvelle inscription'} à la newsletter${nom ? ` : ${nom}` : ''}${lieu(location.ville, location.pays)}.`,
+        ref: !existing && saved?.id ? `abonnement:${saved.id}` : null,
+      });
       // Une nouvelle inscription annule une désinscription passée.
       await supabase.from('newsletter_optouts').delete().eq('email', email);
 

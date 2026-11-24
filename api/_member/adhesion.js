@@ -7,6 +7,7 @@ import { json, getBody, handleError, clean } from '../_lib/http.js';
 import { notifyTeam } from '../_lib/notify.js';
 import { createNotification } from '../_lib/notifications.js';
 import { validateFiche, duplicateFicheMessage } from '../_lib/adhesion.js';
+import { logActivity, lieu } from '../_lib/activity.js';
 
 // « pending » est volontairement absent : pas d'accès avant approbation.
 const ACCOUNT_ROLES = ['member', 'editor', 'readonly', 'superadmin'];
@@ -79,14 +80,14 @@ export default async function handler(req, res) {
     const nom = clean(profile?.nom || meta.nom || '').slice(0, 120);
     const finalNom = nom.length >= 2 && !nom.includes('@') ? nom : (profile?.username || user.email.split('@')[0]);
 
-    const { error } = await supabase.from('members').insert({
+    const { data: inserted, error } = await supabase.from('members').insert({
       nom: String(finalNom).padEnd(2, '.'),
       email: String(user.email).toLowerCase(),
       ...fiche,
       consent: true,
       status: 'pending',
       user_id: user.id,
-    });
+    }).select('id').single();
     if (error) {
       if (error.code === '23505') {
         const dup = duplicateFicheMessage(error);
@@ -95,6 +96,11 @@ export default async function handler(req, res) {
       throw error;
     }
 
+    await logActivity(supabase, {
+      categorie: 'adhesions',
+      message: `${finalNom}${lieu(fiche.ville, fiche.pays)} a complété sa fiche d’adhésion depuis son compte — à examiner.`,
+      ref: inserted?.id ? `adhesion:${inserted.id}` : null,
+    });
     await createNotification(supabase, {
       type: 'fiche',
       title: `Fiche d’adhésion complétée — ${finalNom}`,

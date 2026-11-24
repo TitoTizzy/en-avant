@@ -11,6 +11,7 @@ import { Resend } from 'resend';
 import { escapeHtml, senderAddress } from './notify.js';
 import { effectiveLocation, matchesGeo, geoFacets } from './geo.js';
 import { renderQuizInvite } from './quiz-email.js';
+import { logActivity } from './activity.js';
 
 export const PUBLICS = ['tous', 'adherents', 'abonnes'];
 const PAGE = 1000;
@@ -304,5 +305,16 @@ export async function processQueue(supabase, newsletterId, { deadlineMs = 40000,
   const patch = { envoyes: progress.envoyes, echecs: progress.echecs, destinataires: progress.destinataires, updated_at: new Date().toISOString() };
   if (!progress.restants) { patch.statut = 'envoyee'; patch.sent_at = new Date().toISOString(); }
   await supabase.from('newsletters').update(patch).eq('id', newsletterId);
+  if (!progress.restants && newsletter.statut !== 'envoyee') {
+    const quoi = newsletter.type === 'quiz'
+      ? `Invitation au quiz de la semaine envoyée${newsletter.envoi_auto ? ' automatiquement' : ''}`
+      : `Newsletter « ${newsletter.sujet} » envoyée`;
+    await logActivity(supabase, {
+      categorie: newsletter.type === 'quiz' ? 'quiz' : 'newsletter',
+      niveau: progress.echecs ? 'attention' : 'info',
+      message: `${quoi} à ${progress.envoyes} personne(s)${progress.echecs ? ` — ${progress.echecs} email(s) non parti(s) : utilisez « Relancer les échecs »` : ''}.`,
+      ref: `envoi:${newsletterId}`,
+    });
+  }
   return { ...progress, termine: !progress.restants };
 }

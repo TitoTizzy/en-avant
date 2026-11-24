@@ -5,6 +5,7 @@
 // DELETE : { id }                                    → supprime le compte
 import { getServiceClient, requireRole } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isEmail, isText } from '../_lib/http.js';
+import { logTeamAction } from '../_lib/activity.js';
 
 const ROLES = ['superadmin', 'editor', 'readonly', 'member'];
 // « Utilisateurs » = comptes d'administration ajoutés par un SuperAdmin.
@@ -64,6 +65,7 @@ export default async function handler(req, res) {
       const { error: pErr } = await supabase.from('profiles').update(updates).eq('id', data.user.id);
       if (pErr) throw pErr;
 
+      await logTeamAction(supabase, identity.user, { categorie: 'securite', niveau: 'attention', message: `a créé le compte utilisateur de ${nom || username || email} (rôle : ${({ superadmin: 'SuperAdmin', editor: 'Éditeur', readonly: 'Lecture seule', member: 'Membre' })[role] || role}).` });
       return json(res, 201, { ok: true, id: data.user.id });
     }
 
@@ -94,16 +96,26 @@ export default async function handler(req, res) {
 
       if (Object.keys(updates).length === 0) return json(res, 422, { error: 'Aucune modification fournie.' });
 
+      const { data: target } = await supabase.from('profiles').select('nom, username, email').eq('id', body.id).maybeSingle();
       const { error } = await supabase.from('profiles').update(updates).eq('id', body.id);
       if (error) throw error;
+      const qui = target?.nom || target?.username || target?.email || 'un utilisateur';
+      await logTeamAction(supabase, identity.user, {
+        categorie: 'securite', niveau: 'attention',
+        message: updates.role
+          ? `a changé le rôle de ${qui} : ${({ superadmin: 'SuperAdmin', editor: 'Éditeur', readonly: 'Lecture seule', member: 'Membre' })[updates.role] || updates.role}.`
+          : `a modifié les permissions de ${qui} (${updates.permissions.length} permission(s) accordée(s)).`,
+      });
       return json(res, 200, { ok: true });
     }
 
     if (req.method === 'DELETE') {
       if (!isUuid(body.id)) return json(res, 422, { error: 'Identifiant invalide.' });
       if (body.id === identity.user.id) return json(res, 409, { error: 'Vous ne pouvez pas supprimer votre propre compte.' });
+      const { data: target } = await supabase.from('profiles').select('nom, username, email').eq('id', body.id).maybeSingle();
       const { error } = await supabase.auth.admin.deleteUser(body.id); // cascade → profiles
       if (error) throw error;
+      await logTeamAction(supabase, identity.user, { categorie: 'securite', niveau: 'attention', message: `a supprimé le compte utilisateur de ${target?.nom || target?.username || target?.email || 'un utilisateur'}.` });
       return json(res, 200, { ok: true });
     }
 

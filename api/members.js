@@ -14,6 +14,7 @@ import {
 import { notifyTeam, siteUrl } from './_lib/notify.js';
 import { createNotification } from './_lib/notifications.js';
 import { validateFiche, duplicateFicheMessage } from './_lib/adhesion.js';
+import { logActivity, lieu } from './_lib/activity.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
@@ -107,7 +108,7 @@ export default async function handler(req, res) {
       .eq('id', user.id);
 
     // 3. Fiche d'adhésion reliée au compte.
-    const { error: insertError } = profileError
+    const insertResult = profileError
       ? { error: profileError }
       : await supabase.from('members').insert({
         nom,
@@ -116,7 +117,8 @@ export default async function handler(req, res) {
         consent: true,
         status: 'pending',
         user_id: user.id,
-      });
+      }).select('id').single();
+    const insertError = insertResult.error;
 
     if (insertError) {
       // Pas de compte sans fiche : on annule la création du compte.
@@ -128,6 +130,11 @@ export default async function handler(req, res) {
       throw insertError;
     }
 
+    await logActivity(supabase, {
+      categorie: 'adhesions',
+      message: `${nom}${lieu(fiche.ville, fiche.pays)} a envoyé sa demande d’adhésion — en attente d’examen.`,
+      ref: insertResult?.data?.id ? `adhesion:${insertResult.data.id}` : null,
+    });
     await createNotification(supabase, {
       type: 'adhesion',
       title: `Nouvelle demande d’adhésion — ${nom}`,
