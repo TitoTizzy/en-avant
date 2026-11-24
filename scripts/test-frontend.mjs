@@ -615,3 +615,45 @@ test('Assistant : réponse en flux affichée progressivement, langue de conversa
   assert.ok(!('langue_imposee' in sent[1]));
   dom.window.close();
 });
+
+test('Bouton « Faire un don » dans l’en-tête et dans le menu de toutes les pages publiques', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const files = (await readdir(new URL('../', import.meta.url))).filter((f) => f.endsWith('.html'));
+  for (const file of files) {
+    const html = await read(file);
+    if (!html.includes('u-nav-actions')) continue;
+    const doc = new JSDOM(html).window.document;
+    assert.ok(doc.querySelector('.u-links-cta a.btn-don[href="/don.html"]'), `${file} : menu hamburger`);
+    assert.ok(doc.querySelector('.u-nav-actions a.btn-don[href="/don.html"]'), `${file} : en-tête`);
+  }
+});
+
+test('Cartes d’invitation : alternance s’engager / don, exceptions, membre connecté, langue', async () => {
+  const run = async (file, path, { count = null, member = false, lang = null } = {}) => {
+    const dom = await page(file, path);
+    const { window } = dom;
+    window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+    window.fetch = async () => response(200, {});
+    if (count !== null) window.sessionStorage.setItem('ea-nudge-n', String(count));
+    if (lang) window.localStorage.setItem('__GT_TRANSLATE_LANGS', JSON.stringify({ tgtLang: lang }));
+    if (member) window.localStorage.setItem('sb-rgtzwnihabkpudhwiuik-auth-token', JSON.stringify({ access_token: 't', expires_at: Date.now() / 1000 + 3600, user: { user_metadata: { pseudo: 'Tito' } } }));
+    try { window.eval(await read('js/premium.js')); } catch { /* modules décoratifs */ }
+    window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    await settle();
+    const card = window.document.getElementById('eaNudge');
+    const out = { kind: card?.className.match(/ea-nudge--(\w+)/)?.[1] || null, next: window.sessionStorage.getItem('ea-nudge-n'),
+      cta: card?.querySelector('.ea-nudge-cta')?.getAttribute('href'), title: card?.querySelector('strong')?.textContent, hidden: card?.hidden };
+    dom.window.close();
+    return out;
+  };
+  const first = await run('index.html', '/');
+  assert.deepEqual([first.kind, first.cta, first.next, first.hidden], ['engage', '/adherer.html', '1', true], '1re page : s’engager (affichée après un délai)');
+  const second = await run('Apropos.html', '/Apropos.html', { count: 1 });
+  assert.deepEqual([second.kind, second.cta, second.next], ['don', '/don.html', '2']);
+  assert.equal((await run('blog.html', '/blog.html', { count: 2 })).kind, 'engage', 'puis de nouveau s’engager');
+  assert.equal((await run('don.html', '/don.html', { count: 1 })).kind, 'engage', 'jamais le don sur la page Don');
+  assert.equal((await run('adherer.html', '/adherer.html', { count: 0 })).kind, 'don', 'jamais l’adhésion sur la page Adhérer');
+  assert.equal((await run('index.html', '/', { count: 0, member: true })).kind, 'don', 'membre connecté : don seulement');
+  assert.equal((await run('login.html', '/login.html')).kind, null, 'aucune carte sur la connexion');
+  assert.equal((await run('index.html', '/', { lang: 'ht' })).title, 'Ayiti bezwen w');
+});
