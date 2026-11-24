@@ -30,7 +30,13 @@ const slugify = (titre) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'article';
+    .slice(0, 80)
+    .replace(/-+$/, '');
+// La base exige un slug de 3 caractères minimum (ex. titre « Ô ! » → « article-o »).
+const slugFor = (titre) => {
+  const slug = slugify(titre);
+  return slug.length >= 3 ? slug : `article${slug ? `-${slug}` : ''}`;
+};
 
 export default async function handler(req, res) {
   try {
@@ -96,7 +102,7 @@ export default async function handler(req, res) {
       }
 
       // Slug unique : base + suffixe numérique en cas de collision.
-      const base = slugify(titre);
+      const base = slugFor(titre);
       let lastError = null;
       for (let i = 0; i < 5; i++) {
         const slug = i === 0 ? base : `${base}-${i + 1}`;
