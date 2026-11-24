@@ -18,6 +18,9 @@
     "Cuba", "Jamaïque", "Îles Turques-et-Caïques", "Panama", "Venezuela", "Argentine",
   ];
 
+  // Départements d'Haïti puis régions de la diaspora (copie de api/_lib/geo.js REGIONS).
+  const REGIONS = ["Artibonite", "Centre", "Grand’Anse", "Nippes", "Nord", "Nord-Est", "Nord-Ouest", "Ouest", "Sud", "Sud-Est", "Floride", "Massachusetts", "New York", "New Jersey", "Géorgie", "Illinois", "Pennsylvanie", "Texas", "Californie", "Nevada", "Caroline du Nord", "Rhode Island", "Connecticut", "Nebraska", "Maryland", "Virginie", "Ohio", "Michigan", "District de Columbia", "Québec", "Ontario", "Île-de-France", "Auvergne-Rhône-Alpes", "Provence-Alpes-Côte d’Azur", "Nouvelle-Aquitaine", "Hauts-de-France", "Occitanie", "Pays de la Loire", "Grand Est", "Guyane", "Martinique", "Guadeloupe"];
+
   const geoKey = (value) => String(value ?? "")
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .toLowerCase().replace(/[’'`]/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
@@ -59,5 +62,34 @@
     return { sync };
   }
 
-  window.EA_GEO = { HAITI, DEPARTEMENTS, PAYS, geoKey, isHaiti, bindLocation };
+  /**
+   * Remplit une liste de suggestions (<datalist>) : d'abord les valeurs présentes
+   * dans la base (avec leur effectif), puis la liste de référence. `pays` limite
+   * les régions et les villes au pays choisi.
+   */
+  function fillSuggestions(datalist, dbRows = [], reference = [], { pays = "" } = {}) {
+    if (!datalist) return;
+    const wanted = geoKey(pays);
+    const seen = new Set();
+    const options = [];
+    for (const row of dbRows) {
+      if (wanted && row.pays && geoKey(row.pays) !== wanted) continue;
+      const key = geoKey(row.nom);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const option = document.createElement("option");
+      option.value = row.nom;
+      option.label = `${row.nom} — ${row.total} personne${row.total > 1 ? "s" : ""}`;
+      options.push(option);
+    }
+    for (const value of reference) {
+      const key = geoKey(value);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      options.push(new Option(value));
+    }
+    datalist.replaceChildren(...options);
+  }
+
+  window.EA_GEO = { HAITI, DEPARTEMENTS, PAYS, REGIONS, geoKey, isHaiti, bindLocation, fillSuggestions };
 })();

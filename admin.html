@@ -572,17 +572,25 @@
                   <label><input type="radio" name="nl-public" value="adherents"> Adhérents seulement</label>
                   <label><input type="radio" name="nl-public" value="abonnes"> Inscrits au formulaire seulement</label>
                 </div>
-                <p class="nl-target-label">Pays <small>(aucun coché = tous les pays)</small></p>
-                <div class="nl-chips" id="nl-pays"></div>
-                <div id="nl-dep-block">
-                  <p class="nl-target-label">Départements d’Haïti <small>(aucun coché = tous)</small></p>
-                  <div class="nl-chips" id="nl-departements"></div>
-                </div>
-                <p class="nl-target-label">Villes <small>(facultatif)</small></p>
+                <p class="nl-target-label">Pays <small>(aucun = tous les pays)</small></p>
                 <div class="nl-city-input">
-                  <input id="nl-ville-input" list="nl-villes-list" placeholder="Ajouter une ville…">
+                  <input id="nl-pays-input" list="nl-pays-list" placeholder="Tapez un pays…" autocomplete="off" aria-label="Ajouter un pays">
+                  <datalist id="nl-pays-list"></datalist>
+                  <button type="button" class="btn btn-ghost btn-xs" data-nl-add="pays">Ajouter</button>
+                </div>
+                <div class="nl-chips" id="nl-pays"></div>
+                <p class="nl-target-label">Départements / régions <small>(aucun = toutes)</small></p>
+                <div class="nl-city-input">
+                  <input id="nl-region-input" list="nl-region-list" placeholder="Tapez un département ou une région…" autocomplete="off" aria-label="Ajouter un département ou une région">
+                  <datalist id="nl-region-list"></datalist>
+                  <button type="button" class="btn btn-ghost btn-xs" data-nl-add="departements">Ajouter</button>
+                </div>
+                <div class="nl-chips" id="nl-departements"></div>
+                <p class="nl-target-label">Villes / communes <small>(aucune = toutes)</small></p>
+                <div class="nl-city-input">
+                  <input id="nl-ville-input" list="nl-villes-list" placeholder="Tapez une ville…" autocomplete="off" aria-label="Ajouter une ville">
                   <datalist id="nl-villes-list"></datalist>
-                  <button type="button" class="btn btn-ghost btn-xs" id="nl-ville-add">Ajouter</button>
+                  <button type="button" class="btn btn-ghost btn-xs" data-nl-add="villes">Ajouter</button>
                 </div>
                 <div class="nl-chips" id="nl-villes"></div>
               </fieldset>
@@ -672,9 +680,11 @@
         </div>
         <div class="member-geo" id="member-geo" aria-label="Filtrer par lieu">
           <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-          <select id="mg-pays" aria-label="Pays"><option value="">Tous les pays</option></select>
-          <select id="mg-dep" aria-label="Département" hidden><option value="">Tous les départements</option></select>
-          <input id="mg-ville" list="mg-villes" placeholder="Ville / commune" aria-label="Ville ou commune">
+          <input id="mg-pays" list="mg-pays-list" placeholder="Pays (tous)" aria-label="Pays" autocomplete="off">
+          <datalist id="mg-pays-list"></datalist>
+          <input id="mg-dep" list="mg-dep-list" placeholder="Département / région (toutes)" aria-label="Département ou région" autocomplete="off">
+          <datalist id="mg-dep-list"></datalist>
+          <input id="mg-ville" list="mg-villes" placeholder="Ville / commune (toutes)" aria-label="Ville ou commune" autocomplete="off">
           <datalist id="mg-villes"></datalist>
           <button class="btn btn-ghost btn-xs" type="button" id="mg-clear">Effacer</button>
           <span class="member-geo-summary" id="mg-summary"></span>

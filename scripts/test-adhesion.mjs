@@ -271,7 +271,8 @@ test('Adhérents : filtres pays / département / ville et répartition, fiches a
   assert.deepEqual(ids({ ville: 'delmas' }), [1]);
   assert.deepEqual(ids({ pays: 'Canada' }), []);
   const { facets } = memberGeoView(all, {});
-  assert.deepEqual(facets.pays, [{ nom: 'Haïti', total: 2 }, { nom: 'États-Unis', total: 2 }]);
+  assert.deepEqual(facets.pays, [{ nom: 'États-Unis', total: 2 }, { nom: 'Haïti', total: 2 }], 'égalité : ordre alphabétique');
+  assert.deepEqual(facets.regions.map((r) => [r.nom, r.pays]), [['Floride', 'États-Unis'], ['Massachusetts', 'États-Unis'], ['Nord', 'Haïti'], ['Ouest', 'Haïti']]);
   assert.equal(facets.a_valider, 2, 'Delmas et Miami : lieu déduit à enregistrer ; « Lieu inconnu » non');
   assert.ok(facets.communes.some((c) => c.nom === 'Delmas'));
 });

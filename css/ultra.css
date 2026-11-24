@@ -4550,7 +4550,6 @@ select option:checked { background-color: #ff6a2a; color: #fff; }
 .nl-chip input { accent-color: var(--orange); }
 .nl-city-input { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
 .nl-city-input input { flex: 1; }
-#nl-dep-block[hidden] { display: none; }
 .nl-audience { position: sticky; top: 1rem; padding: 1.2rem; }
 .nl-audience-label { margin: 0; color: var(--ink-400); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
 .nl-audience-total { margin: 0.2rem 0; font-size: 1.6rem; }
@@ -4580,7 +4579,7 @@ select option:checked { background-color: #ff6a2a; color: #fff; }
   border-radius: var(--r-sm); background: var(--glass); border: 1px solid var(--line-1); }
 .member-geo > i { color: var(--orange); }
 .member-geo select, .member-geo input { min-width: 160px; }
-.member-geo select[hidden], .member-geo button[hidden] { display: none; }
+.member-geo button[hidden] { display: none; }
 .member-geo-summary { font-size: 0.85rem; color: var(--ink-300); }
 #mg-validate { margin-left: auto; }
 .member-geo-cell { white-space: nowrap; }
