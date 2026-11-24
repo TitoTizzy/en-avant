@@ -592,6 +592,75 @@
   });
   document.getElementById("stats-open-list")?.addEventListener("click", () => openNotificationLink(statsLink));
 
+  /* ----- Indicateurs détaillés (accueil) ----- */
+  const fmtKpi = (v, format) => {
+    if (v === null || v === undefined) return "—";
+    if (format === "money") return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: v >= 100 ? 0 : 2 }).format(v);
+    if (format === "pct") return `${v} %`;
+    return new Intl.NumberFormat("fr-FR").format(v);
+  };
+  function kpiDelta(k) {
+    if (k.previous === null || k.previous === undefined || k.value === null) return "";
+    if (!k.previous && !k.value) return '<span class="kpi-delta kpi-delta--flat">= stable</span>';
+    if (!k.previous) return '<span class="kpi-delta kpi-delta--up">nouveau</span>';
+    const pct = Math.round(((k.value - k.previous) / k.previous) * 100);
+    const cls = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+    const arrow = pct > 0 ? "▲" : pct < 0 ? "▼" : "=";
+    return `<span class="kpi-delta kpi-delta--${cls}" title="Période précédente : ${esc(fmtKpi(k.previous, k.format))}">${arrow} ${Math.abs(pct)} %</span>`;
+  }
+  function kpiSpark(series) {
+    if (!series?.values?.length) return "";
+    const v = series.values;
+    const max = Math.max(...v, 1);
+    const w = 300; const h = 64; const step = v.length > 1 ? w / (v.length - 1) : w;
+    const pts = v.map((y, i) => `${(i * step).toFixed(1)},${(h - 4 - (y / max) * (h - 10)).toFixed(1)}`);
+    const sum = v.reduce((a, b) => a + b, 0);
+    const first = series.keys[0]; const last = series.keys[series.keys.length - 1];
+    const lab = (k) => (series.monthly ? new Date(`${k}-15T12:00:00`).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" }) : new Date(`${k}T12:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }));
+    return `<figure class="kpi-spark"><figcaption>${esc(series.label)} · total ${esc(fmtKpi(Math.round(sum * 100) / 100))}</figcaption>
+      <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(series.label)}">
+        <polyline points="0,${h} ${pts.join(" ")} ${w},${h}" class="kpi-spark-area"></polyline>
+        <polyline points="${pts.join(" ")}" class="kpi-spark-line"></polyline>
+      </svg><div class="kpi-spark-axis"><span>${esc(lab(first))}</span><span>${esc(lab(last))}</span></div></figure>`;
+  }
+  function kpiList(list) {
+    const items = list.items || [];
+    if (!items.length) return `<div class="kpi-list"><h5>${esc(list.title)}</h5><p class="kpi-empty">${esc(list.empty || "Aucune donnée sur la période.")}</p></div>`;
+    const max = Math.max(...items.map((i) => i.value), 1);
+    return `<div class="kpi-list"><h5>${esc(list.title)}</h5>${items.map((i) => `
+      <div class="kpi-list-row"><span title="${esc(i.label)}">${esc(i.label)}</span>
+        <div class="kpi-bar"><i style="width:${Math.round((100 * i.value) / max)}%"></i></div>
+        <strong>${esc(i.value)}${i.unit ? ` ${esc(i.unit)}` : ""}</strong></div>`).join("")}</div>`;
+  }
+  async function loadKpis(periode = 30) {
+    const host = document.getElementById("kpi-sections");
+    if (!host) return;
+    document.querySelectorAll(".kpi-period").forEach((b) => b.classList.toggle("is-active", b.dataset.periode === String(periode)));
+    host.innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Calcul des indicateurs…</p>';
+    try {
+      const d = await api(`/api/admin/stats?kind=overview&periode=${periode}`);
+      document.getElementById("kpi-sub").textContent = `${d.libelle}, comparés à la période précédente · mis à jour à ${new Date(d.maj).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+      host.innerHTML = d.sections.map((sec) => `
+        <section class="kpi-section">
+          <header><h4><i class="fa-solid ${esc(sec.icon)}" aria-hidden="true"></i> ${esc(sec.titre)}</h4>
+            ${sec.link ? `<button type="button" class="btn btn-ghost btn-xs" data-kpi-link="${esc(sec.link)}">Ouvrir</button>` : ""}</header>
+          <div class="kpi-grid">${sec.kpis.map((k) => `
+            <div class="kpi-tile"><span class="kpi-label">${esc(k.label)}</span>
+              <strong class="kpi-value">${esc(fmtKpi(k.value, k.format))}</strong>
+              <span class="kpi-foot">${kpiDelta(k)}${k.hint ? `<small>${esc(k.hint)}</small>` : ""}</span></div>`).join("")}</div>
+          ${kpiSpark(sec.series)}
+          ${(sec.lists || []).map(kpiList).join("")}
+        </section>`).join("") || '<p class="adm-empty">Aucun indicateur disponible avec vos droits.</p>';
+    } catch (error) {
+      host.innerHTML = `<p class="adm-empty">Indicateurs indisponibles : ${esc(error.message)}</p>`;
+    }
+  }
+  document.querySelectorAll(".kpi-period").forEach((b) => b.addEventListener("click", () => loadKpis(Number(b.dataset.periode))));
+  document.getElementById("kpi-sections")?.addEventListener("click", (event) => {
+    const link = event.target.closest("[data-kpi-link]");
+    if (link) openNotificationLink(link.dataset.kpiLink);
+  });
+
   let viewerIsSuperAdmin = false;
 
   const ACCOUNT_LABELS = {
@@ -3522,6 +3591,7 @@
     bindStaffPanel();
     bindNewsletter();
     bindLogsPanel();
+    loadKpis(30);
     if (isSuperAdmin) {
       document.getElementById("mt-card")?.removeAttribute("hidden");
       bindMaintenance();

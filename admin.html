@@ -254,6 +254,23 @@
           </button>
         </div>
 
+        <!-- Indicateurs détaillés -->
+        <div class="kpi-board" id="kpi-board">
+          <div class="kpi-board-head">
+            <div>
+              <h3 class="adm-box-title" style="margin:0;">Indicateurs</h3>
+              <p class="kpi-sub" id="kpi-sub">Comparaison avec la période précédente.</p>
+            </div>
+            <div class="kpi-periods" role="group" aria-label="Période">
+              <button type="button" class="kpi-period" data-periode="7">7 jours</button>
+              <button type="button" class="kpi-period is-active" data-periode="30">30 jours</button>
+              <button type="button" class="kpi-period" data-periode="90">3 mois</button>
+              <button type="button" class="kpi-period" data-periode="365">12 mois</button>
+            </div>
+          </div>
+          <div class="kpi-sections" id="kpi-sections"><p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Calcul des indicateurs…</p></div>
+        </div>
+
         <!-- Actions rapides + Infos -->
         <div class="adm-home-row">
           <div class="adm-home-box">

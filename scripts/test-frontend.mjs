@@ -530,6 +530,19 @@ test('Admin : les onglets du quiz ne sont jamais traités comme des onglets d’
   dom.window.close();
 });
 
+test('Admin : indicateurs de l’accueil avec choix de la période et contenu échappé', async () => {
+  const html = await read('admin.html');
+  const js = await read('js/admin.js');
+  const dom = new JSDOM(html);
+  const doc = dom.window.document;
+  assert.ok(doc.getElementById('kpi-sections'));
+  assert.deepEqual([...doc.querySelectorAll('.kpi-period')].map((b) => b.dataset.periode), ['7', '30', '90', '365']);
+  assert.equal(doc.querySelectorAll('.kpi-period.is-active').length, 1);
+  assert.match(js, /\/api\/admin\/stats\?kind=overview&periode=\$\{periode\}/);
+  assert.match(js, /\$\{esc\(i\.label\)\}/, 'libellés des listes échappés');
+  dom.window.close();
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
