@@ -409,6 +409,73 @@ test('Assistant : ouverture, question, réponse mise en forme sans lien dangereu
   dom.window.close();
 });
 
+test('Assistant : suit la langue choisie sur le site (créole puis espagnol) et n’est pas retraduit automatiquement', async () => {
+  const dom = await page('index.html', '/');
+  const { window } = dom;
+  window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+  window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  window.localStorage.setItem('__GT_TRANSLATE_LANGS', JSON.stringify({ srcLang: 'fr', tgtLang: 'ht' }));
+  const sent = [];
+  window.fetch = async (url, options = {}) => {
+    if (url === '/api/chat') { sent.push(JSON.parse(options.body)); return response(200, { reponse: 'Repons.', sources: [] }); }
+    return response(200, {});
+  };
+  try { window.eval(await read('js/premium.js')); } catch { /* idem */ }
+  window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+  await settle();
+  const doc = window.document;
+  const fab = doc.getElementById('chatbotFab');
+  assert.equal(fab.getAttribute('aria-label'), 'Louvri asistan En Avant');
+  fab.click();
+  const panel = doc.getElementById('eaChatPanel');
+  assert.ok(panel.classList.contains('notranslate'));
+  assert.equal(panel.getAttribute('translate'), 'no');
+  assert.equal(panel.querySelector('[data-t="title"]').textContent, 'Asistan En Avant');
+  assert.equal(panel.querySelector('textarea').placeholder, 'Poze kesyon ou…');
+  assert.match(panel.querySelector('.eac-msg--bot').textContent, /Bonjou/);
+  panel.querySelector('.eac-suggest button').click(); await settle(); await settle();
+  assert.equal(sent[0].langue, 'ht');
+  // Changement de langue sur le site.
+  doc.dispatchEvent(new window.CustomEvent('ea:lang', { detail: 'es' }));
+  assert.equal(panel.querySelector('[data-t="title"]').textContent, 'Asistente de En Avant');
+  assert.equal(panel.querySelector('textarea').placeholder, 'Escriba su pregunta…');
+  assert.match(panel.querySelector('.eac-msg--bot').textContent, /Hola/);
+  const input = panel.querySelector('textarea');
+  input.value = '¿Y la salud?';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settle(); await settle();
+  assert.equal(sent[1].langue, 'es');
+  dom.window.close();
+});
+
+test('Accueil : classement du quiz flouté jusqu’à 10 joueurs, puis vrai top 5 (pseudos échappés)', async () => {
+  for (const [payload, live] of [
+    [{ actif: false, joueurs: 3, seuil: 10, top: [] }, false],
+    [{ actif: true, joueurs: 12, seuil: 10, top: [{ rang: 1, pseudo: '<b>Tito</b>', points: 1234 }, { rang: 2, pseudo: 'Marie', points: 900 }] }, true],
+  ]) {
+    const dom = await page('index.html', '/');
+    const { window } = dom;
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+    window.fetch = async (url) => (String(url).includes('/api/trivia/classement') ? response(200, payload) : response(200, {}));
+    try { window.eval(await read('js/app.js')); } catch { /* modules décoratifs */ }
+    await settle(); await settle();
+    const box = window.document.getElementById('home-leaderboard');
+    assert.equal(box.classList.contains('is-live'), live);
+    if (!live) {
+      assert.match(window.document.getElementById('home-lb-status').textContent, /3\/10/);
+    } else {
+      const rows = [...box.querySelectorAll('.lb-lb-row')];
+      assert.equal(rows.length, 2);
+      assert.equal(rows[0].querySelector('.lb-lb-name').textContent, '<b>Tito</b>');
+      assert.equal(rows[0].querySelector('b'), null, 'pseudo affiché comme texte');
+      assert.match(rows[0].querySelector('.lb-lb-score').textContent, /1\s?234 pts/);
+      assert.equal(box.getAttribute('aria-hidden'), null);
+    }
+    dom.window.close();
+  }
+});
+
 test('Assistant : absent de l’administration et de la connexion, ajouté sur les pages publiques sans bouton', async () => {
   for (const [file, path, expected] of [['login.html', '/login', false], ['don.html', '/don', true]]) {
     const dom = await page(file, path);

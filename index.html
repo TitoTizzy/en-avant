@@ -126,6 +126,11 @@
     .lb-lb-overlay i { font-size: 1.4rem; color: rgba(147, 197, 253, 0.55); margin-bottom: .25rem; }
     .lb-lb-overlay strong { font-size: .95rem; font-weight: 700; color: rgba(186, 230, 253, 0.9); letter-spacing: .06em; text-transform: uppercase; }
     .lb-lb-overlay small { font-size: .75rem; color: rgba(147, 197, 253, 0.45); line-height: 1.5; }
+    .lb-lb-progress { width: 140px; height: 6px; border-radius: 999px; background: rgba(147, 197, 253, 0.15); overflow: hidden; }
+    .lb-lb-progress span { display: block; height: 100%; background: #fbbf24; }
+    .lb-leaderboard.is-live .lb-lb-rows { filter: none; pointer-events: auto; user-select: auto; }
+    .lb-leaderboard.is-live .lb-lb-overlay { display: none; }
+    .lb-leaderboard.is-live .lb-lb-name { color: rgba(226, 240, 255, 0.95); }
   </style>
 </head>
 
@@ -559,7 +564,7 @@
             </div>
           </div>
 
-          <div class="lb-leaderboard" aria-hidden="true">
+          <div class="lb-leaderboard" id="home-leaderboard" aria-hidden="true">
             <div class="lb-lb-header">
               <i class="fa-solid fa-trophy"></i>
               <span>Top 5 — Classement global</span>
@@ -594,7 +599,7 @@
             <div class="lb-lb-overlay">
               <i class="fa-solid fa-trophy"></i>
               <strong>Leaderboard</strong>
-              <small>Classement global — arrive bientôt</small>
+              <small id="home-lb-status">Classement global — arrive bientôt</small>
             </div>
           </div>
         </div>

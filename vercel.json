@@ -40,6 +40,7 @@
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
     { "source": "/api/trivia/membre", "destination": "/api/trivia?action=membre" },
+    { "source": "/api/trivia/classement", "destination": "/api/trivia?action=classement" },
     { "source": "/api/member/articles",         "destination": "/api/member?action=articles" },
     { "source": "/api/member/adhesion",         "destination": "/api/member?action=adhesion" },
     { "source": "/api/newsletter",              "destination": "/api/member?action=newsletter" },

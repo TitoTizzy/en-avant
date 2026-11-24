@@ -297,3 +297,46 @@ function initSlider() {
   updateSlider();
   startAutoplay();
 }
+
+
+/* Classement du quiz (accueil) : actif automatiquement dès que 10 adhérents ont joué. */
+(() => {
+  const box = document.getElementById("home-leaderboard");
+  if (!box) return;
+  fetch("/api/trivia/classement")
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (!data) return;
+      const status = document.getElementById("home-lb-status");
+      if (!data.actif || !data.top.length) {
+        if (status) {
+          status.textContent = `Classement global — s’ouvre à ${data.seuil} joueurs (${data.joueurs}/${data.seuil})`;
+          const bar = document.createElement("div");
+          bar.className = "lb-lb-progress";
+          bar.innerHTML = `<span style="width:${Math.min(100, Math.round((data.joueurs / data.seuil) * 100))}%"></span>`;
+          status.after(bar);
+        }
+        return;
+      }
+      const rows = box.querySelector(".lb-lb-rows");
+      const medal = ["gold", "silver", "bronze"];
+      rows.replaceChildren(...data.top.map((r) => {
+        const row = document.createElement("div");
+        row.className = "lb-lb-row";
+        const rank = document.createElement("span");
+        rank.className = `lb-lb-rank ${medal[r.rang - 1] || ""}`.trim();
+        rank.textContent = String(r.rang);
+        const name = document.createElement("span");
+        name.className = "lb-lb-name";
+        name.textContent = r.pseudo;
+        const score = document.createElement("span");
+        score.className = "lb-lb-score";
+        score.textContent = `${Number(r.points).toLocaleString("fr-FR")} pts`;
+        row.append(rank, name, score);
+        return row;
+      }));
+      box.classList.add("is-live");
+      box.removeAttribute("aria-hidden");
+    })
+    .catch(() => { /* le bloc reste en « bientôt » */ });
+})();

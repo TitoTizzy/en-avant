@@ -294,3 +294,12 @@ test('Sécurité : tables et fonctions du quiz inaccessibles aux rôles publics'
   await db.exec('reset role; set role authenticated');
   await assert.rejects(db.query(`select quiz_start('${A}', 'libre', null, 15)`), /permission denied/);
 });
+
+test('Classement public : actif à partir de 10 adhérents différents ayant terminé une partie', async () => {
+  const { countPlayers, SEUIL } = await import('../api/_trivia/classement.js');
+  assert.equal(SEUIL, 10);
+  const parties = (n) => Array.from({ length: n }, (_, i) => ({ user_id: `u${i % Math.max(1, n - 3)}` }));
+  assert.equal(countPlayers([{ user_id: 'a' }, { user_id: 'a' }, { user_id: 'b' }, { user_id: null }]), 2, 'un joueur compte une fois');
+  assert.ok(countPlayers(parties(12)) < SEUIL, '12 parties mais 9 joueurs : pas encore');
+  assert.ok(countPlayers(Array.from({ length: 10 }, (_, i) => ({ user_id: `u${i}` }))) >= SEUIL);
+});
