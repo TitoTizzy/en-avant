@@ -733,3 +733,12 @@ test('Sous-menu : la flèche ouvre et referme, Échap ferme', async () => {
   assert.equal(window.document.querySelectorAll('[data-dd].is-open').length, 0);
   dom.window.close();
 });
+
+test('Don : PayPal disponible avec le bouton de dons d’En Avant Miami Inc, ouvert dans un nouvel onglet', async () => {
+  const doc = new JSDOM(await read('don.html')).window.document;
+  const link = doc.querySelector('.don-methods-row--active a.don-paypal-btn');
+  assert.equal(link.getAttribute('href'), 'https://www.paypal.com/donate/?hosted_button_id=L7ZGQVJNM5KPU');
+  assert.equal(link.getAttribute('target'), '_blank');
+  assert.match(link.getAttribute('rel'), /noopener/);
+  assert.ok(![...doc.querySelectorAll('.don-methods-row--soon h3')].some((h) => /PayPal/.test(h.textContent)), 'plus dans « Bientôt disponibles »');
+});
