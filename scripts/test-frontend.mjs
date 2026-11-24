@@ -341,6 +341,22 @@ test('Adhésion : pays et département envoyés avec la fiche', async () => {
   dom.window.close();
 });
 
+test('Pages publiques : en-tête fermé avant le contenu, contenu et pied de page au même niveau', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const files = (await readdir(new URL('..', import.meta.url))).filter((f) => f.endsWith('.html') && !['admin.html'].includes(f));
+  for (const file of files) {
+    const dom = new JSDOM(await read(file));
+    const doc = dom.window.document;
+    const main = doc.querySelector('main');
+    const footer = doc.querySelector('footer');
+    if (main && footer) assert.equal(main.parentElement, footer.parentElement, `${file} : <main> et <footer> doivent avoir le même parent`);
+    if (main) assert.ok(['BODY'].includes(main.parentElement.tagName) || main.parentElement.className.includes('shell'), `${file} : <main> mal imbriqué`);
+    const header = doc.querySelector('header.u-nav');
+    if (header && main) assert.ok(!header.contains(main), `${file} : <main> ne doit pas être dans l’en-tête`);
+    dom.window.close();
+  }
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
