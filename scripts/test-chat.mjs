@@ -144,7 +144,10 @@ test('Livre blanc : extraits avec partie, chantier, section et pages exactes', (
   const chapitres = new Set(chunks.map((c) => c.chapitre));
   CHANTIERS.forEach((nom, i) => assert.ok(chapitres.has(`Chantier ${i + 1} – ${nom}`), `chantier ${i + 1}`));
   const at = (page) => chunks.find((c) => c.pageDebut <= page && c.pageFin >= page && c.chapitre);
-  assert.match(at(41).ref, /^Partie II · Chantier 1 – Sécurité · section « Etat des lieux » · p\. 4\d/);
+  assert.match(at(41).ref, /^Partie II · Chantier 1 – Sécurité · section « État des lieux » · p\. 4\d/);
+  assert.ok(!chunks.some((c) => /^\(/.test(c.section)), 'sigles en capitales non pris pour des sections');
+  assert.ok(chapitres.has('Restaurer l’autorité de l’État') && [...chapitres].some((c) => /^Objectif 2054/.test(c)), 'chapitres de la Partie I');
+  assert.ok(chunks.some((c) => c.section === 'Le mot de Jerry Tardieu'));
   assert.match(at(120).chapitre, /Chantier 11 – Justice/);
   assert.match(at(200).chapitre, /Chantier 20 – Collectivités territoriales/);
   assert.ok(chunks.every((c) => c.texte.length <= 1600 && !/=== Page|PAGE \|/.test(c.texte)), 'en-têtes de page retirés, extraits bornés');
