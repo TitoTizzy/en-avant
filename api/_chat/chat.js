@@ -2,7 +2,7 @@
 //   { question, history?: [{ role:'user'|'assistant', content }] }
 //   → { reponse, sources: [{ titre, url }] }
 // Garde-fous : 10 messages / 5 min par visiteur, 40 / 24 h, plafond global par jour
-// (CHAT_DAILY_LIMIT, 1500 par défaut) ; question ≤ 800 caractères ; réponse ≤ 700 tokens.
+// (CHAT_DAILY_LIMIT, 1500 par défaut) ; question ≤ 800 caractères ; réponse ≤ 2 000 tokens.
 // L'adresse IP n'est jamais stockée : seule une empreinte SHA-256 sert au quota.
 import { createHash } from 'node:crypto';
 import Anthropic from '@anthropic-ai/sdk';
@@ -36,7 +36,7 @@ function formatDate(value) {
 async function ask(anthropic, model, messages) {
   return anthropic.messages.create({
     model,
-    max_tokens: 700,
+    max_tokens: 2000,
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages,
   });
@@ -92,9 +92,13 @@ export default async function handler(req, res) {
         error: busy ? 'L’assistant est très sollicité. Réessayez dans un instant.' : 'L’assistant est momentanément indisponible.',
       });
     }
-    const reponse = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+    let reponse = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
     if (!reponse) return json(res, 502, { error: 'Pas de réponse pour le moment. Réessayez.' });
-    return json(res, 200, { reponse: reponse.slice(0, 4000), sources: sourcesOf(passages) });
+    if (response.stop_reason === 'max_tokens') {
+      console.warn('[chat] réponse tronquée (max_tokens)');
+      reponse = `${reponse.replace(/\s+\S*$/, '')}…`;
+    }
+    return json(res, 200, { reponse: reponse.slice(0, 4000), sources: sourcesOf(passages, reponse) });
   } catch (error) {
     console.error('[chat] erreur :', error?.message || error);
     return handleError(res, Number.isInteger(error?.status) && error.status < 500 ? error : new Error('chat'),

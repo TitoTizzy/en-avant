@@ -63,7 +63,12 @@ test('Consignes : sources uniquement, langue du visiteur, neutralité, pas de do
   assert.match(prompt, /<extrait n="1" source="Livre blanc" page="\/livre-blanc">/);
   assert.match(prompt, /Meeting — samedi 5 décembre — Cap-Haïtien/);
   assert.match(prompt, /contact@enavant\.org/);
-  assert.deepEqual(sourcesOf([{ titre: 'A', url: '/a' }, { titre: 'A', url: '/a' }, { titre: 'B', url: '/b' }]), [{ titre: 'A', url: '/a' }, { titre: 'B', url: '/b' }]);
+  const lb = { titre: 'Livre blanc', url: '/livre-blanc' };
+  // Pages citées dans la réponse, sans doublon ; liens inconnus ignorés.
+  assert.deepEqual(sourcesOf([lb], 'Voir [Adhérer](/adherer), [encore](/adherer) et [ailleurs](/inconnu).'), [{ titre: 'Adhérer', url: '/adherer' }]);
+  // Aucune page citée : le passage le plus pertinent seulement.
+  assert.deepEqual(sourcesOf([lb, { titre: 'Don', url: '/don' }], 'Réponse sans lien.'), [lb]);
+  assert.deepEqual(sourcesOf([], 'Rien.'), []);
 });
 
 test('Corpus : Livre blanc du stockage + pages publiques du site', async () => {
