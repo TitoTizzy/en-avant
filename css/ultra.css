@@ -2514,6 +2514,7 @@ html.ea-returning .page-loader { display: none !important; }
 .tq-share-row { display: flex; gap: 0.9rem; flex-wrap: wrap; justify-content: center; margin-top: 1.8rem; }
 .tq-note { font-size: 0.85rem; color: var(--ink-500); }
 
+.tq-ranking-submit [hidden] { display: none !important; }
 .tq-ranking-submit,
 .tq-leaderboard {
   max-width: 620px;

@@ -3,6 +3,18 @@ import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 // Les scores sont calculés en base depuis une partie verrouillée côté serveur.
 import { getServiceClient } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
+import { scorePseudo } from '../_lib/trivia-session.js';
+
+/** Pseudo d'adhésion du compte connecté (profiles.username), ou null pour un visiteur. */
+async function memberPseudo(req, supabase) {
+  const header = String(req.headers.authorization || '');
+  if (!header.startsWith('Bearer ')) return null;
+  const { data, error } = await supabase.auth.getUser(header.slice(7));
+  if (error || !data?.user) return null;
+  const { data: profile } = await supabase
+    .from('profiles').select('username').eq('id', data.user.id).maybeSingle();
+  return profile?.username || null;
+}
 
 export default async function handler(req, res) {
   try {
@@ -25,14 +37,16 @@ export default async function handler(req, res) {
     const body = getBody(req);
 
     const sessionId = clean(body.session_id);
-    const pseudo = clean(body.pseudo);
-    if (!/^[0-9a-f-]{36}$/i.test(sessionId) || pseudo.length < 2 || pseudo.length > 40) {
+    // Membre connecté : le pseudo choisi à l'adhésion fait foi (jamais celui envoyé par le navigateur).
+    const accountPseudo = await memberPseudo(req, supabase);
+    const pseudo = scorePseudo(accountPseudo, body.pseudo);
+    if (!/^[0-9a-f-]{36}$/i.test(sessionId) || !pseudo) {
       return json(res, 422, { error: 'Partie ou pseudonyme invalide.' });
     }
     // The database locks the session and derives score/total from its answers.
     const { data, error } = await supabase.rpc('ea_submit_trivia', { p_session: sessionId, p_pseudo: pseudo });
     if (error) throw error;
-    return json(res, data?.error ? 409 : 201, data);
+    return json(res, data?.error ? 409 : 201, data?.error ? data : { ...data, pseudo });
   } catch (error) {
     return handleError(res, error);
   }

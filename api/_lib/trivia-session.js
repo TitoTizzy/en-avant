@@ -16,3 +16,12 @@ export async function createTriviaSession(supabase, questions) {
   // Never expose the answer key or explanations before an answer is locked.
   return { session_id: id, questions: questions.map(({ question, options }) => ({ question, options })) };
 }
+
+/**
+ * Pseudo retenu pour le classement : celui du compte s'il existe (membre connecté),
+ * sinon celui saisi par le visiteur. Renvoie null s'il est invalide (2 à 40 caractères).
+ */
+export function scorePseudo(accountPseudo, typedPseudo) {
+  const pick = String(accountPseudo || '').trim() || String(typedPseudo ?? '').trim();
+  return pick.length >= 2 && pick.length <= 40 ? pick : null;
+}
