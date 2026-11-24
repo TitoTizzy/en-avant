@@ -500,6 +500,7 @@ document.documentElement.classList.add("js-ready");
     fr: {
       open: "Ouvrir l’assistant En Avant", title: "Assistant En Avant", subtitle: "Réponses tirées du Livre blanc et du site",
       welcome: "Bonjour ! Je suis l’assistant d’En Avant. Posez-moi vos questions sur le parti, le Livre blanc et ses 20 chantiers, ou sur la façon de vous engager.",
+      welcomeNamed: "Bonjour {nom} ! Ravi de te revoir. De quoi veux-tu discuter aujourd’hui : le Livre blanc, un des 20 chantiers, les prochains événements ?",
       suggestions: ["Que sont les 20 chantiers ?", "Que propose En Avant pour la sécurité ?", "Comment adhérer au parti ?", "Comment faire un don ?"],
       placeholder: "Posez votre question…", send: "Envoyer", reset: "Nouvelle conversation", close: "Fermer l’assistant",
       note: "Réponses générées par une IA à partir des documents d’En Avant : elles peuvent contenir des erreurs. Ne partagez aucune donnée personnelle.",
@@ -509,6 +510,7 @@ document.documentElement.classList.add("js-ready");
     en: {
       open: "Open the En Avant assistant", title: "En Avant Assistant", subtitle: "Answers from the White Paper and the website",
       welcome: "Hello! I am the En Avant assistant. Ask me about the party, its White Paper and its 20 priority areas, or how to get involved.",
+      welcomeNamed: "Hi {nom}! Good to see you. What would you like to talk about today: the White Paper, one of the 20 priority areas, upcoming events?",
       suggestions: ["What are the 20 priority areas?", "What does En Avant propose for security?", "How do I join the party?", "How can I donate?"],
       placeholder: "Ask your question…", send: "Send", reset: "New conversation", close: "Close the assistant",
       note: "AI-generated answers based on En Avant’s documents: they may contain mistakes. Do not share any personal data.",
@@ -518,6 +520,7 @@ document.documentElement.classList.add("js-ready");
     ht: {
       open: "Louvri asistan En Avant", title: "Asistan En Avant", subtitle: "Repons ki soti nan Liv blan an ak sit la",
       welcome: "Bonjou ! Mwen se asistan En Avant. Poze m kesyon sou pati a, Liv blan an ak 20 chantye li yo, oswa sou kijan pou w angaje w.",
+      welcomeNamed: "Bonjou {nom} ! Kontan wè w ankò. Sou ki sa ou vle nou pale jodi a : Liv blan an, youn nan 20 chantye yo, pwochen evènman yo ?",
       suggestions: ["Ki sa 20 chantye yo ye ?", "Ki sa En Avant pwopoze pou sekirite ?", "Kijan pou m vin manm pati a ?", "Kijan pou m fè yon don ?"],
       placeholder: "Poze kesyon ou…", send: "Voye", reset: "Nouvo konvèsasyon", close: "Fèmen asistan an",
       note: "Repons sa yo soti nan yon IA ki baze sou dokiman En Avant : yo ka gen erè. Pa pataje okenn done pèsonèl.",
@@ -527,6 +530,7 @@ document.documentElement.classList.add("js-ready");
     es: {
       open: "Abrir el asistente de En Avant", title: "Asistente de En Avant", subtitle: "Respuestas basadas en el Libro blanco y el sitio",
       welcome: "¡Hola! Soy el asistente de En Avant. Pregúnteme sobre el partido, su Libro blanco y sus 20 ejes de trabajo, o sobre cómo participar.",
+      welcomeNamed: "¡Hola, {nom}! Qué gusto verte. ¿De qué quieres hablar hoy: el Libro blanco, uno de los 20 ejes, los próximos eventos?",
       suggestions: ["¿Cuáles son los 20 ejes de trabajo?", "¿Qué propone En Avant para la seguridad?", "¿Cómo afiliarse al partido?", "¿Cómo hacer una donación?"],
       placeholder: "Escriba su pregunta…", send: "Enviar", reset: "Nueva conversación", close: "Cerrar el asistente",
       note: "Respuestas generadas por una IA a partir de los documentos de En Avant: pueden contener errores. No comparta datos personales.",
@@ -534,6 +538,22 @@ document.documentElement.classList.add("js-ready");
       offline: "No se pudo conectar. Inténtelo de nuevo.",
     },
   };
+
+  /** Session Supabase du navigateur (membre connecté) : jeton et nom d'usage, ou null. */
+  function chatSession() {
+    try {
+      const url = (window.EA_ENV || {}).SUPABASE_URL || "";
+      const ref = url.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || "rgtzwnihabkpudhwiuik";
+      const session = JSON.parse(localStorage.getItem(`sb-${ref}-auth-token`) || "null");
+      if (!session?.access_token) return null;
+      if (session.expires_at && session.expires_at < Date.now() / 1000) return null;
+      const meta = session.user?.user_metadata || {};
+      const nom = String(meta.pseudo || String(meta.nom || "").trim().split(/\s+/)[0] || "").slice(0, 40);
+      return { token: session.access_token, nom };
+    } catch {
+      return null;
+    }
+  }
 
   /** Langue choisie sur le site (sélecteur de langue), français par défaut. */
   function siteLanguage() {
@@ -633,7 +653,8 @@ document.documentElement.classList.add("js-ready");
     function renderAll() {
       const log = panel.querySelector(".eac-log");
       log.innerHTML = "";
-      bubble("bot", chatFormat(t().welcome));
+      const nom = chatSession()?.nom;
+      bubble("bot", chatFormat(nom ? t().welcomeNamed.replace("{nom}", nom) : t().welcome));
       history.forEach((m) => bubble(m.role === "user" ? "user" : "bot",
         m.role === "user" ? `<p>${chatEscape(m.content)}</p>` : chatFormat(m.content), m.sources));
       panel.querySelector(".eac-suggest").hidden = history.length > 0;
@@ -656,9 +677,10 @@ document.documentElement.classList.add("js-ready");
       typing.setAttribute("aria-label", t().typing);
       const previous = history.map(({ role, content }) => ({ role, content }));
       try {
+        const session = chatSession();
         const res = await fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(session ? { Authorization: `Bearer ${session.token}` } : {}) },
           body: JSON.stringify({ question: text, langue: lang, history: previous }),
         });
         const data = await res.json().catch(() => ({}));

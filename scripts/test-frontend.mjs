@@ -476,6 +476,34 @@ test('Accueil : classement du quiz flouté jusqu’à 10 joueurs, puis vrai top 
   }
 });
 
+test('Assistant : membre connecté accueilli par son pseudo, jeton de session envoyé au serveur', async () => {
+  const dom = await page('index.html', '/');
+  const { window } = dom;
+  window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+  window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  window.EA_ENV = { SUPABASE_URL: 'https://rgtzwnihabkpudhwiuik.supabase.co' };
+  window.localStorage.setItem('sb-rgtzwnihabkpudhwiuik-auth-token', JSON.stringify({
+    access_token: 'jeton-membre', expires_at: Date.now() / 1000 + 3600, user: { user_metadata: { pseudo: 'TitoTizzy', nom: 'Myrtho Charles' } },
+  }));
+  const calls = [];
+  window.fetch = async (url, options = {}) => {
+    if (url === '/api/chat') { calls.push(options.headers); return response(200, { reponse: 'Hi !', sources: [] }); }
+    return response(200, {});
+  };
+  try { window.eval(await read('js/premium.js')); } catch { /* idem */ }
+  window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+  await settle();
+  window.document.getElementById('chatbotFab').click();
+  const panel = window.document.getElementById('eaChatPanel');
+  assert.match(panel.querySelector('.eac-msg--bot').textContent, /Bonjour TitoTizzy/);
+  const input = panel.querySelector('textarea');
+  input.value = 'hey';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settle(); await settle();
+  assert.equal(calls[0].Authorization, 'Bearer jeton-membre');
+  dom.window.close();
+});
+
 test('Assistant : absent de l’administration et de la connexion, ajouté sur les pages publiques sans bouton', async () => {
   for (const [file, path, expected] of [['login.html', '/login', false], ['don.html', '/don', true]]) {
     const dom = await page(file, path);
