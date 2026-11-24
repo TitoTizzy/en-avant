@@ -558,6 +558,15 @@ test('Admin : page Audience reliée à Google Analytics, réservée au droit voi
   assert.ok(vercel.rewrites.some((r) => r.source === '/api/admin/audience' && r.destination === '/api/admin?action=audience'));
 });
 
+test('Éditeurs (newsletter, articles) : texte toujours sombre sur la zone blanche', async () => {
+  const css = await read('css/ultra.css');
+  const html = await read('admin.html');
+  assert.match(css, /\.ql-container\.ql-snow \.ql-editor :is\(p, h1, h2, h3[^)]*strong[^)]*span[^)]*\) \{\s*color: #111827;/);
+  assert.doesNotMatch(css.match(/\.ql-container\.ql-snow \.ql-editor :is\([^{]*\{[^}]*\}/)[0], /!important/, 'les couleurs choisies dans la barre d’outils restent prioritaires');
+  assert.match(html, /id="nl-content-editor"/);
+  assert.match(html, /id="article-content-editor"/);
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
