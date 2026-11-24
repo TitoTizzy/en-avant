@@ -448,6 +448,34 @@ test('Assistant : suit la langue choisie sur le site (créole puis espagnol) et 
   dom.window.close();
 });
 
+test('Accueil : classement du quiz flouté jusqu’à 10 joueurs, puis vrai top 5 (pseudos échappés)', async () => {
+  for (const [payload, live] of [
+    [{ actif: false, joueurs: 3, seuil: 10, top: [] }, false],
+    [{ actif: true, joueurs: 12, seuil: 10, top: [{ rang: 1, pseudo: '<b>Tito</b>', points: 1234 }, { rang: 2, pseudo: 'Marie', points: 900 }] }, true],
+  ]) {
+    const dom = await page('index.html', '/');
+    const { window } = dom;
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+    window.fetch = async (url) => (String(url).includes('/api/trivia/classement') ? response(200, payload) : response(200, {}));
+    try { window.eval(await read('js/app.js')); } catch { /* modules décoratifs */ }
+    await settle(); await settle();
+    const box = window.document.getElementById('home-leaderboard');
+    assert.equal(box.classList.contains('is-live'), live);
+    if (!live) {
+      assert.match(window.document.getElementById('home-lb-status').textContent, /3\/10/);
+    } else {
+      const rows = [...box.querySelectorAll('.lb-lb-row')];
+      assert.equal(rows.length, 2);
+      assert.equal(rows[0].querySelector('.lb-lb-name').textContent, '<b>Tito</b>');
+      assert.equal(rows[0].querySelector('b'), null, 'pseudo affiché comme texte');
+      assert.match(rows[0].querySelector('.lb-lb-score').textContent, /1\s?234 pts/);
+      assert.equal(box.getAttribute('aria-hidden'), null);
+    }
+    dom.window.close();
+  }
+});
+
 test('Assistant : absent de l’administration et de la connexion, ajouté sur les pages publiques sans bouton', async () => {
   for (const [file, path, expected] of [['login.html', '/login', false], ['don.html', '/don', true]]) {
     const dom = await page(file, path);
