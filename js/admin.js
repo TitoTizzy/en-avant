@@ -708,7 +708,8 @@
 
   function renderMemberCounts(counts) {
     if (!counts) return;
-    document.querySelectorAll(".member-tab").forEach((tabBtn) => {
+    // Onglets des adhésions seulement (les onglets du quiz partagent la classe .member-tab).
+    document.querySelectorAll(".member-tab[data-tab]").forEach((tabBtn) => {
       const n = counts[tabBtn.dataset.tab] ?? 0;
       tabBtn.querySelector(".member-tab-count").textContent = String(n);
       const active = tabBtn.dataset.tab === currentMemberTab;
@@ -967,8 +968,6 @@
           ["mg-pays", "mg-dep", "mg-ville"].forEach((id) => { document.getElementById(id).value = ""; });
           reloadFirstPage();
         });
-        // Liste chargée dès l'ouverture : les suggestions (pays, régions, villes) sont prêtes tout de suite.
-        load();
         document.getElementById("mg-validate")?.addEventListener("click", async (event) => {
           const button = event.currentTarget;
           if (!window.confirm(`${button.textContent} : le pays et le département déduits de la ville seront enregistrés dans ces fiches. Les lieux déjà déclarés ne changent pas. Continuer ?`)) return;
@@ -983,7 +982,7 @@
             button.disabled = false;
           }
         });
-        document.querySelectorAll(".member-tab").forEach((tabBtn) => {
+        document.querySelectorAll(".member-tab[data-tab]").forEach((tabBtn) => {
           tabBtn.addEventListener("click", () => {
             currentMemberTab = tabBtn.dataset.tab;
             page = 1;
