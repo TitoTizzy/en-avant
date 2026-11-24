@@ -343,14 +343,19 @@ const langueOrNull = (value) => (Object.hasOwn(LANGUES, value) ? value : null);
 
 // Mots fréquents propres à chaque langue (repli si l'analyse par l'IA échoue).
 const MOTS = {
-  fr: `le les des du et est une pour qui dans avec sur je tu il nous vous ils elle cette mais au aux sont être avoir fait
-    comment quoi quel quelle quels pourquoi bonjour merci oui très aussi plus parti propose ça c'est j'ai suis veux peux`,
+  fr: `le la les des du et est une pour qui dans avec sur je tu il nous vous ils elle cette mais au aux sont être avoir fait
+    comment quoi quel quelle quels pourquoi bonjour merci oui très aussi plus parti propose ça c'est j'ai suis veux peux
+    parle parlez dis moi chantier sécurité securité justice économie santé jeunes ce que`,
   en: `the and is are an of to in for what how why who which this that you your we they it with on not do does can about
-    party hello hi hey thanks thank yes please tell me i'm it's what's there their my have has would could`,
+    party hello hi hey thanks thank yes please tell me i'm it's what's there their my have has would could but more
+    system security health economy youth`,
   ht: `mwen ou li nou yo ki sa kisa kijan poukisa pou nan ak gen fè konn vle bonjou mèsi wi tanpri pati pwopoze sak pase
-    m ap kounye ankò anpil kòman kreyòl mezanmi bagay kounya tankou paske genyen ye konsa`,
-  es: `el los las del una para por con cómo qué cuál hola gracias sí partido propone usted tú yo nosotros está son
-    también muy pero quiero puedo qué cuáles dónde cuándo hay es español`,
+    m ap kounye ankò anpil kòman kreyòl mezanmi bagay kounya tankou paske genyen ye konsa e koze sou ekonomi sekirite
+    lapolis jistis sante edikasyon jèn èske eske di pale m'ap kounyea kounye a`,
+  es: `el los las del una para por con cómo como qué cuál hola gracias sí partido propone usted tú yo nosotros está son
+    también muy pero quiero puedo cuáles dónde cuándo hay español diga dígame digame dime háblame hablame cuéntame cuentame
+    menos más sobre policía policia justicia economía economia seguridad salud educación educacion jóvenes jovenes
+    eso esto este esta sistema lo al`,
 };
 const MOTS_SET = Object.fromEntries(Object.entries(MOTS).map(([k, v]) => [k, new Set(v.split(/\s+/).filter(Boolean))]));
 
@@ -385,19 +390,19 @@ export function langueDemandee(text) {
 }
 
 /**
- * Langue de la réponse, par ordre de priorité : langue demandée dans ce message,
- * langue demandée plus tôt (maintenue jusqu'à nouvelle demande), langue majoritaire
- * du message, langue de la conversation, langue du site.
+ * Langue de la réponse, comme un assistant IA : la langue demandée dans ce message,
+ * sinon la langue majoritaire de ce message, sinon (message sans langue : « ok », « 👍 »)
+ * la langue de la conversation, sinon celle du site.
  */
-export function choisirLangue({ demandee, imposee, dominante, conversation, site }) {
-  return langueOrNull(demandee) || langueOrNull(imposee) || langueOrNull(dominante)
-    || langueOrNull(conversation) || langueOf(site);
+export function choisirLangue({ demandee, dominante, conversation, site }) {
+  return langueOrNull(demandee) || langueOrNull(dominante) || langueOrNull(conversation) || langueOf(site);
 }
 
 /** Consigne de l'analyse rapide d'un message (langue, ton, requête de recherche). */
 export const ANALYSE = `Tu analyses le dernier message d'un visiteur d'un chatbot sur le parti politique haïtien En Avant. Réponds UNIQUEMENT par un objet JSON sur une ligne :
 {"langue":"fr|en|ht|es|null","langue_demandee":"fr|en|ht|es|null","requete_fr":"…","ton":"…"}
-- langue : langue majoritaire du message, en comptant les mots de chaque langue (français fr, anglais en, créole haïtien ht, espagnol es). Si les mots sont mélangés, prends la langue qui a le plus de mots. null si le message est trop court ou sans langue identifiable (« ok », « 👍 », un nom propre seul).
+- langue : langue du DERNIER message uniquement (français fr, anglais en, créole haïtien ht, espagnol es). Ignore complètement la langue du contexte et des messages précédents. Le visiteur peut faire des fautes de frappe ou d'orthographe : reconnais la langue quand même. Si les mots sont mélangés, prends la langue qui a le plus de mots. null seulement si le message n'a aucune langue identifiable (« ok », « 👍 », un nom propre seul).
+  Exemples : « Diga me menos on la policia » → es ; « but what about the justice system? » → en ; « e pou koze ekonomi? » → ht ; « PArle moi du chantier securité » → fr ; « I want to know ce que le parti propose » → fr (plus de mots français) ; « sak pase » → ht ; « ok » → null.
 - langue_demandee : la langue que le visiteur demande explicitement pour la réponse (« réponds en créole », « in English please », « an kreyòl tanpri »), sinon null.
 - requete_fr : reformulation autonome EN FRANÇAIS de ce que cherche le visiteur, en tenant compte du contexte (« et pour la santé ? » après une question sur la sécurité → « propositions d'En Avant pour la santé »). Mots-clés utiles pour chercher dans le Livre blanc. Chaîne vide pour une simple salutation.
 - ton : 3 à 8 mots décrivant le ton du visiteur (ex. « décontracté, tutoie, curieux », « formel, vouvoie, pressé », « agacé, sceptique »).

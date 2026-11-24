@@ -563,7 +563,7 @@ test('Assistant : réponse en flux affichée progressivement, langue de conversa
   window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
   const sent = [];
   const lines = [
-    { type: 'meta', langue: 'ht', langue_imposee: 'ht' },
+    { type: 'meta', langue: 'ht' },
     { type: 'delta', text: 'Dakò, m ap reponn ou an kreyòl.\n\nLiv blan an pale de sekirite ' },
     { type: 'delta', text: '([Livre blanc, p. 40](/docs/livre-blanc.pdf#page=40)).' },
     { type: 'done', reponse: 'Dakò, m ap reponn ou an kreyòl.\n\nLiv blan an pale de sekirite ([Livre blanc, p. 40](/docs/livre-blanc.pdf#page=40)).',
@@ -606,12 +606,12 @@ test('Assistant : réponse en flux affichée progressivement, langue de conversa
   assert.equal(bot.querySelector('.eac-caret'), null);
   assert.deepEqual([...bot.querySelectorAll('.eac-sources a')].map((a) => a.getAttribute('href')), ['/docs/livre-blanc.pdf#page=40']);
   assert.ok(bot.querySelector('p a[href="/docs/livre-blanc.pdf#page=40"]'));
-  assert.deepEqual(JSON.parse(window.sessionStorage.getItem('ea-chat-langue')), { conv: 'ht', imposee: 'ht' });
+  assert.deepEqual(JSON.parse(window.sessionStorage.getItem('ea-chat-langue')), { conv: 'ht' });
 
   input.value = 'Et pour la santé ?';
   input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
   await new Promise((r) => setTimeout(r, 50));
   assert.equal(sent[1].langue_conv, 'ht');
-  assert.equal(sent[1].langue_imposee, 'ht');
+  assert.ok(!('langue_imposee' in sent[1]));
   dom.window.close();
 });

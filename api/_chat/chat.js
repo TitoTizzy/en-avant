@@ -1,10 +1,10 @@
 // POST /api/chat — Assistant En Avant (public).
-//   { question, langue?: langue du site, langue_conv?: langue de la conversation, langue_imposee?: langue demandée plus tôt,
+//   { question, langue?: langue du site, langue_conv?: langue de la conversation (message sans langue identifiable),
 //     history?: [{ role:'user'|'assistant', content }], stream?: true }
-//   → { reponse, sources: [{ titre, url }], langue, langue_imposee }
-//   stream: true → flux NDJSON : {type:'meta', langue, langue_imposee} puis {type:'delta', text}… puis
+//   → { reponse, sources: [{ titre, url }], langue }
+//   stream: true → flux NDJSON : {type:'meta', langue} puis {type:'delta', text}… puis
 //   {type:'done', reponse, sources} (ou {type:'error', error}). Les erreurs avant le début de la réponse restent en JSON.
-// Langue de réponse : demandée dans le message > demandée plus tôt > majoritaire dans le message > conversation > site.
+// Langue de réponse : demandée dans le message > majoritaire dans le message > conversation > site.
 // Garde-fous : 10 messages / 5 min par visiteur, 40 / 24 h (100 pour un membre connecté), plafond global par jour
 // (CHAT_DAILY_LIMIT, 1500 par défaut) ; question ≤ 800 caractères ; réponse ≤ 2 000 tokens.
 // L'adresse IP n'est jamais stockée : seule une empreinte SHA-256 sert au quota.
@@ -15,7 +15,7 @@ import { json, methodGuard, getBody, handleError } from '../_lib/http.js';
 import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import {
   SYSTEM, ANALYSE, buildPrompt, cleanHistory, loadIndex, search, sourcesOf, langueOf, message, displayNameOf,
-  detectLangue, langueDemandee, choisirLangue, parseAnalyse, LANGUES, withChantier,
+  detectLangue, langueDemandee, choisirLangue, parseAnalyse, withChantier,
 } from '../_lib/chat.js';
 
 const MODEL = process.env.CHAT_MODEL || 'claude-haiku-5-5';
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
     const site = langueOf(body.langue);
     const question = String(body.question ?? '').replace(/\s+/g, ' ').trim();
     // Messages d'erreur : langue probable du visiteur.
-    let langue = choisirLangue({ demandee: langueDemandee(question), imposee: body.langue_imposee, dominante: detectLangue(question), conversation: body.langue_conv, site });
+    let langue = choisirLangue({ demandee: langueDemandee(question), dominante: detectLangue(question), conversation: body.langue_conv, site });
     if (question.length < 2) return json(res, 422, { error: message('vide', langue) });
     if (question.length > 800) return json(res, 422, { error: message('long', langue) });
     if (!process.env.ANTHROPIC_API_KEY) return json(res, 503, { error: message('indispo', langue) });
@@ -122,8 +122,7 @@ export default async function handler(req, res) {
         .gte('date_cible', new Date().toISOString()).order('date_cible').limit(5),
     ]);
     const demandee = langueDemandee(question) || info.langueDemandee;
-    const imposee = demandee || (Object.hasOwn(LANGUES, body.langue_imposee ?? '') ? body.langue_imposee : null);
-    langue = choisirLangue({ demandee, imposee, dominante: info.langue, conversation: body.langue_conv, site });
+    langue = choisirLangue({ demandee, dominante: info.langue || detectLangue(question), conversation: body.langue_conv, site });
 
     // Recherche : requête reformulée en français + question ; relance courte → question précédente en appui.
     const lastUser = [...history].reverse().find((m) => m.role === 'user')?.content || '';
@@ -163,7 +162,7 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
       res.setHeader('X-Accel-Buffering', 'no');
       const line = (payload) => res.write(`${JSON.stringify(payload)}\n`);
-      line({ type: 'meta', langue, langue_imposee: imposee });
+      line({ type: 'meta', langue });
       let text = '';
       let stop = null;
       try {
@@ -191,7 +190,7 @@ export default async function handler(req, res) {
 
     const reponse = finish((response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n'), response.stop_reason);
     if (!reponse) return json(res, 502, { error: message('vide_reponse', langue) });
-    return json(res, 200, { reponse, sources: sourcesOf(passages, reponse), langue, langue_imposee: imposee });
+    return json(res, 200, { reponse, sources: sourcesOf(passages, reponse), langue });
   } catch (error) {
     console.error('[chat] erreur :', error?.message || error);
     return handleError(res, Number.isInteger(error?.status) && error.status < 500 ? error : new Error('chat'),
