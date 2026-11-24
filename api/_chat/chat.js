@@ -37,7 +37,6 @@ async function ask(anthropic, model, messages) {
   return anthropic.messages.create({
     model,
     max_tokens: 700,
-    temperature: 0.2,
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages,
   });
@@ -79,18 +78,26 @@ export default async function handler(req, res) {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 1 });
     let response;
     try {
-      response = await ask(anthropic, MODEL, messages);
+      try {
+        response = await ask(anthropic, MODEL, messages);
+      } catch (error) {
+        if (error?.status !== 404 || MODEL === FALLBACK_MODEL) throw error;
+        response = await ask(anthropic, FALLBACK_MODEL, messages);
+      }
     } catch (error) {
-      if (error?.status !== 404 || MODEL === FALLBACK_MODEL) throw error;
-      response = await ask(anthropic, FALLBACK_MODEL, messages);
+      // Le détail technique reste dans les journaux, jamais affiché au visiteur.
+      console.error('[chat] appel IA échoué :', error?.status, error?.message);
+      const busy = error?.status === 429 || error?.status === 529;
+      return json(res, 503, {
+        error: busy ? 'L’assistant est très sollicité. Réessayez dans un instant.' : 'L’assistant est momentanément indisponible.',
+      });
     }
     const reponse = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
     if (!reponse) return json(res, 502, { error: 'Pas de réponse pour le moment. Réessayez.' });
     return json(res, 200, { reponse: reponse.slice(0, 4000), sources: sourcesOf(passages) });
   } catch (error) {
-    if (error?.status === 429 || error?.status === 529) {
-      return json(res, 503, { error: 'L’assistant est très sollicité. Réessayez dans un instant.' });
-    }
-    return handleError(res, error, 'L’assistant est momentanément indisponible.');
+    console.error('[chat] erreur :', error?.message || error);
+    return handleError(res, Number.isInteger(error?.status) && error.status < 500 ? error : new Error('chat'),
+      'L’assistant est momentanément indisponible.');
   }
 }
