@@ -567,6 +567,101 @@ test('Éditeurs (newsletter, articles) : texte toujours sombre sur la zone blanc
   assert.match(html, /id="article-content-editor"/);
 });
 
+const ARTICLES_TEST = [
+  { slug: 'deux', titre: 'Deuxième article', categorie: 'politique', published_at: '2026-11-23T12:00:00Z', image_url: 'https://cdn.test/deux.jpg' },
+  { slug: 'une', titre: 'Article à la une', excerpt: 'Résumé', categorie: 'actualite', published_at: '2026-11-24T12:00:00Z', is_featured: true, image_url: 'https://cdn.test/une.webp' },
+  { slug: 'trois', titre: 'Troisième <b>article</b>', categorie: 'diaspora', published_at: '2026-11-22T12:00:00Z', image_url: null },
+  { slug: 'quatre', titre: 'Quatrième article', categorie: 'programme', published_at: '2026-11-21T12:00:00Z', image_url: 'https://cdn.test/quatre.png' },
+];
+const FAUX_ARTICLES = /Rencontre (avec la diaspora|historique avec la diaspora haïtienne) à Boston|Lancement (de la campagne nationale|officiel de la grande campagne)|Renforcement des coordinations régionales|annonce ses 20 chantiers prioritaires|annonce ses grandes réformes institutionnelles/;
+
+async function homeWith(fetchImpl) {
+  const dom = await page('index.html', '/');
+  const { window } = dom;
+  window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+  window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  window.fetch = fetchImpl;
+  try { window.eval(await read('js/app.js')); } catch { /* modules décoratifs */ }
+  window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+  const news = window.document.querySelector('[data-news]');
+  for (let i = 0; i < 100 && news.classList.contains('is-loading'); i += 1) await new Promise((r) => setTimeout(r, 5));
+  return dom;
+}
+
+test('Accueil : chaque article montre SA photo (aucun srcset hérité), miniatures dans « Autres articles »', async () => {
+  const dom = await homeWith(async (url) => (String(url).includes('/api/articles') ? response(200, { articles: ARTICLES_TEST }) : response(200, {})));
+  const doc = dom.window.document;
+  const imgs = [...doc.querySelectorAll('.u-news img')];
+  assert.ok(imgs.length >= 4);
+  for (const img of imgs) {
+    assert.equal(img.hasAttribute('srcset'), false, 'un srcset l’emporterait sur la photo de l’article');
+    assert.equal(img.hasAttribute('sizes'), false);
+  }
+  const feature = doc.querySelector('[data-news-feature]');
+  assert.equal(feature.querySelector('.feature-media img').getAttribute('src'), 'https://cdn.test/une.webp', 'la photo de l’article à la une');
+  assert.equal(feature.querySelector('h3').textContent, 'Article à la une');
+  assert.match(feature.querySelector('.feature-media').href, /slug=une$/);
+  const items = [...doc.querySelectorAll('[data-news-list] .news-item')];
+  assert.deepEqual(items.map((i) => i.querySelector('h4').textContent), ['Deuxième article', 'Troisième <b>article</b>', 'Quatrième article']);
+  assert.equal(items[1].querySelector('h4 b'), null, 'titres affichés comme texte');
+  assert.deepEqual(items.map((i) => i.querySelector('.news-thumb img').getAttribute('src')), ['https://cdn.test/deux.jpg', '/pictures/foule-Assise-800.webp', 'https://cdn.test/quatre.png']);
+  assert.equal(doc.querySelectorAll('.news-skel').length, 0, 'squelettes retirés');
+  assert.doesNotMatch(doc.querySelector('.u-news').textContent, FAUX_ARTICLES);
+  dom.window.close();
+});
+
+test('Accueil : panne de l’actualité → message et lien, jamais de faux articles', async () => {
+  const dom = await homeWith(async (url) => { if (String(url).includes('/api/articles')) throw new Error('réseau'); return response(200, {}); });
+  const doc = dom.window.document;
+  assert.equal(doc.querySelector('[data-news-feature]'), null);
+  assert.equal(doc.querySelectorAll('.news-item').length, 0);
+  assert.equal(doc.querySelector('[data-news-error]').hidden, false);
+  assert.ok(doc.querySelector('.news-cta-box a[href="/blog.html"]'));
+  dom.window.close();
+});
+
+test('Pages publiques : aucun faux article ni photo en dur dans les zones d’actualité', async () => {
+  for (const file of ['index.html', 'blog.html']) assert.doesNotMatch(await read(file), FAUX_ARTICLES, file);
+  const home = new JSDOM(await read('index.html')).window.document;
+  assert.equal(home.querySelectorAll('.u-news img').length, 0, 'aucune image statique à remplacer');
+  const blog = new JSDOM(await read('blog.html')).window.document;
+  assert.equal(blog.querySelectorAll('#articles-grid article').length, 0);
+  assert.equal(blog.querySelectorAll('.blog-pagination a').length, 0, 'pas de fausse pagination');
+});
+
+test('Blog : panne → message et bouton Réessayer ; aucun article → message clair', async () => {
+  for (const [impl, attendu] of [
+    [async () => { throw new Error('réseau'); }, /n’a pas pu être chargée/],
+    [async () => response(200, { articles: [], total: 0 }), /Aucun article publié/],
+  ]) {
+    const dom = await page('blog.html', '/blog');
+    dom.window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+    dom.window.fetch = impl;
+    dom.window.eval(await read('js/blog.js'));
+    await settle(); await settle();
+    const grid = dom.window.document.getElementById('articles-grid');
+    assert.match(grid.textContent, attendu);
+    assert.equal(grid.querySelectorAll('article').length, 0);
+    dom.window.close();
+  }
+});
+
+test('Article : « Autres articles » avec miniatures, sans l’article en cours', async () => {
+  const dom = await page('article-details.html', '/article-details?slug=une');
+  dom.window.fetch = async (url) => (String(url).includes('limit=5')
+    ? response(200, { articles: ARTICLES_TEST })
+    : response(200, { article: { ...ARTICLES_TEST[1], contenu: '<p>Texte</p>' } }));
+  dom.window.eval(await read('js/article.js'));
+  await settle(); await settle(); await settle();
+  const doc = dom.window.document;
+  const others = [...doc.querySelectorAll('#art-recent .art-other')];
+  assert.equal(others.length, 3);
+  assert.ok(!others.some((a) => /slug=une$/.test(a.href)), 'l’article lu n’est pas proposé');
+  assert.ok(others.every((a) => a.querySelector('.art-other-thumb img')?.getAttribute('src')), 'chaque article a sa miniature');
+  assert.equal(doc.querySelector('.art-aside h4').textContent, 'Autres articles');
+  dom.window.close();
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));

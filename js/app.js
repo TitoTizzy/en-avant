@@ -96,84 +96,114 @@ function initMobileMenu() {
   });
 }
 
+/* Photo d'article : on crée TOUJOURS une image neuve (jamais de srcset/sizes hérités du HTML,
+   qui l'emporteraient sur src et afficheraient une autre photo). Repli si l'image manque ou casse. */
+const NEWS_FALLBACK_IMG = "/pictures/foule-Assise-800.webp";
+function newsImage(url, alt, { eager = false } = {}) {
+  const img = document.createElement("img");
+  img.decoding = "async";
+  img.loading = eager ? "eager" : "lazy";
+  img.alt = alt || "";
+  img.src = url || NEWS_FALLBACK_IMG;
+  img.addEventListener("error", () => {
+    if (img.dataset.fallback) return;
+    img.dataset.fallback = "1";
+    img.src = NEWS_FALLBACK_IMG;
+  });
+  return img;
+}
+
 async function hydrateNews() {
-  const featureCard = document.querySelector(".feature-card");
-  const miniCards   = document.querySelectorAll(".mini-news-card");
-  const newsSection = featureCard?.closest("section") || null;
-  if (!featureCard && !miniCards.length) return;
+  const root = document.querySelector("[data-news]");
+  if (!root) return;
+  const featureCard = root.querySelector("[data-news-feature]");
+  const list        = root.querySelector("[data-news-list]");
+  const errorBox    = root.querySelector("[data-news-error]");
+  const newsSection = root.closest("section");
 
   const CAT_LABELS = {
     actualite: "Actualité", politique: "Politique", economie: "Économie",
     societe: "Société",     diaspora:  "Diaspora",   programme: "Programme",
     communique: "Communiqué",
   };
-
+  const catOf = (a) => CAT_LABELS[a.categorie] || a.categorie || "Actualité";
+  const hrefOf = (a) => `/article-details.html?slug=${encodeURIComponent(a.slug)}`;
   const fmtDate = (iso) => {
-    try {
-      return new Date(iso).toLocaleDateString("fr-FR", {
-        day: "numeric", month: "long", year: "numeric",
-      });
-    } catch { return ""; }
+    try { return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); }
+    catch { return ""; }
   };
+  const done = () => { root.classList.remove("is-loading"); root.removeAttribute("aria-busy"); };
 
+  let arts = [];
   try {
-    const res     = await fetch("/api/articles?limit=4", { signal: AbortSignal.timeout(4000) });
+    const res     = await fetch("/api/articles?limit=4", { signal: AbortSignal.timeout(6000) });
     const payload = await res.json().catch(() => ({}));
-
-    // Cacher la section si aucun article publié
-    if (!res.ok || !payload.articles?.length) {
-      if (newsSection) newsSection.hidden = true;
-      return;
-    }
-
-    if (newsSection) newsSection.hidden = false;
-
-    // Featured article: prefer is_featured flag, fallback to most recent
-    const arts    = payload.articles;
-    const featIdx = arts.findIndex((a) => a.is_featured);
-    const ordered = featIdx > 0 ? [arts[featIdx], ...arts.filter((_, i) => i !== featIdx)] : arts;
-
-    // Article vedette
-    if (featureCard && ordered[0]) {
-      const a    = ordered[0];
-      const cat  = CAT_LABELS[a.categorie] || a.categorie || "Actualité";
-      const href = `/article-details.html?slug=${encodeURIComponent(a.slug)}`;
-
-      const img    = featureCard.querySelector(".feature-media img");
-      const badge  = featureCard.querySelector(".feature-badge");
-      const spans  = featureCard.querySelectorAll(".meta-row span");
-      const h3     = featureCard.querySelector("h3");
-      const p      = featureCard.querySelector("p");
-      const link   = featureCard.querySelector("a.text-link");
-
-      if (img   && a.image_url) { img.src = a.image_url; img.alt = a.titre; }
-      if (badge) badge.textContent = cat;
-      if (spans[0]) spans[0].textContent = fmtDate(a.published_at);
-      if (spans[1]) spans[1].textContent = cat;
-      if (h3)   h3.textContent  = a.titre;
-      if (p)    p.textContent   = a.excerpt || "";
-      if (link) link.href       = href;
-    }
-
-    // Cartes secondaires (articles 2, 3, 4)
-    miniCards.forEach((card, i) => {
-      const a = ordered[i + 1];
-      if (!a) return;
-      const cat  = CAT_LABELS[a.categorie] || a.categorie || "Actualité";
-      const href = `/article-details.html?slug=${encodeURIComponent(a.slug)}`;
-
-      const spans = card.querySelectorAll(".mini-news-meta span");
-      const h4    = card.querySelector("h4");
-      const link  = card.querySelector("a");
-
-      if (spans[0]) spans[0].textContent = fmtDate(a.published_at);
-      if (spans[1]) spans[1].textContent = cat;
-      if (h4)   h4.textContent = a.titre;
-      if (link) link.href      = href;
-    });
+    if (!res.ok) throw new Error("api");
+    arts = payload.articles || [];
   } catch {
-    /* Repli volontaire — le HTML statique reste affiché */
+    // Échec réseau : aucun faux article, seulement un message et le lien vers le blog.
+    featureCard?.remove();
+    list?.remove();
+    root.querySelector(".news-stack-title")?.remove();
+    if (errorBox) errorBox.hidden = false;
+    root.classList.add("is-empty");
+    done();
+    return;
   }
+
+  if (!arts.length) { if (newsSection) newsSection.hidden = true; return; }
+  if (newsSection) newsSection.hidden = false;
+
+  const featIdx = arts.findIndex((a) => a.is_featured);
+  const ordered = featIdx > 0 ? [arts[featIdx], ...arts.filter((_, i) => i !== featIdx)] : arts;
+
+  // Article à la une
+  if (featureCard) {
+    const a = ordered[0];
+    const media = featureCard.querySelector(".feature-media");
+    media.href = hrefOf(a);
+    media.querySelectorAll("img, .news-skel").forEach((el) => el.remove());
+    media.prepend(newsImage(a.image_url, a.titre, { eager: true }));
+    const badge = media.querySelector(".feature-badge");
+    if (badge) { badge.textContent = catOf(a); badge.hidden = false; }
+    const meta = featureCard.querySelector(".meta-row");
+    meta.replaceChildren(...[fmtDate(a.published_at), catOf(a)].filter(Boolean).map((t) => {
+      const span = document.createElement("span"); span.textContent = t; return span;
+    }));
+    featureCard.querySelector("h3").textContent = a.titre;
+    const p = featureCard.querySelector("p");
+    p.textContent = a.excerpt || "";
+    p.hidden = !a.excerpt;
+    featureCard.querySelector("a.text-link").href = hrefOf(a);
+  }
+
+  // Autres articles : une carte par article, avec sa miniature
+  if (list) {
+    const others = ordered.slice(1);
+    list.replaceChildren(...others.map((a) => {
+      const card = document.createElement("a");
+      card.className = "news-item";
+      card.href = hrefOf(a);
+      const thumb = document.createElement("div");
+      thumb.className = "news-thumb";
+      thumb.appendChild(newsImage(a.image_url, ""));
+      const body = document.createElement("div");
+      body.className = "news-item-body";
+      const meta = document.createElement("span");
+      meta.className = "news-item-meta";
+      meta.textContent = [fmtDate(a.published_at), catOf(a)].filter(Boolean).join(" · ");
+      const title = document.createElement("h4");
+      title.textContent = a.titre;
+      const more = document.createElement("span");
+      more.className = "news-item-more";
+      more.textContent = "Lire l’article";
+      body.append(meta, title, more);
+      card.append(thumb, body);
+      return card;
+    }));
+    if (!others.length) { list.remove(); root.querySelector(".news-stack-title")?.remove(); }
+  }
+  done();
 }
 
 async function hydrateLeaderboard() {
