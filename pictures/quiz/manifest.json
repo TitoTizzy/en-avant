@@ -1,0 +1,785 @@
+[
+  {
+    "id": "quiz-chantier-01-securite",
+    "fichier": "pictures/quiz/quiz-chantier-01-securite.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-01-securite-800.webp",
+    "categorie": "chantier",
+    "chantier": 1,
+    "titre": "SÉCURITÉ",
+    "legende": "Illustration symbolique du chantier 1 : SÉCURITÉ. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 1, intitulé « SÉCURITÉ » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "1- SÉCURITÉ"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 38 (pagination imprimée identique).",
+    "elements_visibles": [
+      "1",
+      "SÉCURITÉ"
+    ]
+  },
+  {
+    "id": "quiz-chantier-02-defense-et-protection-civile",
+    "fichier": "pictures/quiz/quiz-chantier-02-defense-et-protection-civile.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-02-defense-et-protection-civile-800.webp",
+    "categorie": "chantier",
+    "chantier": 2,
+    "titre": "DÉFENSE ET PROTECTION CIVILE",
+    "legende": "Illustration symbolique du chantier 2 : DÉFENSE ET PROTECTION CIVILE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 2, intitulé « DÉFENSE ET PROTECTION CIVILE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "2- DÉFENSE ET PROTECTION CIVILE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 52 (pagination imprimée identique).",
+    "elements_visibles": [
+      "2",
+      "DÉFENSE ET PROTECTION CIVILE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-03-economie-et-creation-demplois",
+    "fichier": "pictures/quiz/quiz-chantier-03-economie-et-creation-demplois.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-03-economie-et-creation-demplois-800.webp",
+    "categorie": "chantier",
+    "chantier": 3,
+    "titre": "ECONOMIE ET CRÉATION D’EMPLOIS",
+    "legende": "Illustration symbolique du chantier 3 : ECONOMIE ET CRÉATION D’EMPLOIS. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 3, intitulé « ECONOMIE ET CRÉATION D’EMPLOIS » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "3- ECONOMIE ET CRÉATION D’EMPLOIS"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 56 (pagination imprimée identique).",
+    "elements_visibles": [
+      "3",
+      "ECONOMIE ET CRÉATION D’EMPLOIS"
+    ]
+  },
+  {
+    "id": "quiz-chantier-04-education",
+    "fichier": "pictures/quiz/quiz-chantier-04-education.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-04-education-800.webp",
+    "categorie": "chantier",
+    "chantier": 4,
+    "titre": "EDUCATION",
+    "legende": "Illustration symbolique du chantier 4 : EDUCATION. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 4, intitulé « EDUCATION » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "4-EDUCATION"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 65 (pagination imprimée identique).",
+    "elements_visibles": [
+      "4",
+      "EDUCATION"
+    ]
+  },
+  {
+    "id": "quiz-chantier-05-diaspora",
+    "fichier": "pictures/quiz/quiz-chantier-05-diaspora.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-05-diaspora-800.webp",
+    "categorie": "chantier",
+    "chantier": 5,
+    "titre": "DIASPORA",
+    "legende": "Illustration symbolique du chantier 5 : DIASPORA. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 5, intitulé « DIASPORA » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "5-DIASPORA"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 79 (pagination imprimée identique).",
+    "elements_visibles": [
+      "5",
+      "DIASPORA"
+    ]
+  },
+  {
+    "id": "quiz-chantier-06-sante",
+    "fichier": "pictures/quiz/quiz-chantier-06-sante.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-06-sante-800.webp",
+    "categorie": "chantier",
+    "chantier": 6,
+    "titre": "SANTÉ",
+    "legende": "Illustration symbolique du chantier 6 : SANTÉ. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 6, intitulé « SANTÉ » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "6- SANTÉ"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 86 (pagination imprimée identique).",
+    "elements_visibles": [
+      "6",
+      "SANTÉ"
+    ]
+  },
+  {
+    "id": "quiz-chantier-07-egalite-hommes-femmes",
+    "fichier": "pictures/quiz/quiz-chantier-07-egalite-hommes-femmes.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-07-egalite-hommes-femmes-800.webp",
+    "categorie": "chantier",
+    "chantier": 7,
+    "titre": "EGALITÉ HOMMES - FEMMES",
+    "legende": "Illustration symbolique du chantier 7 : EGALITÉ HOMMES - FEMMES. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 7, intitulé « EGALITÉ HOMMES - FEMMES » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "7- EGALITÉ HOMMES - FEMMES"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 94 (pagination imprimée identique).",
+    "elements_visibles": [
+      "7",
+      "EGALITÉ HOMMES - FEMMES"
+    ]
+  },
+  {
+    "id": "quiz-chantier-08-environnement-et-amenagement-du-territoire",
+    "fichier": "pictures/quiz/quiz-chantier-08-environnement-et-amenagement-du-territoire.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-08-environnement-et-amenagement-du-territoire-800.webp",
+    "categorie": "chantier",
+    "chantier": 8,
+    "titre": "ENVIRONNEMENT ET AMÉNAGEMENT DU TERRITOIRE",
+    "legende": "Illustration symbolique du chantier 8 : ENVIRONNEMENT ET AMÉNAGEMENT DU TERRITOIRE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 8, intitulé « ENVIRONNEMENT ET AMÉNAGEMENT DU TERRITOIRE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "8-ENVIRONNEMENT ET AMÉNAGEMENT DU TERRITOIRE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 102 (pagination imprimée identique).",
+    "elements_visibles": [
+      "8",
+      "ENVIRONNEMENT ET AMÉNAGEMENT DU TERRITOIRE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-09-culture",
+    "fichier": "pictures/quiz/quiz-chantier-09-culture.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-09-culture-800.webp",
+    "categorie": "chantier",
+    "chantier": 9,
+    "titre": "CULTURE",
+    "legende": "Illustration symbolique du chantier 9 : CULTURE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 9, intitulé « CULTURE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "9-CULTURE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 109 (pagination imprimée identique).",
+    "elements_visibles": [
+      "9",
+      "CULTURE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-10-jeunesse-sport-et-action-civique",
+    "fichier": "pictures/quiz/quiz-chantier-10-jeunesse-sport-et-action-civique.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-10-jeunesse-sport-et-action-civique-800.webp",
+    "categorie": "chantier",
+    "chantier": 10,
+    "titre": "JEUNESSE, SPORT ET ACTION CIVIQUE",
+    "legende": "Illustration symbolique du chantier 10 : JEUNESSE, SPORT ET ACTION CIVIQUE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 10, intitulé « JEUNESSE, SPORT ET ACTION CIVIQUE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "10- JEUNESSE, SPORT ET ACTION CIVIQUE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 114 (pagination imprimée identique).",
+    "elements_visibles": [
+      "10",
+      "JEUNESSE, SPORT ET ACTION CIVIQUE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-11-justice",
+    "fichier": "pictures/quiz/quiz-chantier-11-justice.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-11-justice-800.webp",
+    "categorie": "chantier",
+    "chantier": 11,
+    "titre": "JUSTICE",
+    "legende": "Illustration symbolique du chantier 11 : JUSTICE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 11, intitulé « JUSTICE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "11-JUSTICE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 119 (pagination imprimée identique).",
+    "elements_visibles": [
+      "11",
+      "JUSTICE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-12-tourisme",
+    "fichier": "pictures/quiz/quiz-chantier-12-tourisme.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-12-tourisme-800.webp",
+    "categorie": "chantier",
+    "chantier": 12,
+    "titre": "TOURISME",
+    "legende": "Illustration symbolique du chantier 12 : TOURISME. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 12, intitulé « TOURISME » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "12- TOURISME"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 129 (pagination imprimée identique).",
+    "elements_visibles": [
+      "12",
+      "TOURISME"
+    ]
+  },
+  {
+    "id": "quiz-chantier-13-infrastructures",
+    "fichier": "pictures/quiz/quiz-chantier-13-infrastructures.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-13-infrastructures-800.webp",
+    "categorie": "chantier",
+    "chantier": 13,
+    "titre": "INFRASTRUCTURES",
+    "legende": "Illustration symbolique du chantier 13 : INFRASTRUCTURES. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 13, intitulé « INFRASTRUCTURES » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "13- INFRASTRUCTURES"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 137 (pagination imprimée identique).",
+    "elements_visibles": [
+      "13",
+      "INFRASTRUCTURES"
+    ]
+  },
+  {
+    "id": "quiz-chantier-14-diplomatie-politique-etrangere-et-cooperation-externe",
+    "fichier": "pictures/quiz/quiz-chantier-14-diplomatie-politique-etrangere-et-cooperation-externe.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-14-diplomatie-politique-etrangere-et-cooperation-externe-800.webp",
+    "categorie": "chantier",
+    "chantier": 14,
+    "titre": "DIPLOMATIE, POLITIQUE ÉTRANGÈRE ET COOPÉRATION EXTERNE",
+    "legende": "Illustration symbolique du chantier 14 : DIPLOMATIE, POLITIQUE ÉTRANGÈRE ET COOPÉRATION EXTERNE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 14, intitulé « DIPLOMATIE, POLITIQUE ÉTRANGÈRE ET COOPÉRATION EXTERNE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "14- DIPLOMATIE, POLITIQUE ÉTRANGÈRE ET COOPÉRATION EXTERNE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 146 (pagination imprimée identique).",
+    "elements_visibles": [
+      "14",
+      "DIPLOMATIE, POLITIQUE ÉTRANGÈRE ET COOPÉRATION EXTERNE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-15-production-nationale-et-agriculture",
+    "fichier": "pictures/quiz/quiz-chantier-15-production-nationale-et-agriculture.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-15-production-nationale-et-agriculture-800.webp",
+    "categorie": "chantier",
+    "chantier": 15,
+    "titre": "PRODUCTION NATIONALE ET AGRICULTURE",
+    "legende": "Illustration symbolique du chantier 15 : PRODUCTION NATIONALE ET AGRICULTURE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 15, intitulé « PRODUCTION NATIONALE ET AGRICULTURE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "15- PRODUCTION NATIONALE ET AGRICULTURE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 158 (pagination imprimée identique).",
+    "elements_visibles": [
+      "15",
+      "PRODUCTION NATIONALE ET AGRICULTURE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-16-transparence-et-reddition-de-comptes",
+    "fichier": "pictures/quiz/quiz-chantier-16-transparence-et-reddition-de-comptes.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-16-transparence-et-reddition-de-comptes-800.webp",
+    "categorie": "chantier",
+    "chantier": 16,
+    "titre": "TRANSPARENCE ET REDDITION DE COMPTES",
+    "legende": "Illustration symbolique du chantier 16 : TRANSPARENCE ET REDDITION DE COMPTES. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 16, intitulé « TRANSPARENCE ET REDDITION DE COMPTES » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "16-TRANSPARENCE ET REDDITION DE COMPTES"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 165 (pagination imprimée identique).",
+    "elements_visibles": [
+      "16",
+      "TRANSPARENCE ET REDDITION DE COMPTES"
+    ]
+  },
+  {
+    "id": "quiz-chantier-17-secteur-prive",
+    "fichier": "pictures/quiz/quiz-chantier-17-secteur-prive.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-17-secteur-prive-800.webp",
+    "categorie": "chantier",
+    "chantier": 17,
+    "titre": "SECTEUR PRIVÉ",
+    "legende": "Illustration symbolique du chantier 17 : SECTEUR PRIVÉ. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 17, intitulé « SECTEUR PRIVÉ » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "17- SECTEUR PRIVÉ"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 172 (pagination imprimée identique).",
+    "elements_visibles": [
+      "17",
+      "SECTEUR PRIVÉ"
+    ]
+  },
+  {
+    "id": "quiz-chantier-18-energie",
+    "fichier": "pictures/quiz/quiz-chantier-18-energie.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-18-energie-800.webp",
+    "categorie": "chantier",
+    "chantier": 18,
+    "titre": "ENERGIE",
+    "legende": "Illustration symbolique du chantier 18 : ENERGIE. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 18, intitulé « ENERGIE » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "18- ENERGIE"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 178 (pagination imprimée identique).",
+    "elements_visibles": [
+      "18",
+      "ENERGIE"
+    ]
+  },
+  {
+    "id": "quiz-chantier-19-mines",
+    "fichier": "pictures/quiz/quiz-chantier-19-mines.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-19-mines-800.webp",
+    "categorie": "chantier",
+    "chantier": 19,
+    "titre": "MINES",
+    "legende": "Illustration symbolique du chantier 19 : MINES. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 19, intitulé « MINES » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "19-MINES"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 185 (pagination imprimée identique).",
+    "elements_visibles": [
+      "19",
+      "MINES"
+    ]
+  },
+  {
+    "id": "quiz-chantier-20-collectivites-territoriales",
+    "fichier": "pictures/quiz/quiz-chantier-20-collectivites-territoriales.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chantier-20-collectivites-territoriales-800.webp",
+    "categorie": "chantier",
+    "chantier": 20,
+    "titre": "COLLECTIVITÉS TERRITORIALES",
+    "legende": "Illustration symbolique du chantier 20 : COLLECTIVITÉS TERRITORIALES. Le pictogramme exprime son thème sans représenter de personne ou de lieu réel.",
+    "texte_alternatif": "Numéro 20, intitulé « COLLECTIVITÉS TERRITORIALES » et pictogramme abstrait sur fond bleu nuit.",
+    "faits": [
+      "20 – COLLECTIVITÉS TERRITORIALES"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 193 (pagination imprimée identique).",
+    "elements_visibles": [
+      "20",
+      "COLLECTIVITÉS TERRITORIALES"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-01-economie-emergente",
+    "fichier": "pictures/quiz/quiz-chiffre-01-economie-emergente.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-01-economie-emergente-800.webp",
+    "categorie": "chiffre",
+    "chantier": 3,
+    "titre": "2054 — économie émergente",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. En Avant propose dans son programme de repousser l’échéance à l’année 2054.",
+    "texte_alternatif": "Valeur 2054, extrait « économie émergente », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "En Avant propose dans son programme de repousser l’échéance à l’année 2054."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 20 (pagination imprimée identique).",
+    "elements_visibles": [
+      "l’année",
+      "2054",
+      "économie émergente"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-02-personnes-vivant-en-dessous-du-seuil-de-pauvrete",
+    "fichier": "pictures/quiz/quiz-chiffre-02-personnes-vivant-en-dessous-du-seuil-de-pauvrete.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-02-personnes-vivant-en-dessous-du-seuil-de-pauvrete-800.webp",
+    "categorie": "chiffre",
+    "chantier": 3,
+    "titre": "20% — personnes vivant en dessous du seuil de pauvreté",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Réduire de 20% le nombre de personnes vivant en dessous du seuil de pauvreté suivant le normes dévaluation des nations-unies.",
+    "texte_alternatif": "Valeur 20%, extrait « personnes vivant en dessous du seuil de pauvreté », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Réduire de 20% le nombre de personnes vivant en dessous du seuil de pauvreté suivant le normes dévaluation des nations-unies."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 61 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Réduire de",
+      "20%",
+      "personnes vivant en dessous du seuil de pauvreté"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-03-linflation",
+    "fichier": "pictures/quiz/quiz-chiffre-03-linflation.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-03-linflation-800.webp",
+    "categorie": "chiffre",
+    "chantier": 3,
+    "titre": "10% — l’inflation",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Ramener l’inflation à une moyenne de 10%",
+    "texte_alternatif": "Valeur 10%, extrait « l’inflation », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Ramener l’inflation à une moyenne de 10%"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 61 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Ramener",
+      "10%",
+      "l’inflation"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-04-couverture-sanitaire",
+    "fichier": "pictures/quiz/quiz-chiffre-04-couverture-sanitaire.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-04-couverture-sanitaire-800.webp",
+    "categorie": "chiffre",
+    "chantier": 6,
+    "titre": "100% — couverture sanitaire",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Viser Une couverture sanitaire à 100%",
+    "texte_alternatif": "Valeur 100%, extrait « couverture sanitaire », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Viser Une couverture sanitaire à 100%"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 89 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Viser",
+      "100%",
+      "couverture sanitaire"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-05-budget-sante",
+    "fichier": "pictures/quiz/quiz-chiffre-05-budget-sante.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-05-budget-sante-800.webp",
+    "categorie": "chiffre",
+    "chantier": 6,
+    "titre": "15 % — budget santé",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Augmenter progressivement le pourcentage du budget santé à 15 % du budget National.",
+    "texte_alternatif": "Valeur 15 %, extrait « budget santé », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Augmenter progressivement le pourcentage du budget santé à 15 % du budget National."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 92 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Augmenter",
+      "15 %",
+      "budget santé"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-06-couverture-forestiere-depart",
+    "fichier": "pictures/quiz/quiz-chiffre-06-couverture-forestiere-depart.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-06-couverture-forestiere-depart-800.webp",
+    "categorie": "chiffre",
+    "chantier": 8,
+    "titre": "1,5% — couverture forestière",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Faire passer la couverture forestière du pays de 1,5% à 5%",
+    "texte_alternatif": "Valeur 1,5%, extrait « couverture forestière », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Faire passer la couverture forestière du pays de 1,5% à 5%"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 106 (pagination imprimée identique).",
+    "elements_visibles": [
+      "de",
+      "1,5%",
+      "couverture forestière"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-07-couverture-forestiere",
+    "fichier": "pictures/quiz/quiz-chiffre-07-couverture-forestiere.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-07-couverture-forestiere-800.webp",
+    "categorie": "chiffre",
+    "chantier": 8,
+    "titre": "5% — couverture forestière",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Faire passer la couverture forestière du pays de 1,5% à 5%",
+    "texte_alternatif": "Valeur 5%, extrait « couverture forestière », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Faire passer la couverture forestière du pays de 1,5% à 5%"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 106 (pagination imprimée identique).",
+    "elements_visibles": [
+      "à",
+      "5%",
+      "couverture forestière"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-08-revenu-per-capita-rural",
+    "fichier": "pictures/quiz/quiz-chiffre-08-revenu-per-capita-rural.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-08-revenu-per-capita-rural-800.webp",
+    "categorie": "chiffre",
+    "chantier": 15,
+    "titre": "50% — revenu per capita rural",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Augmenter de 50% le revenu per capita rural.",
+    "texte_alternatif": "Valeur 50%, extrait « revenu per capita rural », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Augmenter de 50% le revenu per capita rural."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 163 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Augmenter de",
+      "50%",
+      "revenu per capita rural"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-09-autosuffisance",
+    "fichier": "pictures/quiz/quiz-chiffre-09-autosuffisance.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-09-autosuffisance-800.webp",
+    "categorie": "chiffre",
+    "chantier": 15,
+    "titre": "60% — autosuffisance",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Réduire de 25% la dépendance alimentaire pour atteindre un taux d’autosuffisance de 60% à la fin du mandat présidentiel.",
+    "texte_alternatif": "Valeur 60%, extrait « autosuffisance », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Réduire de 25% la dépendance alimentaire pour atteindre un taux d’autosuffisance de 60% à la fin du mandat présidentiel."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 163 (pagination imprimée identique).",
+    "elements_visibles": [
+      "atteindre un taux",
+      "60%",
+      "autosuffisance"
+    ]
+  },
+  {
+    "id": "quiz-chiffre-10-exportations-de-produits-agricoles",
+    "fichier": "pictures/quiz/quiz-chiffre-10-exportations-de-produits-agricoles.webp",
+    "fichier_mobile": "pictures/quiz/quiz-chiffre-10-exportations-de-produits-agricoles-800.webp",
+    "categorie": "chiffre",
+    "chantier": 15,
+    "titre": "100% — exportations de produits agricoles",
+    "legende": "Mise en valeur d’un objectif du Livre blanc. Augmenter les exportations de produits agricoles de 100% sur les 5 prochaines années.",
+    "texte_alternatif": "Valeur 100%, extrait « exportations de produits agricoles », accompagnés d’un pictogramme symbolique ; objectif du programme, pas résultat acquis.",
+    "faits": [
+      "Augmenter les exportations de produits agricoles de 100% sur les 5 prochaines années."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 163 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Augmenter",
+      "100%",
+      "exportations de produits agricoles"
+    ]
+  },
+  {
+    "id": "quiz-carte-01-la-region-nord",
+    "fichier": "pictures/quiz/quiz-carte-01-la-region-nord.webp",
+    "fichier_mobile": "pictures/quiz/quiz-carte-01-la-region-nord-800.webp",
+    "categorie": "carte",
+    "chantier": 8,
+    "titre": "La région Nord",
+    "legende": "Cartogramme schématique d’Haïti : La région Nord en orange dans les regroupements décrits à la page 105. Les cases ne représentent ni frontières administratives, ni superficies, ni positions géographiques exactes.",
+    "texte_alternatif": "Carte en cases des départements cités ; Nord-Ouest, Nord, Nord Est, Artibonite, Centre en orange, les autres cases en bleu nuit. Regroupement schématique sans précision géographique.",
+    "faits": [
+      "La région Nord - Le groupement des 5 départements du Nord-Ouest, du Nord, du Nord Est, de l’Artibonite et du Centre, articulés autour de la plaine de l’Artibonite."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 105 (pagination imprimée identique).",
+    "elements_visibles": [
+      "La région Nord",
+      "Nord-Ouest",
+      "Nord",
+      "Nord Est",
+      "Artibonite",
+      "Centre",
+      "Nippes",
+      "Sud",
+      "Grande Anse",
+      "Sud Est",
+      "Ouest"
+    ]
+  },
+  {
+    "id": "quiz-carte-02-la-region-sud",
+    "fichier": "pictures/quiz/quiz-carte-02-la-region-sud.webp",
+    "fichier_mobile": "pictures/quiz/quiz-carte-02-la-region-sud-800.webp",
+    "categorie": "carte",
+    "chantier": 8,
+    "titre": "La région Sud",
+    "legende": "Cartogramme schématique d’Haïti : La région Sud en orange dans les regroupements décrits à la page 105. Les cases ne représentent ni frontières administratives, ni superficies, ni positions géographiques exactes.",
+    "texte_alternatif": "Carte en cases des départements cités ; Nippes, Sud, Grande Anse, Sud Est en orange, les autres cases en bleu nuit. Regroupement schématique sans précision géographique.",
+    "faits": [
+      "La région Sud qui regroupe les quatre départements des Nippes, du Sud, de la Grande Anse et du Sud Est."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 105 (pagination imprimée identique).",
+    "elements_visibles": [
+      "La région Sud",
+      "Nord-Ouest",
+      "Nord",
+      "Nord Est",
+      "Artibonite",
+      "Centre",
+      "Nippes",
+      "Sud",
+      "Grande Anse",
+      "Sud Est",
+      "Ouest"
+    ]
+  },
+  {
+    "id": "quiz-carte-03-la-zone-metropolitaine",
+    "fichier": "pictures/quiz/quiz-carte-03-la-zone-metropolitaine.webp",
+    "fichier_mobile": "pictures/quiz/quiz-carte-03-la-zone-metropolitaine-800.webp",
+    "categorie": "carte",
+    "chantier": 8,
+    "titre": "La zone métropolitaine",
+    "legende": "Cartogramme schématique d’Haïti : La zone métropolitaine en orange dans les regroupements décrits à la page 105. Les cases ne représentent ni frontières administratives, ni superficies, ni positions géographiques exactes.",
+    "texte_alternatif": "Carte en cases des départements cités ; Ouest en orange, les autres cases en bleu nuit. Regroupement schématique sans précision géographique.",
+    "faits": [
+      "La zone métropolitaine plus précisément le département de l’Ouest"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 105 (pagination imprimée identique).",
+    "elements_visibles": [
+      "La zone métropolitaine",
+      "Nord-Ouest",
+      "Nord",
+      "Nord Est",
+      "Artibonite",
+      "Centre",
+      "Nippes",
+      "Sud",
+      "Grande Anse",
+      "Sud Est",
+      "Ouest"
+    ]
+  },
+  {
+    "id": "quiz-carte-04-artibonite",
+    "fichier": "pictures/quiz/quiz-carte-04-artibonite.webp",
+    "fichier_mobile": "pictures/quiz/quiz-carte-04-artibonite-800.webp",
+    "categorie": "carte",
+    "chantier": 8,
+    "titre": "Artibonite",
+    "legende": "Cartogramme schématique d’Haïti : Artibonite en orange dans les regroupements décrits à la page 105. Les cases ne représentent ni frontières administratives, ni superficies, ni positions géographiques exactes.",
+    "texte_alternatif": "Carte en cases des départements cités ; Artibonite en orange, les autres cases en bleu nuit. Regroupement schématique sans précision géographique.",
+    "faits": [
+      "La région Nord - Le groupement des 5 départements du Nord-Ouest, du Nord, du Nord Est, de l’Artibonite et du Centre, articulés autour de la plaine de l’Artibonite."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 105 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Artibonite",
+      "Nord-Ouest",
+      "Nord",
+      "Nord Est",
+      "Artibonite",
+      "Centre",
+      "Nippes",
+      "Sud",
+      "Grande Anse",
+      "Sud Est",
+      "Ouest"
+    ]
+  },
+  {
+    "id": "quiz-carte-05-centre",
+    "fichier": "pictures/quiz/quiz-carte-05-centre.webp",
+    "fichier_mobile": "pictures/quiz/quiz-carte-05-centre-800.webp",
+    "categorie": "carte",
+    "chantier": 8,
+    "titre": "Centre",
+    "legende": "Cartogramme schématique d’Haïti : Centre en orange dans les regroupements décrits à la page 105. Les cases ne représentent ni frontières administratives, ni superficies, ni positions géographiques exactes.",
+    "texte_alternatif": "Carte en cases des départements cités ; Centre en orange, les autres cases en bleu nuit. Regroupement schématique sans précision géographique.",
+    "faits": [
+      "La région Nord - Le groupement des 5 départements du Nord-Ouest, du Nord, du Nord Est, de l’Artibonite et du Centre, articulés autour de la plaine de l’Artibonite."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 105 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Centre",
+      "Nord-Ouest",
+      "Nord",
+      "Nord Est",
+      "Artibonite",
+      "Centre",
+      "Nippes",
+      "Sud",
+      "Grande Anse",
+      "Sud Est",
+      "Ouest"
+    ]
+  },
+  {
+    "id": "quiz-frise-01-energie",
+    "fichier": "pictures/quiz/quiz-frise-01-energie.webp",
+    "fichier_mobile": "pictures/quiz/quiz-frise-01-energie-800.webp",
+    "categorie": "frise",
+    "chantier": 18,
+    "titre": "ENERGIE",
+    "legende": "Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "texte_alternatif": "ENERGIE : A court terme puis A moyen terme et long terme. Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "faits": [
+      "A court terme :",
+      "A moyen terme et long terme, l’EDH devra entreprendre les actions suivantes :"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 178, 182 (pagination imprimée identique).",
+    "elements_visibles": [
+      "ENERGIE",
+      "A court terme",
+      "A moyen terme et long terme"
+    ]
+  },
+  {
+    "id": "quiz-frise-02-justice",
+    "fichier": "pictures/quiz/quiz-frise-02-justice.webp",
+    "fichier_mobile": "pictures/quiz/quiz-frise-02-justice-800.webp",
+    "categorie": "frise",
+    "chantier": 11,
+    "titre": "JUSTICE",
+    "legende": "Schéma des deux horizons de réforme menés en parallèle ; aucun calendrier chiffré ajouté.",
+    "texte_alternatif": "JUSTICE : court terme et long terme. Schéma des deux horizons de réforme menés en parallèle ; aucun calendrier chiffré ajouté.",
+    "faits": [
+      "des actions à court terme",
+      "un effort parallèle de renforcement des capacités institutionnelles sur le long terme."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 119, 123, 125 (pagination imprimée identique).",
+    "elements_visibles": [
+      "JUSTICE",
+      "court terme",
+      "long terme"
+    ]
+  },
+  {
+    "id": "quiz-frise-03-couverture-forestiere",
+    "fichier": "pictures/quiz/quiz-frise-03-couverture-forestiere.webp",
+    "fichier_mobile": "pictures/quiz/quiz-frise-03-couverture-forestiere-800.webp",
+    "categorie": "frise",
+    "chantier": 8,
+    "titre": "couverture forestière",
+    "legende": "Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "texte_alternatif": "couverture forestière : 1,5% puis 5%. Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "faits": [
+      "Faire passer la couverture forestière du pays de 1,5% à 5%"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 106 (pagination imprimée identique).",
+    "elements_visibles": [
+      "couverture forestière",
+      "1,5%",
+      "5%"
+    ]
+  },
+  {
+    "id": "quiz-frise-04-lacces",
+    "fichier": "pictures/quiz/quiz-frise-04-lacces.webp",
+    "fichier_mobile": "pictures/quiz/quiz-frise-04-lacces-800.webp",
+    "categorie": "frise",
+    "chantier": 18,
+    "titre": "l’accès",
+    "legende": "Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "texte_alternatif": "l’accès : 12.5% puis 25%. Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "faits": [
+      "de 100% l’accès, soit de 12.5% à 25%."
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 182 (pagination imprimée identique).",
+    "elements_visibles": [
+      "l’accès",
+      "12.5%",
+      "25%"
+    ]
+  },
+  {
+    "id": "quiz-frise-05-sante",
+    "fichier": "pictures/quiz/quiz-frise-05-sante.webp",
+    "fichier_mobile": "pictures/quiz/quiz-frise-05-sante-800.webp",
+    "categorie": "frise",
+    "chantier": 6,
+    "titre": "Santé",
+    "legende": "Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "texte_alternatif": "Santé : premiers soins de secours puis transfert des patients puis l’échelle supérieure. Schéma d’un parcours ou d’une transition explicitement décrit dans le Livre blanc ; aucune échéance ajoutée.",
+    "faits": [
+      "facilitant les premiers soins de secours avant le transfert des patients à l’échelle supérieure"
+    ],
+    "source": "docs/livre-blanc.pdf, page(s) PDF 89 (pagination imprimée identique).",
+    "elements_visibles": [
+      "Santé",
+      "premiers soins de secours",
+      "transfert des patients",
+      "l’échelle supérieure"
+    ]
+  }
+]
