@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   tokens, pageText, chunk, buildIndex, search, cleanHistory, buildPrompt, sourcesOf, loadIndex, resetCache, SYSTEM, PAGES,
-  LANGUES, langueOf, message,
+  LANGUES, langueOf, message, displayNameOf,
 } from '../api/_lib/chat.js';
 import chatHandler from '../api/_chat/chat.js';
 
@@ -73,7 +73,10 @@ test('Consignes : sources uniquement, langue du visiteur, neutralité, pas de do
   // Pages citées dans la réponse, sans doublon ; liens inconnus ignorés.
   assert.deepEqual(sourcesOf([lb], 'Voir [Adhérer](/adherer), [encore](/adherer) et [ailleurs](/inconnu).'), [{ titre: 'Adhérer', url: '/adherer' }]);
   // Aucune page citée : le passage le plus pertinent seulement.
-  assert.deepEqual(sourcesOf([lb, { titre: 'Don', url: '/don' }], 'Réponse sans lien.'), [lb]);
+  const longue = 'Réponse détaillée sans lien. '.repeat(8);
+  assert.deepEqual(sourcesOf([lb, { titre: 'Don', url: '/don' }], longue), [lb]);
+  // Salutation ou relance courte : aucune source affichée.
+  assert.deepEqual(sourcesOf([lb], 'Hi Myrtho ! Comment tu vas ?'), []);
   assert.deepEqual(sourcesOf([], 'Rien.'), []);
 });
 
@@ -120,4 +123,16 @@ test('Langues : 4 langues du site, réponse imposée dans la langue choisie, mes
   const res = fakeRes();
   await chatHandler({ method: 'POST', body: { question: '', langue: 'ht' }, headers: {}, query: {} }, res);
   assert.equal(res.body.error, 'Poze kesyon ou.');
+});
+
+test('Membre connecté : nom vérifié transmis au modèle, salutations naturelles, « pas mentionné dans le Livre blanc »', () => {
+  assert.match(SYSTEM, /Salutations/);
+  assert.match(SYSTEM, /pas mentionné dans le Livre blanc/);
+  assert.match(SYSTEM, /un nom donné dans la conversation n’est pas vérifié/);
+  assert.match(buildPrompt({ question: 'hi', passages: [], visiteur: { nom: 'Myrtho' } }), /<visiteur>Membre connecté \(compte vérifié\)\. Nom à utiliser : Myrtho<\/visiteur>/);
+  assert.match(buildPrompt({ question: 'hi', passages: [] }), /<visiteur>Visiteur non connecté/);
+  assert.equal(displayNameOf({ username: 'TitoTizzy', metadata: { nom: 'Myrtho Charles' } }), 'TitoTizzy');
+  assert.equal(displayNameOf({ metadata: { nom: 'Myrtho Charles' } }), 'Myrtho');
+  assert.equal(displayNameOf({ metadata: { pseudo: '<script>x' } }), 'scriptx');
+  assert.equal(displayNameOf({}), null);
 });

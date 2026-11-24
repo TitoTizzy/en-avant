@@ -1,7 +1,7 @@
 // POST /api/chat — Assistant En Avant (public).
 //   { question, langue?: 'fr'|'en'|'ht'|'es', history?: [{ role:'user'|'assistant', content }] }
 //   → { reponse, sources: [{ titre, url }] }
-// Garde-fous : 10 messages / 5 min par visiteur, 40 / 24 h, plafond global par jour
+// Garde-fous : 10 messages / 5 min par visiteur, 40 / 24 h (100 pour un membre connecté), plafond global par jour
 // (CHAT_DAILY_LIMIT, 1500 par défaut) ; question ≤ 800 caractères ; réponse ≤ 2 000 tokens.
 // L'adresse IP n'est jamais stockée : seule une empreinte SHA-256 sert au quota.
 import { createHash } from 'node:crypto';
@@ -9,7 +9,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getServiceClient } from '../_lib/supabase.js';
 import { json, methodGuard, getBody, handleError } from '../_lib/http.js';
 import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
-import { SYSTEM, buildPrompt, cleanHistory, loadIndex, search, sourcesOf, langueOf, message } from '../_lib/chat.js';
+import { SYSTEM, buildPrompt, cleanHistory, loadIndex, search, sourcesOf, langueOf, message, displayNameOf } from '../_lib/chat.js';
 
 const MODEL = process.env.CHAT_MODEL || 'claude-haiku-5-5';
 const FALLBACK_MODEL = 'claude-haiku-4-5-20251001';
@@ -47,6 +47,23 @@ async function frenchQuery(anthropic, model, question) {
   return (r.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(' ').trim().slice(0, 800);
 }
 
+/**
+ * Membre connecté : identité vérifiée par Supabase à partir du jeton de session
+ * (jamais un nom envoyé par le navigateur). Sans jeton ou jeton invalide : anonyme.
+ */
+async function connectedMember(req, supabase) {
+  const header = String(req.headers.authorization || '');
+  if (!header.startsWith('Bearer ')) return null;
+  try {
+    const { data, error } = await supabase.auth.getUser(header.slice(7));
+    if (error || !data?.user) return null;
+    const { data: profile } = await supabase.from('profiles').select('username').eq('id', data.user.id).maybeSingle();
+    return { id: data.user.id, nom: displayNameOf({ username: profile?.username, metadata: data.user.user_metadata || {} }) };
+  } catch {
+    return null;
+  }
+}
+
 async function ask(anthropic, model, messages) {
   return anthropic.messages.create({
     model,
@@ -69,9 +86,10 @@ export default async function handler(req, res) {
     if (!await enforceDurableRateLimit(req, res, { key: 'chat', limit: 10, windowMs: 300000 })) return;
 
     const supabase = getServiceClient();
+    const membre = await connectedMember(req, supabase);
     const limit = Number.parseInt(process.env.CHAT_DAILY_LIMIT, 10) || 1500;
     const { data: allowed, error: quotaError } = await supabase.rpc('ai_usage_reserve', {
-      p_user: visitorId(req), p_kind: 'chat', p_user_limit: 40, p_global_limit: limit,
+      p_user: membre?.id || visitorId(req), p_kind: 'chat', p_user_limit: membre ? 100 : 40, p_global_limit: limit,
     });
     if (quotaError) throw quotaError;
     if (!allowed) {
@@ -93,7 +111,7 @@ export default async function handler(req, res) {
     // La question précédente aide pour les relances courtes (« et pour la santé ? »).
     const passages = search(index, langue === 'fr' ? `${question} ${question.length < 60 ? lastUser : ''}` : `${searchText} ${question}`, 6);
     const events = (eventsResult.data || []).map((e) => ({ titre: e.titre, date: formatDate(e.date_cible), lieu: e.lieu }));
-    const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events, langue }) }];
+    const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events, langue, visiteur: membre }) }];
 
     let response;
     try {
