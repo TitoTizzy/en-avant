@@ -184,9 +184,20 @@ export function cleanHistory(history) {
   return out;
 }
 
-/** Sources à afficher sous la réponse (une par page, dans l'ordre de pertinence). */
-export function sourcesOf(passages) {
+/**
+ * Sources à afficher sous la réponse : les pages du site citées dans la réponse ;
+ * à défaut, la page du passage le plus pertinent. Une seule fois chacune.
+ */
+export function sourcesOf(passages, reponse = '') {
+  const known = new Map([[LIVRE_BLANC.url, LIVRE_BLANC.titre], ...PAGES.map((p) => [p.url, p.titre])]);
+  known.set('/quiz', 'Quiz des membres');
   const seen = new Map();
-  for (const p of passages) if (!seen.has(p.url)) seen.set(p.url, { titre: p.titre, url: p.url });
+  for (const [, url] of String(reponse).matchAll(/\]\((\/[\w\-]*)[^)]*\)/g)) {
+    if (known.has(url) && !seen.has(url)) seen.set(url, { titre: known.get(url), url });
+  }
+  if (!seen.size) {
+    for (const p of passages) if (!seen.has(p.url)) seen.set(p.url, { titre: p.titre, url: p.url });
+    return [...seen.values()].slice(0, 1);
+  }
   return [...seen.values()].slice(0, 3);
 }
