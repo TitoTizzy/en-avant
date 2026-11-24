@@ -90,14 +90,4 @@ function initFilters() {
   });
 }
 
-/*for the chatbot bouton*/
-
-document.addEventListener("DOMContentLoaded", () => {
-  const chatbotFab = document.getElementById("chatbotFab");
-
-  if (!chatbotFab) return;
-
-  chatbotFab.addEventListener("click", () => {
-    alert("Le module de chat sera bientôt disponible.");
-  });
-});
+/* Le bouton du chatbot est géré par js/premium.js (Assistant En Avant). */

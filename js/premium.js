@@ -488,15 +488,205 @@ document.documentElement.classList.add("js-ready");
     if (current !== "fr") translate(current);
   }
 
-  /* Chatbot (placeholder en attendant le module IA) */
-  function initChatbot() {
-    const fab = document.getElementById("chatbotFab");
-    if (!fab || fab.dataset.eaBound) return;
-    fab.dataset.eaBound = "1";
+  /* ------------------------------------------------------------------ */
+  /* ASSISTANT EN AVANT (chatbot IA fondé sur le Livre blanc)             */
+  /* ------------------------------------------------------------------ */
+  const CHAT_KEY = "ea-chat";
+  const CHAT_EXCLUDED = /^\/(admin|login|mot-de-passe)(\.html)?$/;
+  const CHAT_SUGGESTIONS = [
+    "Que sont les 20 chantiers ?",
+    "Que propose En Avant pour la sécurité ?",
+    "Comment adhérer au parti ?",
+    "Kijan pou m fè yon don ?",
+  ];
 
-    fab.addEventListener("click", () => {
-      alert("Le module de chat sera bientôt disponible.");
-    });
+  function chatEscape(text) {
+    return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /** Lien sûr : chemin du site ou https://enavant.org uniquement. */
+  function chatSafeUrl(url) {
+    const u = String(url || "").trim();
+    if (/^\/(?!\/)[\w\-./?=&#%]*$/.test(u)) return u;
+    if (/^https:\/\/(www\.)?enavant\.org(\/[\w\-./?=&#%]*)?$/.test(u)) return u;
+    if (/^mailto:contact@enavant\.org$/.test(u)) return u;
+    return null;
+  }
+
+  /** Mise en forme minimale et sûre : **gras**, listes « - », liens internes, retours à la ligne. */
+  function chatFormat(text) {
+    const lines = chatEscape(text).split(/\n/);
+    let html = "";
+    let inList = false;
+    for (const raw of lines) {
+      let line = raw
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\[([^\]]{1,120})\]\(([^)\s]{1,300})\)/g, (m, label, url) => {
+          const safe = chatSafeUrl(url.replace(/&amp;/g, "&"));
+          return safe ? `<a href="${chatEscape(safe)}">${label}</a>` : label;
+        })
+        .replace(/\bcontact@enavant\.org\b/g, '<a href="mailto:contact@enavant.org">contact@enavant.org</a>');
+      const item = /^\s*[-•]\s+(.*)$/.exec(line);
+      if (item) {
+        if (!inList) { html += "<ul>"; inList = true; }
+        html += `<li>${item[1]}</li>`;
+        continue;
+      }
+      if (inList) { html += "</ul>"; inList = false; }
+      if (line.trim()) html += `<p>${line}</p>`;
+    }
+    if (inList) html += "</ul>";
+    return html;
+  }
+
+  function initChatbot() {
+    if (CHAT_EXCLUDED.test(location.pathname)) return;
+    let fab = document.getElementById("chatbotFab");
+    if (!fab) {
+      fab = document.createElement("button");
+      fab.className = "chatbot-fab";
+      fab.id = "chatbotFab";
+      fab.innerHTML = '<span class="chatbot-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5C4 4.12 5.12 3 6.5 3h11C18.88 3 20 4.12 20 5.5v7c0 1.38-1.12 2.5-2.5 2.5H11l-4.2 3.4c-.33.27-.8.03-.8-.4V15.8C4.84 15.57 4 14.62 4 13.5v-8z" fill="currentColor"/></svg></span><span class="chatbot-dot"></span>';
+      document.body.appendChild(fab);
+    }
+    if (fab.dataset.eaBound) return;
+    fab.dataset.eaBound = "1";
+    fab.type = "button";
+    fab.setAttribute("aria-label", "Ouvrir l’assistant En Avant");
+    fab.setAttribute("aria-expanded", "false");
+
+    let panel = null;
+    let busy = false;
+    let history = [];
+    try { history = JSON.parse(sessionStorage.getItem(CHAT_KEY) || "[]").slice(-20); } catch { history = []; }
+    const save = () => { try { sessionStorage.setItem(CHAT_KEY, JSON.stringify(history.slice(-20))); } catch { /* ignore */ } };
+
+    function bubble(role, html, sources) {
+      const log = panel.querySelector(".eac-log");
+      const el = document.createElement("div");
+      el.className = `eac-msg eac-msg--${role}`;
+      el.innerHTML = html;
+      if (sources?.length) {
+        const s = document.createElement("p");
+        s.className = "eac-sources";
+        s.innerHTML = "Sources : " + sources.map((src) => {
+          const url = chatSafeUrl(src.url);
+          return url ? `<a href="${chatEscape(url)}">${chatEscape(src.titre)}</a>` : chatEscape(src.titre);
+        }).join(" · ");
+        el.appendChild(s);
+      }
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+
+    function renderAll() {
+      const log = panel.querySelector(".eac-log");
+      log.innerHTML = "";
+      bubble("bot", chatFormat("Bonjour ! Je suis l’assistant d’En Avant. Posez-moi vos questions sur le parti, le Livre blanc et ses 20 chantiers, ou sur la façon de vous engager.\nBonjou ! Ou ka poze m kesyon an kreyòl tou."));
+      history.forEach((m) => bubble(m.role === "user" ? "user" : "bot",
+        m.role === "user" ? `<p>${chatEscape(m.content)}</p>` : chatFormat(m.content), m.sources));
+      panel.querySelector(".eac-suggest").hidden = history.length > 0;
+    }
+
+    async function send(question) {
+      const text = String(question || "").trim();
+      if (!text || busy) return;
+      if (text.length > 800) {
+        bubble("bot", "<p>Votre question est trop longue (800 caractères au maximum).</p>");
+        return;
+      }
+      busy = true;
+      const input = panel.querySelector("textarea");
+      input.value = "";
+      input.style.height = "";
+      panel.querySelector(".eac-suggest").hidden = true;
+      bubble("user", `<p>${chatEscape(text)}</p>`);
+      const typing = bubble("bot eac-typing", '<span></span><span></span><span></span>');
+      typing.setAttribute("aria-label", "L’assistant écrit…");
+      const previous = history.map(({ role, content }) => ({ role, content }));
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: text, history: previous }),
+        });
+        const data = await res.json().catch(() => ({}));
+        typing.remove();
+        if (!res.ok) throw new Error(data.error || "L’assistant est momentanément indisponible.");
+        history.push({ role: "user", content: text }, { role: "assistant", content: data.reponse, sources: data.sources || [] });
+        save();
+        bubble("bot", chatFormat(data.reponse), data.sources);
+      } catch (error) {
+        typing.remove();
+        bubble("bot eac-error", `<p>${chatEscape(error.message || "Connexion impossible. Réessayez.")}</p>`);
+      } finally {
+        busy = false;
+        input.focus();
+      }
+    }
+
+    function build() {
+      panel = document.createElement("section");
+      panel.className = "eac-panel";
+      panel.id = "eaChatPanel";
+      panel.setAttribute("role", "dialog");
+      panel.setAttribute("aria-label", "Assistant En Avant");
+      panel.hidden = true;
+      panel.innerHTML = `
+        <header class="eac-head">
+          <img src="/pictures/logo/logo.png" alt="" width="34" height="34">
+          <div class="eac-title"><strong>Assistant En Avant</strong><span>Réponses tirées du Livre blanc et du site</span></div>
+          <button type="button" class="eac-icon" data-chat="reset" title="Nouvelle conversation" aria-label="Nouvelle conversation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" fill="currentColor"/></svg></button>
+          <button type="button" class="eac-icon" data-chat="close" title="Fermer" aria-label="Fermer l’assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z" fill="currentColor"/></svg></button>
+        </header>
+        <div class="eac-log" role="log" aria-live="polite"></div>
+        <div class="eac-suggest">${CHAT_SUGGESTIONS.map((q) => `<button type="button" data-chat-q="${chatEscape(q)}">${chatEscape(q)}</button>`).join("")}</div>
+        <form class="eac-form">
+          <textarea rows="1" maxlength="800" placeholder="Posez votre question…" aria-label="Votre question"></textarea>
+          <button type="submit" aria-label="Envoyer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z" fill="currentColor"/></svg></button>
+        </form>
+        <p class="eac-note">Réponses générées par une IA à partir des documents d’En Avant : elles peuvent contenir des erreurs. Ne partagez aucune donnée personnelle.</p>`;
+      document.body.appendChild(panel);
+
+      const input = panel.querySelector("textarea");
+      panel.querySelector(".eac-form").addEventListener("submit", (event) => { event.preventDefault(); send(input.value); });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(input.value); }
+      });
+      input.addEventListener("input", () => {
+        input.style.height = "";
+        input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
+      });
+      panel.addEventListener("click", (event) => {
+        const q = event.target.closest("[data-chat-q]");
+        if (q) send(q.dataset.chatQ);
+        const action = event.target.closest("[data-chat]")?.dataset.chat;
+        if (action === "close") toggle(false);
+        if (action === "reset") {
+          history = [];
+          save();
+          renderAll();
+          input.focus();
+        }
+      });
+      panel.addEventListener("keydown", (event) => { if (event.key === "Escape") toggle(false); });
+      renderAll();
+    }
+
+    function toggle(open) {
+      if (!panel) build();
+      const show = open ?? panel.hidden;
+      panel.hidden = !show;
+      document.body.classList.toggle("eac-open", show);
+      fab.setAttribute("aria-expanded", String(show));
+      fab.classList.toggle("is-open", show);
+      if (show) panel.querySelector("textarea").focus();
+      else fab.focus();
+    }
+
+    fab.addEventListener("click", () => toggle());
   }
 
   /* Navigation auth-aware : "Connexion" → prénom du membre si session active */
