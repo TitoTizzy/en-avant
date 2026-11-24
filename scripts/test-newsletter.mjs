@@ -283,7 +283,7 @@ test('Email : boutons Adhérer et Faire un don toujours présents ; photos et mi
   assert.match(html, /<img src="https:\/\/x\.supabase\.co[^"]+" style="display:block;max-width:100%/);
   assert.doesNotMatch(html, /width="900"/);
   assert.match(html, /<span style="font-size:20px">Grand/);
-  assert.equal(emailifyHtml('<p class="ql-inconnue">x</p>'), '<p style="margin:0 0 14px">x</p>', 'classe inconnue retirée');
+  assert.equal(emailifyHtml('<p class="ql-inconnue">x</p>'), '<p style="margin:0 0 16px">x</p>', 'classe inconnue retirée');
 });
 
 test('Photos de la newsletter : seul un vrai fichier image est accepté', () => {
