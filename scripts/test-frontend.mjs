@@ -357,6 +357,72 @@ test('Pages publiques : en-tête fermé avant le contenu, contenu et pied de pag
   }
 });
 
+test('Assistant : ouverture, question, réponse mise en forme sans lien dangereux, sources, historique envoyé', async () => {
+  const dom = await page('index.html', '/');
+  const { window } = dom;
+  window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+  window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  const sent = [];
+  window.fetch = async (url, options = {}) => {
+    if (url === '/api/chat') {
+      sent.push(JSON.parse(options.body));
+      return response(200, {
+        reponse: 'Voici les **20 chantiers**.\n- Sécurité\n- Santé\n[Lire](/vingt-chantiers) [piège](javascript:alert(1)) <img src=x onerror=alert(1)> [externe](https://exemple.com)',
+        sources: [{ titre: 'Livre blanc', url: '/livre-blanc' }, { titre: 'Piège', url: 'javascript:alert(2)' }],
+      });
+    }
+    return response(200, {});
+  };
+  try { window.eval(await read('js/premium.js')); } catch { /* modules décoratifs non pris en charge par jsdom */ }
+  window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+  await settle();
+  const doc = window.document;
+  const fab = doc.getElementById('chatbotFab');
+  fab.click();
+  const panel = doc.getElementById('eaChatPanel');
+  assert.ok(panel && !panel.hidden, 'fenêtre ouverte');
+  assert.equal(fab.getAttribute('aria-expanded'), 'true');
+  assert.equal(panel.querySelectorAll('.eac-suggest button').length, 4);
+
+  panel.querySelector('.eac-suggest button').click();
+  await settle(); await settle();
+  assert.equal(sent[0].question, 'Que sont les 20 chantiers ?');
+  assert.deepEqual(sent[0].history, []);
+  const bot = [...panel.querySelectorAll('.eac-msg--bot')].at(-1);
+  assert.equal(bot.querySelector('strong').textContent, '20 chantiers');
+  assert.equal(bot.querySelectorAll('li').length, 2);
+  assert.equal(bot.querySelector('a[href="/vingt-chantiers"]').textContent, 'Lire');
+  assert.equal(bot.querySelector('img'), null, 'aucune image injectée');
+  assert.ok(![...bot.querySelectorAll('a')].some((a) => /javascript:|exemple\.com/.test(a.getAttribute('href'))), 'aucun lien dangereux ou externe');
+  assert.deepEqual([...bot.querySelectorAll('.eac-sources a')].map((a) => a.getAttribute('href')), ['/livre-blanc']);
+
+  const input = panel.querySelector('textarea');
+  input.value = 'Et pour la santé ?';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settle(); await settle();
+  assert.deepEqual(sent[1].history.map((m) => m.role), ['user', 'assistant']);
+  assert.ok(!('sources' in sent[1].history[1]), 'les sources ne repartent pas au serveur');
+  assert.equal(JSON.parse(window.sessionStorage.getItem('ea-chat')).length, 4);
+
+  panel.querySelector('[data-chat="close"]').click();
+  assert.equal(panel.hidden, true);
+  dom.window.close();
+});
+
+test('Assistant : absent de l’administration et de la connexion, ajouté sur les pages publiques sans bouton', async () => {
+  for (const [file, path, expected] of [['login.html', '/login', false], ['don.html', '/don', true]]) {
+    const dom = await page(file, path);
+    dom.window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    dom.window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+    dom.window.fetch = async () => response(200, {});
+    try { dom.window.eval(await read('js/premium.js')); } catch { /* idem */ }
+    dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
+    await settle();
+    assert.equal(Boolean(dom.window.document.getElementById('chatbotFab')), expected, file);
+    dom.window.close();
+  }
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
