@@ -764,3 +764,45 @@ test('Formulaires : options des listes déroulantes lisibles (texte clair sur fo
   assert.equal(dcs.backgroundColor, 'rgb(11, 23, 48)');
   dom.window.close();
 });
+
+test('Mots de passe : un œil sur chaque champ (pages publiques et administration), re-masqué à l’envoi', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const files = (await readdir(new URL('../', import.meta.url))).filter((f) => f.endsWith('.html'));
+  const script = await read('js/password-toggle.js');
+  let total = 0;
+  for (const file of files) {
+    const html = await read(file);
+    if (!html.includes('type="password"')) continue;
+    assert.match(html, /<script src="\/js\/password-toggle\.js"><\/script>/, `${file} : script de l’œil chargé`);
+    const dom = new JSDOM(html, { url: 'https://enavant.org/', runScripts: 'outside-only' });
+    dom.window.eval(script);
+    const doc = dom.window.document;
+    const inputs = [...doc.querySelectorAll('input[type="password"]')];
+    for (const input of inputs) {
+      const button = input.parentElement.querySelector('.pw-toggle');
+      assert.ok(input.parentElement.classList.contains('pw-wrap') && button, `${file} #${input.id} : œil présent`);
+      assert.ok(input.closest('.ea-field') || !input.closest('form')?.querySelector('.ea-field'), `${file} : champ toujours dans son bloc`);
+      assert.equal(button.getAttribute('aria-controls'), input.id);
+      button.click();
+      assert.equal(input.type, 'text', `${file} #${input.id} : révélé`);
+      assert.equal(button.getAttribute('aria-pressed'), 'true');
+      assert.equal(button.getAttribute('aria-label'), 'Masquer le mot de passe');
+      if (input.form) {
+        input.form.dispatchEvent(new dom.window.Event('submit', { cancelable: true }));
+        assert.equal(input.type, 'password', `${file} #${input.id} : re-masqué à l’envoi`);
+      } else {
+        button.click();
+        assert.equal(input.type, 'password');
+      }
+      total += 1;
+    }
+    // Champ ajouté plus tard par un script : l'œil apparaît aussi.
+    const extra = doc.createElement('input');
+    extra.type = 'password';
+    doc.body.appendChild(extra);
+    await new Promise((r) => setTimeout(r, 0));
+    assert.ok(extra.parentElement.querySelector('.pw-toggle'), `${file} : champ dynamique`);
+    dom.window.close();
+  }
+  assert.ok(total >= 14, `tous les champs couverts (${total})`);
+});
