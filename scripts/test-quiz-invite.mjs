@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { autoSendDue, haitiDate, inviteContent, inviteRecipients, startInvite } from '../api/_lib/quiz-invite.js';
-import { renderNewsletter } from '../api/_lib/newsletter.js';
+import { renderQuizInvite } from '../api/_lib/quiz-email.js';
 import { cronAuthorized } from '../api/_lib/cron.js';
 
 process.env.SITE_URL = 'https://enavant.org';
@@ -128,12 +128,22 @@ test('Tâche planifiée : deux passages le mardi (04:00 et 05:00 UTC), route pro
   assert.equal(cronAuthorized({ headers: { authorization: 'Bearer ' } }), false);
 });
 
-test('Email d’invitation : objet, bouton « Jouer maintenant », boutons fixes, désinscription', () => {
-  const { html, text } = renderNewsletter({ newsletter: inviteContent(), nom: 'Alice Test', unsubscribeUrl: 'https://enavant.org/newsletter?desinscription=t' });
-  assert.match(html, /Le quiz de la semaine est ouvert/);
+test('Email d’invitation : design de marque (nuit, orange, cartes verre), bouton, boutons fixes, désinscription, texte', () => {
+  const { html, text } = renderQuizInvite({ invitation: inviteContent(), nom: 'Alice Test', unsubscribeUrl: 'https://enavant.org/newsletter?desinscription=t', semaine: '2026-11-23' });
+  assert.match(html, /Le quiz de la semaine<br><span[^>]*>est ouvert\./);
+  assert.match(html, /Semaine du 23 novembre/);
   assert.match(html, /href="https:\/\/enavant\.org\/quiz"[^>]*>Jouer maintenant/);
   assert.match(html, /Bonjour Alice,/);
-  assert.match(html, /Adhérer à En Avant/);
-  assert.match(html, /Se désinscrire/);
+  assert.match(html, /href="https:\/\/enavant\.org\/adherer"/);
+  assert.match(html, /href="https:\/\/enavant\.org\/don"/);
+  assert.match(html, /href="https:\/\/enavant\.org\/newsletter\?desinscription=t"[^>]*>Se désinscrire/);
+  assert.match(html, /background-color:#050b1d/, 'fond nuit');
+  assert.match(html, /rgba\(255,255,255,0\.0\d\)/, 'cartes translucides');
+  assert.match(html, /bgcolor="#ff6a2a"/, 'bouton orange avec repli');
+  assert.match(html, /pictures\/hero\.jpeg/);
+  assert.doesNotMatch(html, /<script/i);
   assert.match(text, /Jouer maintenant : https:\/\/enavant\.org\/quiz/);
+  assert.match(text, /Se désinscrire : https:\/\/enavant\.org\/newsletter\?desinscription=t/);
+  // Un nom piégé est échappé.
+  assert.match(renderQuizInvite({ invitation: inviteContent(), nom: '<b>X</b>', unsubscribeUrl: 'u' }).html, /Bonjour &lt;b&gt;X&lt;\/b&gt;,/);
 });
