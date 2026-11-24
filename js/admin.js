@@ -249,6 +249,7 @@
   const PANEL_TITLES = {
     "panel-home":         "Tableau de bord",
     "panel-stats":        "Statistiques",
+    "panel-audience":     "Audience du site",
     "panel-articles":     "Articles",
     "panel-events":       "Événements",
     "panel-newsletter":   "Newsletter",
@@ -635,7 +636,7 @@
   async function loadKpis(periode = 30) {
     const host = document.getElementById("kpi-sections");
     if (!host) return;
-    document.querySelectorAll(".kpi-period").forEach((b) => b.classList.toggle("is-active", b.dataset.periode === String(periode)));
+    document.querySelectorAll("#kpi-board .kpi-period").forEach((b) => b.classList.toggle("is-active", b.dataset.periode === String(periode)));
     host.innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Calcul des indicateurs…</p>';
     try {
       const d = await api(`/api/admin/stats?kind=overview&periode=${periode}`);
@@ -655,10 +656,194 @@
       host.innerHTML = `<p class="adm-empty">Indicateurs indisponibles : ${esc(error.message)}</p>`;
     }
   }
-  document.querySelectorAll(".kpi-period").forEach((b) => b.addEventListener("click", () => loadKpis(Number(b.dataset.periode))));
+  document.querySelectorAll("#kpi-board .kpi-period").forEach((b) => b.addEventListener("click", () => loadKpis(Number(b.dataset.periode))));
   document.getElementById("kpi-sections")?.addEventListener("click", (event) => {
     const link = event.target.closest("[data-kpi-link]");
     if (link) openNotificationLink(link.dataset.kpiLink);
+  });
+
+  /* ----- Audience du site (Google Analytics) ----- */
+  const fmtDuree = (sec) => {
+    const n = Math.round(Number(sec) || 0);
+    if (n < 60) return `${n} s`;
+    const m = Math.floor(n / 60); const r = n % 60;
+    return m < 60 ? `${m} min${r ? ` ${String(r).padStart(2, "0")} s` : ""}` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}`;
+  };
+  const fmtNb = (n) => new Intl.NumberFormat("fr-FR").format(Math.round(Number(n) || 0));
+  const ga = { periode: 30, page: null, data: null, sort: "vues", dir: -1, filtre: "", tout: false, liveTimer: null };
+
+  function gaTile(k) {
+    const value = k.format === "duree" ? fmtDuree(k.value) : fmtKpi(k.value, k.format);
+    let delta = kpiDelta({ ...k, format: k.format === "duree" ? "int" : k.format });
+    if (k.inverse && delta) delta = delta.replace("kpi-delta--up", "kpi-delta--TMP").replace("kpi-delta--down", "kpi-delta--up").replace("kpi-delta--TMP", "kpi-delta--down");
+    if (k.format === "duree" && k.previous != null) delta = delta.replace(/title="[^"]*"/, `title="Période précédente : ${esc(fmtDuree(k.previous))}"`);
+    return `<div class="kpi-tile"><span class="kpi-label">${esc(k.label)}</span><strong class="kpi-value">${esc(value)}</strong>
+      <span class="kpi-foot">${delta}${k.hint ? `<small>${esc(k.hint)}</small>` : ""}</span></div>`;
+  }
+
+  function gaChart(serie) {
+    const n = serie.keys.length;
+    if (!n) return "";
+    const w = 720; const h = 190; const pad = 6;
+    const max = Math.max(...serie.vues, ...serie.visiteurs, 1);
+    const x = (i) => (n > 1 ? (i * (w - 2 * pad)) / (n - 1) + pad : w / 2);
+    const y = (v) => h - 18 - (v / max) * (h - 34);
+    const line = (vals) => vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    const label = (k) => (serie.horaire ? `${k} h` : new Date(`${k.slice(0, 4)}-${k.slice(4, 6)}-${k.slice(6, 8)}T12:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }));
+    const ticks = [0, Math.floor((n - 1) / 2), n - 1].filter((v, i, a) => a.indexOf(v) === i);
+    const step = n > 1 ? (w - 2 * pad) / (n - 1) : w;
+    const hits = serie.keys.map((k, i) => `<rect x="${(x(i) - step / 2).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${h}" class="ga-hit"><title>${esc(label(k))} : ${fmtNb(serie.visiteurs[i])} visiteurs, ${fmtNb(serie.vues[i])} pages vues</title></rect>`).join("");
+    return `<figure class="ga-chart">
+      <figcaption><span class="ga-key ga-key--vues"></span> Pages vues <span class="ga-key ga-key--vis"></span> Visiteurs <small>(survolez la courbe pour le détail)</small></figcaption>
+      <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Évolution des visites">
+        <line x1="0" x2="${w}" y1="${y(max)}" y2="${y(max)}" class="ga-grid"></line>
+        <line x1="0" x2="${w}" y1="${y(max / 2)}" y2="${y(max / 2)}" class="ga-grid"></line>
+        <polyline points="${pad},${h - 18} ${line(serie.vues)} ${w - pad},${h - 18}" class="ga-area"></polyline>
+        <polyline points="${line(serie.vues)}" class="ga-line ga-line--vues"></polyline>
+        <polyline points="${line(serie.visiteurs)}" class="ga-line ga-line--vis"></polyline>
+        ${hits}
+      </svg>
+      <div class="ga-axis"><span>max ${fmtNb(max)}</span>${ticks.map((i) => `<span>${esc(label(serie.keys[i]))}</span>`).join("")}</div>
+    </figure>`;
+  }
+
+  function gaList(title, items, { unit = "", empty = "Aucune donnée sur la période.", fmt = fmtNb, limit = 10 } = {}) {
+    const list = (items || []).slice(0, limit);
+    if (!list.length) return `<div class="kpi-list ga-box"><h5>${esc(title)}</h5><p class="kpi-empty">${esc(empty)}</p></div>`;
+    const max = Math.max(...list.map((i) => i.value), 1);
+    const total = (items || []).reduce((a, i) => a + i.value, 0);
+    return `<div class="kpi-list ga-box"><h5>${esc(title)}</h5>${list.map((i) => `
+      <div class="kpi-list-row"><span title="${esc(i.label)}">${esc(i.label)}</span>
+        <div class="kpi-bar"><i style="width:${Math.round((100 * i.value) / max)}%"></i></div>
+        <strong title="${total ? Math.round((100 * i.value) / total) : 0} %">${esc(fmt(i.value))}${unit ? ` ${esc(unit)}` : ""}</strong></div>`).join("")}</div>`;
+  }
+
+  function gaPagesTable() {
+    const d = ga.data;
+    const f = ga.filtre.toLowerCase();
+    let rows = d.pages.filter((p) => !f || p.chemin.toLowerCase().includes(f) || (p.titre || "").toLowerCase().includes(f));
+    rows = rows.sort((a, b) => (a[ga.sort] > b[ga.sort] ? 1 : a[ga.sort] < b[ga.sort] ? -1 : 0) * ga.dir);
+    const shown = ga.tout ? rows : rows.slice(0, 20);
+    const th = (key, label) => `<th scope="col"><button type="button" class="ga-sort${ga.sort === key ? " is-on" : ""}" data-ga-sort="${key}">${label}${ga.sort === key ? (ga.dir < 0 ? " ▼" : " ▲") : ""}</button></th>`;
+    return `<div class="ga-box ga-pages">
+      <div class="ga-pages-head"><h5>Pages consultées <small>(${rows.length})</small></h5>
+        <input type="search" id="ga-filtre" class="ea-select-sm" placeholder="Filtrer : chantier, /don…" value="${esc(ga.filtre)}" aria-label="Filtrer les pages">
+        <button type="button" class="btn btn-ghost btn-xs" id="ga-csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Exporter</button></div>
+      <div class="ga-table-wrap"><table class="ga-table">
+        <thead><tr>${th("chemin", "Page")}${th("vues", "Vues")}${th("visiteurs", "Visiteurs")}${th("temps_moyen", "Temps moyen")}<th></th></tr></thead>
+        <tbody>${shown.map((p) => `<tr>
+          <td><strong>${esc(p.titre || p.chemin)}</strong><small>${esc(p.chemin)}</small></td>
+          <td>${fmtNb(p.vues)}</td><td>${fmtNb(p.visiteurs)}</td><td>${esc(fmtDuree(p.temps_moyen))}</td>
+          <td><button type="button" class="btn btn-ghost btn-xs" data-ga-page="${esc(p.chemin)}">Détail</button></td></tr>`).join("") || '<tr><td colspan="5" class="kpi-empty">Aucune page ne correspond.</td></tr>'}</tbody>
+      </table></div>
+      ${rows.length > 20 ? `<button type="button" class="btn btn-ghost btn-xs" id="ga-tout">${ga.tout ? "Réduire" : `Voir les ${rows.length} pages`}</button>` : ""}
+    </div>`;
+  }
+
+  function gaRender() {
+    const body = document.getElementById("ga-body");
+    const d = ga.data;
+    const banner = document.getElementById("ga-page-banner");
+    banner.hidden = !ga.page;
+    if (ga.page) banner.innerHTML = `<button type="button" class="btn btn-ghost btn-xs" id="ga-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Tout le site</button>
+      <span>Détail de la page <strong>${esc(d.titre_page || ga.page)}</strong> <code>${esc(ga.page)}</code></span>
+      <a class="btn btn-ghost btn-xs" href="${esc(ga.page)}" target="_blank" rel="noopener">Ouvrir la page</a>`;
+    const attention = d.attention.map((p) => ({ label: p.titre || p.chemin, value: p.temps_moyen }));
+    body.innerHTML = `
+      <div class="kpi-grid ga-kpis">${d.kpis.map(gaTile).join("")}</div>
+      <div class="ga-box">${gaChart(d.serie)}</div>
+      ${ga.page ? "" : `<div class="ga-grid-2">
+        ${gaList("Pages les plus consultées", d.pages.map((p) => ({ label: p.titre || p.chemin, value: p.vues })), { unit: "vues" })}
+        ${gaList("Pages où l’on reste le plus longtemps", attention, { fmt: fmtDuree, empty: "Pas encore assez de visites pour comparer." })}
+      </div>`}
+      <div class="ga-grid-3">
+        ${gaList("D’où viennent les visiteurs", d.canaux, { unit: "visites" })}
+        ${gaList("Sites et réseaux d’origine", d.sources, { unit: "visites" })}
+        ${gaList(ga.page ? "Campagnes" : "Pages d’arrivée sur le site", d.entrees, { unit: "visites", empty: ga.page ? "Aucune campagne identifiée." : undefined })}
+        ${gaList("Pays", d.pays, { unit: "visiteurs" })}
+        ${gaList("Villes", d.villes, { unit: "visiteurs" })}
+        ${gaList("Appareils", d.appareils, { unit: "visiteurs" })}
+        ${gaList("Langue du navigateur", d.langues, { unit: "visiteurs" })}
+      </div>
+      ${ga.page ? "" : gaPagesTable()}
+      <p class="ga-note">Les données Google Analytics peuvent avoir jusqu’à quelques heures de décalage. Le temps moyen est le temps pendant lequel la page était réellement affichée au premier plan. Les visiteurs qui refusent les cookies de mesure ne sont pas comptés.</p>`;
+  }
+
+  async function gaLoad() {
+    const body = document.getElementById("ga-body");
+    const sub = document.getElementById("ga-sub");
+    if (!body) return;
+    document.querySelectorAll(".ga-period").forEach((b) => b.classList.toggle("is-active", b.dataset.periode === String(ga.periode)));
+    body.innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement des statistiques…</p>';
+    try {
+      const q = `periode=${ga.periode}${ga.page ? `&page=${encodeURIComponent(ga.page)}` : ""}`;
+      const d = await api(`/api/admin/audience?${q}`);
+      if (d.branche === false) {
+        body.innerHTML = `<p class="adm-empty">${esc(d.error)}</p>`;
+        return;
+      }
+      ga.data = d;
+      sub.textContent = `${d.libelle}, comparés à la période précédente · mis à jour à ${new Date(d.maj).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+      gaRender();
+    } catch (error) {
+      body.innerHTML = `<p class="adm-empty"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> ${esc(error.message)}</p>`;
+    }
+  }
+
+  async function gaLive() {
+    const host = document.getElementById("ga-live");
+    if (!host || document.getElementById("panel-audience")?.hidden) { clearInterval(ga.liveTimer); ga.liveTimer = null; return; }
+    try {
+      const d = await api("/api/admin/audience?temps_reel=1");
+      if (d.branche === false) { host.hidden = true; return; }
+      host.hidden = false;
+      host.innerHTML = `<span class="ga-dot" aria-hidden="true"></span><strong>${fmtNb(d.en_ligne)}</strong> visiteur${d.en_ligne > 1 ? "s" : ""} sur le site (30 dernières minutes)
+        ${d.pages.length ? `<span class="ga-live-pages">${d.pages.slice(0, 4).map((p) => `${esc(p.label.replace(/\s*[|–-]\s*En Avant.*$/i, ""))} (${p.value})`).join(" · ")}</span>` : ""}`;
+    } catch { host.hidden = true; }
+  }
+
+  function gaCsv() {
+    const d = ga.data;
+    const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = [["Page", "Adresse", "Vues", "Visiteurs", "Temps moyen (secondes)"].map(q).join(";"),
+      ...d.pages.map((p) => [p.titre, p.chemin, p.vues, p.visiteurs, p.temps_moyen].map(q).join(";"))];
+    const blob = new Blob([`﻿${lines.join("\r\n")}`], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `audience-enavant-${d.periode}j-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  function openAudience() {
+    gaLoad();
+    gaLive();
+    if (!ga.liveTimer) ga.liveTimer = setInterval(gaLive, 60000);
+  }
+  document.querySelector('.adm-nav-item[data-panel="panel-audience"]')?.addEventListener("click", openAudience);
+  document.querySelectorAll(".ga-period").forEach((b) => b.addEventListener("click", () => { ga.periode = Number(b.dataset.periode); gaLoad(); }));
+  document.getElementById("ga-refresh")?.addEventListener("click", () => { gaLoad(); gaLive(); });
+  document.getElementById("panel-audience")?.addEventListener("click", (event) => {
+    const t = event.target;
+    const pageBtn = t.closest("[data-ga-page]");
+    if (pageBtn) { ga.page = pageBtn.dataset.gaPage; gaLoad(); document.getElementById("panel-audience").scrollIntoView({ behavior: "smooth" }); return; }
+    if (t.closest("#ga-back")) { ga.page = null; gaLoad(); return; }
+    const sortBtn = t.closest("[data-ga-sort]");
+    if (sortBtn) {
+      const key = sortBtn.dataset.gaSort;
+      ga.dir = ga.sort === key ? -ga.dir : (key === "chemin" ? 1 : -1);
+      ga.sort = key; gaRender(); return;
+    }
+    if (t.closest("#ga-tout")) { ga.tout = !ga.tout; gaRender(); return; }
+    if (t.closest("#ga-csv")) gaCsv();
+  });
+  document.getElementById("panel-audience")?.addEventListener("input", (event) => {
+    if (event.target.id !== "ga-filtre") return;
+    ga.filtre = event.target.value;
+    const pos = event.target.selectionStart;
+    gaRender();
+    const input = document.getElementById("ga-filtre");
+    input.focus(); input.setSelectionRange(pos, pos);
   });
 
   let viewerIsSuperAdmin = false;
@@ -3538,6 +3723,7 @@
         "panel-donations":    "voir_dons",
         "panel-leads":        "voir_dons",
         "panel-equipe":       "gerer_utilisateurs",
+        "panel-audience":     "voir_statistiques",
       };
       Object.entries(panelPerms).forEach(([panel, perm]) => {
         if (!canDo(perm)) {
@@ -4209,6 +4395,7 @@
       { key: "voir_membres",       label: "Voir et traiter les membres" },
       { key: "voir_dons",          label: "Voir les dons et les leads" },
       { key: "gerer_newsletter",   label: "Gérer et envoyer la newsletter" },
+      { key: "voir_statistiques",  label: "Voir l’audience du site (Google Analytics)" },
       { key: "gerer_parametres",   label: "Gérer les paramètres et la sécurité" },
       { key: "espace_membre",      label: "Accès à l'espace membre" },
       { key: "jouer_trivia",       label: "Participer au Trivia" },
@@ -4216,7 +4403,7 @@
       { key: "voir_reserves",      label: "Contenus réservés aux membres" },
     ];
     const ROLE_DEFAULTS = {
-      superadmin: ["acces_dashboard","gerer_utilisateurs","gerer_articles","gerer_evenements","gerer_galerie","gerer_organigramme","gerer_trivia","voir_membres","voir_dons","gerer_newsletter","gerer_parametres","espace_membre","jouer_trivia","voir_public","voir_reserves"],
+      superadmin: ["acces_dashboard","gerer_utilisateurs","gerer_articles","gerer_evenements","gerer_galerie","gerer_organigramme","gerer_trivia","voir_membres","voir_dons","gerer_newsletter","voir_statistiques","gerer_parametres","espace_membre","jouer_trivia","voir_public","voir_reserves"],
       editor:    ["espace_membre","voir_public"],
       readonly:  ["espace_membre","voir_public"],
       member:    ["espace_membre","jouer_trivia","voir_reserves"],
