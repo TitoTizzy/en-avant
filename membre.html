@@ -395,13 +395,20 @@
           <label>Téléphone
             <input name="telephone" type="tel" autocomplete="tel" placeholder="+509 0000-0000" required>
           </label>
-          <label>Ville
+          <label>Pays de résidence
+            <input name="pays" autocomplete="country-name" value="Haïti" required>
+          </label>
+          <label data-departement-field>Département
+            <select name="departement"><option value="">Choisir…</option></select>
+          </label>
+          <label>Ville / commune
             <input name="ville" autocomplete="address-level2" required>
           </label>
         </div>
         <label class="membre-adhesion-consent">
           <input type="checkbox" name="consent" required>
-          <span>J'accepte que ces données soient traitées par En Avant pour ma demande d'adhésion,
+          <span>J'accepte que ces données soient traitées par En Avant pour ma demande d'adhésion et de recevoir
+            la newsletter du parti (désinscription possible à tout moment),
             conformément à la <a href="/mentions-legales#confidentialite" target="_blank" rel="noopener">politique de confidentialité</a>.</span>
         </label>
         <button type="submit" class="btn btn-primary">Envoyer ma fiche</button>
@@ -518,6 +525,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/env.js"></script>
   <script src="/js/premium.js"></script>
+  <script src="/js/geo.js"></script>
   <script src="/js/membre.js"></script>
 </body>
 </html>

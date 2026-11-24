@@ -4,7 +4,7 @@
   "trailingSlash": false,
   "functions": {
     "api/trivia.js": { "maxDuration": 60, "includeFiles": "pictures/quiz/manifest.json" },
-    "api/admin.js": { "includeFiles": "pictures/quiz/manifest.json" }
+    "api/admin.js": { "maxDuration": 60, "includeFiles": "pictures/quiz/manifest.json" }
   },
   "redirects": [
     { "source": "/register", "destination": "/adherer", "permanent": true },
@@ -40,7 +40,9 @@
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
     { "source": "/api/trivia/membre", "destination": "/api/trivia?action=membre" },
     { "source": "/api/member/articles",         "destination": "/api/member?action=articles" },
-    { "source": "/api/member/adhesion",         "destination": "/api/member?action=adhesion" }
+    { "source": "/api/member/adhesion",         "destination": "/api/member?action=adhesion" },
+    { "source": "/api/newsletter",              "destination": "/api/member?action=newsletter" },
+    { "source": "/api/admin/newsletter",        "destination": "/api/admin?action=newsletter" }
   ],
   "headers": [
     {

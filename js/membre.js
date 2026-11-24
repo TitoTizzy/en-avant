@@ -87,6 +87,7 @@
   }
 
   const adhesionForm = document.getElementById("mb-adhesion-form");
+  if (adhesionForm) window.EA_GEO?.bindLocation(adhesionForm);
   adhesionForm?.elements.ninu.addEventListener("input", (event) => {
     event.target.value = event.target.value.replace(/\D/g, "").slice(0, 10);
   });
@@ -96,9 +97,10 @@
     const f = adhesionForm.elements;
     const show = (msg, type) => { status.textContent = msg; status.className = `membre-form-status ${type}`; };
 
+    const haiti = window.EA_GEO?.isHaiti(f.pays.value);
     if (!f.sexe.value || !/^1\d{9}$/.test(f.ninu.value) || f.telephone.value.replace(/\D/g, "").length < 8
-      || f.ville.value.trim().length < 2) {
-      show("Vérifiez les champs : NINU à 10 chiffres commençant par 1, téléphone et ville requis.", "error");
+      || f.ville.value.trim().length < 2 || f.pays.value.trim().length < 2 || (haiti && !f.departement.value)) {
+      show("Vérifiez les champs : NINU à 10 chiffres commençant par 1, téléphone, pays, département (Haïti) et ville requis.", "error");
       return;
     }
     if (!f.consent.checked) {
@@ -116,6 +118,8 @@
           ninu: f.ninu.value,
           telephone: f.telephone.value.trim(),
           ville: f.ville.value.trim(),
+          pays: f.pays.value.trim(),
+          departement: f.departement.value,
           consent: true,
         }),
       });

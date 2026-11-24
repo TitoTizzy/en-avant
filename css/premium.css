@@ -734,3 +734,4 @@ header.header {
     animation: none !important;
   }
 }
+.ea-field[hidden], [data-departement-field][hidden] { display: none !important; }

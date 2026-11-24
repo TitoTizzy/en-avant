@@ -15,6 +15,7 @@ const STATIC_PAGES = [
   ['/organisation', '0.6', 'monthly'],
   ['/don', '0.6', 'monthly'],
   ['/trivia', '0.5', 'monthly'],
+  ['/newsletter', '0.5', 'yearly'],
   ['/mentions-legales', '0.2', 'yearly'],
 ];
 

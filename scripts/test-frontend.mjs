@@ -275,6 +275,72 @@ test('Quiz membres : sans session, retour mémorisé puis redirection vers la co
   dom.window.close();
 });
 
+test('Newsletter : inscription avec pays, département (Haïti) et ville ; département masqué hors Haïti', async () => {
+  const dom = await page('newsletter.html', '/newsletter');
+  const sent = [];
+  dom.window.fetch = async (_url, options = {}) => { sent.push(JSON.parse(options.body)); return response(201, { ok: true }); };
+  dom.window.eval(await read('js/geo.js'));
+  dom.window.eval(await read('js/newsletter.js'));
+  const doc = dom.window.document;
+  const f = doc.getElementById('nl-form').elements;
+  const depField = doc.querySelector('[data-departement-field]');
+  assert.equal(depField.hidden, false, 'Haïti par défaut : département visible');
+  f.pays.value = 'Canada'; f.pays.dispatchEvent(new dom.window.Event('input'));
+  assert.equal(depField.hidden, true);
+  f.pays.value = 'haiti'; f.pays.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(f.pays.value, 'Haïti');
+  f.email.value = 'marie@example.org'; f.ville.value = 'Jacmel'; f.consent.checked = true;
+  doc.getElementById('nl-form').dispatchEvent(new dom.window.Event('submit', { cancelable: true })); await settle();
+  assert.equal(sent.length, 0, 'département manquant : rien n’est envoyé');
+  f.departement.value = 'Sud-Est';
+  doc.getElementById('nl-form').dispatchEvent(new dom.window.Event('submit', { cancelable: true })); await settle();
+  assert.deepEqual(sent[0], { op: 'inscription', email: 'marie@example.org', nom: '', pays: 'Haïti', departement: 'Sud-Est', ville: 'Jacmel', consent: true, site: '' });
+  assert.equal(doc.getElementById('nl-success').hidden, false);
+  dom.window.close();
+});
+
+test('Newsletter : le lien de désinscription n’agit qu’après un clic (jamais à l’ouverture)', async () => {
+  const dom = await page('newsletter.html', '/newsletter?desinscription=11111111-1111-4111-8111-111111111111');
+  const calls = [];
+  dom.window.fetch = async (url, options = {}) => {
+    calls.push({ url, method: options.method || 'GET', body: options.body });
+    return url.includes('op=jeton') ? response(200, { email: 'ma•••@example.org', desinscrit: false }) : response(200, { ok: true });
+  };
+  dom.window.eval(await read('js/geo.js'));
+  dom.window.eval(await read('js/newsletter.js'));
+  await settle(); await settle();
+  const doc = dom.window.document;
+  assert.equal(doc.getElementById('nl-inscription').hidden, true);
+  assert.deepEqual(calls.map((c) => c.method), ['GET']);
+  assert.match(doc.getElementById('nl-unsub-text').textContent, /ma•••@example\.org/);
+  doc.getElementById('nl-unsub-btn').click(); await settle(); await settle();
+  assert.equal(calls[1].method, 'POST');
+  assert.deepEqual(JSON.parse(calls[1].body), { op: 'desinscription', t: '11111111-1111-4111-8111-111111111111' });
+  assert.match(doc.getElementById('nl-unsub-text').textContent, /désinscrit/);
+  dom.window.close();
+});
+
+test('Adhésion : pays et département envoyés avec la fiche', async () => {
+  const dom = await page('adherer.html', '/adherer');
+  const sent = [];
+  dom.window.fetch = async (_url, options = {}) => { sent.push(JSON.parse(options.body)); return response(201, { ok: true }); };
+  dom.window.eval(await read('js/geo.js'));
+  dom.window.eval(await read('js/adherer.js'));
+  const doc = dom.window.document;
+  const form = doc.getElementById('adhesion-form');
+  const set = (name, value) => { form.elements.namedItem(name).value = value; };
+  set('nom', 'Marie Joseph'); set('pseudo', 'marie'); set('sexe', 'femme'); set('ninu', '1234567890');
+  set('email', 'marie@example.org'); set('telephone', '+509 3400 0000'); set('pays', 'Haïti');
+  set('departement', 'Nord'); set('ville', 'Cap-Haïtien'); set('password', 'motdepasse-solide'); set('confirm', 'motdepasse-solide');
+  doc.getElementById('adh-consent').checked = true;
+  form.dispatchEvent(new dom.window.Event('submit', { cancelable: true })); await settle();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].pays, 'Haïti');
+  assert.equal(sent[0].departement, 'Nord');
+  assert.equal(sent[0].ville, 'Cap-Haïtien');
+  dom.window.close();
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));

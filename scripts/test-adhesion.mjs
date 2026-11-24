@@ -51,13 +51,24 @@ function fakeSupabase({ profileByEmail = null, inviteError = null } = {}) {
 const updatesOn = (sb, table) => sb.calls.filter((c) => c.table === table && c.op === 'update');
 
 test('validateFiche : NINU commençant par 1, consentement obligatoire', () => {
-  const ok = validateFiche({ sexe: 'Femme', ninu: '1234-567-890', telephone: '+509 3400 0000', ville: 'Jacmel', consent: true });
+  const ok = validateFiche({ sexe: 'Femme', ninu: '1234-567-890', telephone: '+509 3400 0000', ville: 'Jacmel',
+    pays: 'haiti', departement: 'sud est', consent: true });
   assert.deepEqual(ok.errors, {});
   assert.equal(ok.values.ninu, '1234567890');
   assert.equal(ok.values.sexe, 'femme');
+  assert.equal(ok.values.pays, 'Haïti');
+  assert.equal(ok.values.departement, 'Sud-Est');
+
+  const diaspora = validateFiche({ sexe: 'homme', ninu: '1234567890', telephone: '+1 617 000 0000', ville: 'Boston',
+    pays: 'États-Unis', departement: 'Ouest', consent: true });
+  assert.deepEqual(diaspora.errors, {});
+  assert.equal(diaspora.values.departement, null, 'pas de département hors d’Haïti');
+
+  const sansDep = validateFiche({ sexe: 'homme', ninu: '1234567890', telephone: '+509 3400 0000', ville: 'Hinche', pays: 'Haïti', consent: true });
+  assert.deepEqual(Object.keys(sansDep.errors), ['departement']);
 
   const ko = validateFiche({ sexe: 'x', ninu: '2234567890', telephone: '12', ville: '', consent: 'true' });
-  assert.deepEqual(Object.keys(ko.errors).sort(), ['consent', 'ninu', 'sexe', 'telephone', 'ville']);
+  assert.deepEqual(Object.keys(ko.errors).sort(), ['consent', 'ninu', 'pays', 'sexe', 'telephone', 'ville']);
 });
 
 test('Approbation d’un compte existant : seul le rôle « pending » passe en « member »', async () => {
