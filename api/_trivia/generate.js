@@ -8,7 +8,7 @@ import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, methodGuard, handleError } from '../_lib/http.js';
 import {
   APPELS, QUOTA_PAR_APPEL, QUESTION_TOOL, SYSTEM_PROMPT, buildUserPrompt, chantierNames,
-  duplicateIndex, loadImageManifest, sourceWindow, toQuestionRow,
+  auditQuestion, duplicateIndex, loadImageManifest, sourceWindow, toQuestionRow,
 } from '../_lib/quiz-generation.js';
 
 const MODEL = process.env.TRIVIA_MODEL || 'claude-haiku-5-5';
@@ -100,7 +100,8 @@ export default async function handler(req, res) {
       const tool = result.value.response.content.find((b) => b.type === 'tool_use');
       for (const candidate of tool?.input?.questions || []) {
         const row = toQuestionRow(candidate, { imageIds, generationId });
-        if (!row) { rejected += 1; continue; }
+        // Double contrôle : aucune question injouable n'entre dans la banque.
+        if (!row || auditQuestion(row, imageIds)) { rejected += 1; continue; }
         if (dupes.has(row.question)) { duplicates += 1; continue; }
         dupes.add(row.question);
         rows.push(row);

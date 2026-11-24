@@ -9,9 +9,11 @@
 //   DELETE { id, kind? }               → supprimer une question ou un score visiteur
 //   POST   { action:'reset_joueur', user_id }
 //   POST   { action:'remplacer_defi', semaine:'courante'|'suivante', index, question_id? }
+//   GET  ?view=controle                → questions techniquement injouables (même règles que le générateur)
+//   POST   { action:'desactiver_risques' } → désactive toutes les questions actives injouables
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError } from '../_lib/http.js';
-import { FORMATS, DIFFICULTES, loadImageManifest, chantierNames, fingerprint } from '../_lib/quiz-generation.js';
+import { FORMATS, DIFFICULTES, loadImageManifest, chantierNames, fingerprint, auditQuestion } from '../_lib/quiz-generation.js';
 import { titreFor } from '../_lib/quiz-rules.js';
 
 const isUuid = (v) => /^[0-9a-f-]{36}$/i.test(String(v || ''));
@@ -46,13 +48,29 @@ async function weekStarts(supabase) {
 async function challengeFor(supabase, weekStart, create) {
   const { data, error } = await supabase.from('quiz_challenges').select('*').eq('week_start', weekStart).maybeSingle();
   if (error) throw error;
-  if (data || !create) return data;
+  if ((data && data.question_ids?.length >= 5) || !create) return data;
+  // Tirage vérifié avant l'enregistrement : jamais de défi vide ou trop court.
   const ids = await rpc(supabase, 'quiz_pick', { p_count: 15 });
-  const { data: created, error: insertError } = await supabase.from('quiz_challenges')
-    .upsert({ week_start: weekStart, question_ids: ids }, { onConflict: 'week_start', ignoreDuplicates: true })
-    .select('*').maybeSingle();
+  if (!ids || ids.length < 5) return data || null;
+  const { data: created, error: insertError } = data
+    ? await supabase.from('quiz_challenges').update({ question_ids: ids }).eq('week_start', weekStart).select('*').maybeSingle()
+    : await supabase.from('quiz_challenges')
+      .upsert({ week_start: weekStart, question_ids: ids }, { onConflict: 'week_start', ignoreDuplicates: true })
+      .select('*').maybeSingle();
   if (insertError) throw insertError;
   return created || (await supabase.from('quiz_challenges').select('*').eq('week_start', weekStart).single()).data;
+}
+
+/** Questions de la banque qui ne passent pas le contrôle technique. */
+async function risques(supabase) {
+  const imageIds = new Set((await loadImageManifest()).map((i) => i.id));
+  const { data, error } = await supabase.from('trivia_questions')
+    .select('id, question, format, options, correct_answer, meta, image_id, active').limit(20000);
+  if (error) throw error;
+  return (data || []).flatMap((q) => {
+    const raison = auditQuestion(q, imageIds);
+    return raison ? [{ id: q.id, question: q.question, format: q.format, active: q.active, raison }] : [];
+  });
 }
 
 async function describeChallenge(supabase, challenge) {
@@ -70,7 +88,7 @@ async function describeChallenge(supabase, challenge) {
   };
 }
 
-function cleanEdit(body) {
+function cleanEdit(body, format) {
   const patch = {};
   if (typeof body.active === 'boolean') patch.active = body.active;
   if (typeof body.question === 'string' && body.question.trim().length >= 8) {
@@ -81,6 +99,9 @@ function cleanEdit(body) {
   if (typeof body.source_livre_blanc === 'string') patch.source_livre_blanc = body.source_livre_blanc.trim().slice(0, 300) || null;
   if (body.chantier === null || (Number.isInteger(body.chantier) && body.chantier >= 1 && body.chantier <= 20)) patch.chantier = body.chantier;
   if (DIFFICULTES.includes(body.difficulte)) patch.difficulte = body.difficulte;
+  if ((Array.isArray(body.options) || typeof body.correct_answer === 'string') && ['chiffre', 'ordre'].includes(format)) {
+    return { error: 'Pour ce format, la réponse ne se modifie pas ici : désactivez la question et générez-en une nouvelle.' };
+  }
   if (Array.isArray(body.options) && typeof body.correct_answer === 'string') {
     const options = body.options.map((o) => String(o).trim().slice(0, 200)).filter(Boolean);
     if (options.length >= 2 && new Set(options).size === options.length && options.includes(body.correct_answer.trim())) {
@@ -101,6 +122,10 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       const view = String(req.query?.view || '');
+
+      if (view === 'controle') {
+        return json(res, 200, { risques: await risques(supabase) });
+      }
 
       if (view === 'resume') {
         const since7 = new Date(Date.now() - 7 * 864e5).toISOString();
@@ -239,9 +264,17 @@ export default async function handler(req, res) {
     if (req.method === 'PATCH') {
       const body = getBody(req);
       if (!isUuid(body.id)) return json(res, 422, { error: 'Identifiant invalide.' });
-      const patch = cleanEdit(body);
+      const { data: current, error: currentError } = await supabase.from('trivia_questions')
+        .select('question, format, options, correct_answer, meta, image_id').eq('id', body.id).maybeSingle();
+      if (currentError) throw currentError;
+      if (!current) return json(res, 404, { error: 'Question introuvable.' });
+      const patch = cleanEdit(body, current.format);
       if (patch.error) return json(res, 422, { error: patch.error });
       if (!Object.keys(patch).length) return json(res, 422, { error: 'Aucune modification valide.' });
+      // Une modification ne doit jamais rendre la question injouable.
+      const imageIds = new Set((await loadImageManifest()).map((i) => i.id));
+      const probleme = auditQuestion({ ...current, ...patch }, imageIds);
+      if (probleme && patch.active !== false) return json(res, 422, { error: `Modification refusée : ${probleme}.` });
       const { data, error } = await supabase.from('trivia_questions').update(patch).eq('id', body.id).select('id, active').maybeSingle();
       if (error) {
         if (error.code === '23505') return json(res, 409, { error: 'Une question identique existe déjà.' });
@@ -262,6 +295,14 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       const body = getBody(req);
+      if (body.action === 'desactiver_risques') {
+        const ids = (await risques(supabase)).filter((q) => q.active).map((q) => q.id);
+        if (ids.length) {
+          const { error } = await supabase.from('trivia_questions').update({ active: false }).in('id', ids);
+          if (error) throw error;
+        }
+        return json(res, 200, { ok: true, desactivees: ids.length });
+      }
       if (body.action === 'reset_joueur') {
         if (!isUuid(body.user_id)) return json(res, 422, { error: 'Joueur invalide.' });
         const { error, count } = await supabase.from('quiz_games').delete({ count: 'exact' }).eq('user_id', body.user_id);

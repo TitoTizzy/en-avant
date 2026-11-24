@@ -674,6 +674,14 @@
               </select>
               <button type="submit" class="btn btn-ghost btn-xs"><i class="fa-solid fa-filter" aria-hidden="true"></i> Filtrer</button>
             </form>
+            <div class="quiz-control" id="quiz-control">
+              <div>
+                <strong><i class="fa-solid fa-stethoscope" aria-hidden="true"></i> Contrôle technique</strong>
+                <small>Repère les questions injouables (réponse impossible à sélectionner, options incohérentes, image manquante…).</small>
+              </div>
+              <button type="button" class="btn btn-ghost btn-xs" id="quiz-control-run">Contrôler la banque</button>
+            </div>
+            <div class="quiz-control-result" id="quiz-control-result" hidden></div>
             <p class="quiz-admin-count" id="quiz-bank-count"></p>
             <div id="trivia-admin" class="adm-record-list"><p class="adm-loading">Chargement des questions…</p></div>
             <div class="quiz-admin-pager" id="quiz-bank-pager"></div>
