@@ -686,9 +686,16 @@ test('Sous-pages : menu à sous-menus partout, fil d’Ariane, contenu du Livre 
   }
   for (const c of CHANTIER_PAGES) {
     const doc = new JSDOM(await read(c.file)).window.document;
-    const text = doc.querySelector('.sp-article').textContent;
-    assert.ok(text.length > 3000, `${c.file} : contenu du Livre blanc (${text.length})`);
-    assert.match(doc.querySelector('.sp-aside-pdf').getAttribute('href'), /^\/docs\/livre-blanc\.pdf#page=\d+$/);
+    const resume = doc.querySelectorAll('.sp-resume p');
+    assert.ok(resume.length >= 3 && resume.length <= 4, `${c.file} : résumé en 3 ou 4 paragraphes`);
+    assert.ok([...resume].every((p) => p.textContent.length > 120), `${c.file} : paragraphes développés`);
+    assert.match(doc.querySelector('.sp-readmore a').getAttribute('href'), /^\/docs\/livre-blanc\.pdf#page=\d+$/, `${c.file} : invitation à lire le Livre blanc`);
+    const poster = doc.querySelector('.sp-hero-poster img');
+    assert.equal(poster.getAttribute('src'), `/pictures/chantiers/chantier-${String(c.n).padStart(2, '0')}.webp`, `${c.file} : affiche complète`);
+    const full = doc.querySelector('details.sp-full');
+    assert.ok(full && !full.open, `${c.file} : texte intégral replié`);
+    const text = full.querySelector('.sp-article').textContent;
+    assert.ok(text.length > 3000, `${c.file} : texte intégral du Livre blanc (${text.length})`);
     assert.equal(doc.querySelectorAll('.sp-pager a').length, c.n === 1 || c.n === 20 ? 2 : 3);
   }
   const candidats = new JSDOM(await read('organisation/candidats.html')).window.document;

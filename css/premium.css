@@ -1140,3 +1140,30 @@ body.eac-open .ea-nudge, body:has(.u-links.open, .u-links.is-open, .u-links.menu
 .chantier-card .card-link::after { content: ""; position: absolute; inset: 0; z-index: 3; }
 .chantier-card .card-link:focus-visible { outline: none; }
 .chantier-card:has(.card-link:focus-visible) { outline: 2px solid #ff6a2a; outline-offset: 3px; }
+
+/* Pages des chantiers : affiche complète, résumé, texte intégral repliable */
+.sp-hero--poster { min-height: 0; padding: 8.5rem 0 4rem; }
+.sp-hero-blur { filter: blur(28px) brightness(0.45); transform: scale(1.1); }
+.sp-hero-grid { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3rem; align-items: center; }
+.sp-hero-poster { margin: 0; }
+.sp-hero-poster img { display: block; width: auto; height: auto; max-width: min(420px, 38vw); max-height: 78vh; border-radius: 18px; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.12); }
+@media (max-width: 860px) {
+  .sp-hero-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .sp-hero-poster img { max-width: 100%; max-height: none; margin-inline: auto; }
+}
+.sp-resume p { font-size: 1.1rem; }
+.sp-readmore { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; margin: 2rem 0 1.5rem; padding: 1.4rem 1.5rem; border-radius: 20px; background: linear-gradient(135deg, rgba(255, 106, 42, 0.16), rgba(255, 106, 42, 0.04)); border: 1px solid rgba(255, 138, 76, 0.35); }
+.sp-readmore > div { flex: 1 1 320px; }
+.sp-readmore strong { color: #fff; font-size: 1.15rem; }
+.sp-readmore p { margin: 0.35rem 0 0; color: var(--ink-300); }
+.sp-full { border-radius: 18px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); }
+.sp-full > summary { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.4rem 1rem; padding: 1.1rem 1.3rem; cursor: pointer; list-style: none; color: #fff; font-weight: 700; }
+.sp-full > summary::-webkit-details-marker { display: none; }
+.sp-full > summary span::before { content: "+"; display: inline-grid; place-items: center; width: 26px; height: 26px; margin-right: 0.6rem; border-radius: 50%; background: rgba(255, 106, 42, 0.18); color: #ff8a4c; }
+.sp-full[open] > summary span::before { content: "−"; }
+.sp-full > summary small { color: var(--ink-400, rgba(205, 216, 232, 0.55)); font-weight: 600; }
+.sp-full[open] > summary { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.sp-full-toc { padding: 1.1rem 1.3rem 0; }
+.sp-full-toc ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; }
+.sp-full-toc a { color: #ffd9c6; }
+.sp-full .sp-article { padding: 0.5rem 1.3rem 1.3rem; max-width: none; }

@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CHANTIERS } from '../api/_lib/chat.js';
 import { RUBRIQUES, NAV, CHANTIER_PAGES, FAMILLES } from '../api/_lib/site-pages.js';
+import { RESUMES } from '../pages-src/chantiers-resumes.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
@@ -92,7 +93,7 @@ export function livreBlancBlocks(text) {
   return out.map((b) => ({ ...b, text: b.text.replace(/­/g, '').replace(/\s+/g, ' ').trim() })).filter((b) => b.text);
 }
 
-const LB = livreBlancBlocks(read('docs/livre-blanc.txt'));
+export const LB = livreBlancBlocks(read('docs/livre-blanc.txt'));
 const lbWhere = (fn) => LB.filter(fn);
 const pagesOf = (blocks) => {
   const ps = blocks.map((b) => b.page).filter(Boolean);
@@ -223,7 +224,25 @@ function renderPage({ file, path, title, description, main, team = false }) {
   write(file, `${head}<main class="sp-page">\n${main}\n  </main>${foot}`);
 }
 
-function hero({ crumbs, kicker, titre, lead, img }) {
+function hero({ crumbs, kicker, titre, lead, img, poster = null }) {
+  if (poster) {
+    return `
+    <section class="sp-hero sp-hero--poster">
+      <img class="sp-hero-img sp-hero-blur" src="${poster.src}" alt="" aria-hidden="true" decoding="async">
+      <div class="sp-hero-overlay"></div>
+      <div class="container sp-hero-grid">
+        <div class="sp-hero-content">
+          ${crumbsHtml(crumbs)}
+          <span class="eyebrow">${esc(kicker)}</span>
+          <h1>${esc(titre)}</h1>
+          ${lead ? `<p>${esc(lead)}</p>` : ''}
+        </div>
+        <figure class="sp-hero-poster">
+          <img src="${poster.src}" alt="${esc(poster.alt)}" width="1600" height="2212" decoding="async" fetchpriority="high">
+        </figure>
+      </div>
+    </section>`;
+  }
   return `
     <section class="sp-hero">
       ${img ? `<img class="sp-hero-img" src="${img}" alt="" aria-hidden="true" decoding="async">` : ''}
@@ -382,22 +401,40 @@ for (const c of CHANTIER_PAGES) {
   const num = String(c.n).padStart(2, '0');
   const prev = CHANTIER_PAGES[c.n - 2];
   const next = CHANTIER_PAGES[c.n];
+  const resume = RESUMES[c.n];
+  if (!resume || resume.length < 3) throw new Error(`Chantier ${c.n} : résumé manquant`);
+  const pdfLink = `${PDF}#page=${a}`;
   const main = [
-    hero({ crumbs: [home, { label: 'Vingt chantiers', href: '/vingt-chantiers' }, { label: c.titre }], kicker: `Chantier ${num} · ${c.famille}`, titre: c.titre, lead: c.resume, img: `/pictures/chantiers/chantier-${num}.webp` }),
+    hero({
+      crumbs: [home, { label: 'Vingt chantiers', href: '/vingt-chantiers' }, { label: c.titre }],
+      kicker: `Chantier ${num} · ${c.famille}`, titre: c.titre, lead: c.resume,
+      poster: { src: `/pictures/chantiers/chantier-${num}.webp`, alt: `Chantier ${c.n} : ${c.titre}` },
+    }),
     `
     <section class="section section-light">
-      <div class="container sp-article-grid">
-        <aside class="sp-aside">
-          <div class="sp-aside-card">
-            <p class="sp-aside-title">Dans cette page</p>
-            <ol>${blocks[0].section ? '' : '<li><a href="#contenu">Présentation</a></li>'}${toc.map((t) => `<li><a href="#${t.id}">${esc(t.titre)}</a></li>`).join('')}</ol>
-            <a class="sp-aside-pdf" href="${PDF}#page=${a}" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Livre blanc, ${pagesLabel([a, b])}</a>
+      <div class="container narrow-container">
+        <div class="section-head reveal-up">
+          <span class="section-kicker">En résumé</span>
+          <h2 class="section-title">Ce que propose En Avant</h2>
+        </div>
+        <div class="about-rich-text sp-resume">
+          ${resume.map((p) => `<p>${esc(p)}</p>`).join('\n          ')}
+        </div>
+        <div class="sp-readmore reveal-up">
+          <div>
+            <strong>Lire le chantier en entier</strong>
+            <p>Le détail complet du chantier ${c.n} — état des lieux, objectifs et toutes les actions envisagées — se trouve dans le Livre blanc d’En Avant, ${pagesLabel([a, b])}.</p>
           </div>
-        </aside>
-        <article class="about-rich-text sp-lb sp-article" id="contenu">
-          ${html}
-          <p class="sp-ref"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Source : <a href="${PDF}#page=${a}" target="_blank" rel="noopener">Livre blanc d’En Avant, Partie II, Chantier ${c.n}, ${pagesLabel([a, b])}</a></p>
-        </article>
+          <a class="btn btn-primary" href="${pdfLink}" target="_blank" rel="noopener"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Lire dans le Livre blanc (${pagesLabel([a, b])})</a>
+        </div>
+        <details class="sp-full">
+          <summary><span>Afficher le texte intégral du chantier</span><small>Livre blanc, Partie II, Chantier ${c.n}, ${pagesLabel([a, b])}</small></summary>
+          <nav class="sp-full-toc" aria-label="Sommaire du chantier"><ol>${blocks[0].section ? '' : '<li><a href="#contenu">Présentation</a></li>'}${toc.map((t) => `<li><a href="#${t.id}">${esc(t.titre)}</a></li>`).join('')}</ol></nav>
+          <article class="about-rich-text sp-lb sp-article" id="contenu">
+            ${html}
+            <p class="sp-ref"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Source : <a href="${pdfLink}" target="_blank" rel="noopener">Livre blanc d’En Avant, Partie II, Chantier ${c.n}, ${pagesLabel([a, b])}</a></p>
+          </article>
+        </details>
       </div>
     </section>`,
     `
