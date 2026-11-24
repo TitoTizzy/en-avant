@@ -1254,7 +1254,7 @@
           <div class="adm-record-head">
             <div>
               <h4>Journal d'activité</h4>
-              <p>Toutes les actions effectuées sur la plateforme, filtrables par catégorie, heure et utilisateur.</p>
+              <p>Tout ce qui se passe sur le site, expliqué simplement : adhésions, dons, contenus, newsletter, quiz, actions de l’équipe, sécurité et incidents. Heures de Port-au-Prince.</p>
             </div>
             <button type="button" class="btn btn-ghost btn-xs" id="logs-refresh">
               <i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualiser
@@ -1262,17 +1262,23 @@
           </div>
           <!-- Filtres -->
           <div style="display:flex; gap:.6rem; flex-wrap:wrap; margin-top:1rem;">
-            <select id="logs-filter-cat" class="ea-select-sm">
+            <select id="logs-filter-cat" class="ea-select-sm" aria-label="Catégorie">
               <option value="">Toutes catégories</option>
-              <option value="article">Articles</option>
-              <option value="event">Événements</option>
-              <option value="media">Médias</option>
-              <option value="team">Organisation</option>
-              <option value="member">Membres</option>
-              <option value="security">Sécurité</option>
-              <option value="settings">Paramètres</option>
+              <option value="adhesions">Adhésions</option>
+              <option value="dons">Dons</option>
+              <option value="contenus">Contenus</option>
+              <option value="newsletter">Newsletter</option>
+              <option value="quiz">Quiz</option>
+              <option value="equipe">Équipe</option>
+              <option value="securite">Sécurité</option>
+              <option value="systeme">Système</option>
             </select>
-            <input type="text" id="logs-filter-user" class="ea-input-sm" placeholder="Filtrer par utilisateur…" maxlength="40">
+            <select id="logs-filter-niveau" class="ea-select-sm" aria-label="Importance">
+              <option value="">Toutes importances</option>
+              <option value="attention">À surveiller</option>
+              <option value="erreur">Incidents</option>
+            </select>
+            <input type="text" id="logs-filter-user" class="ea-input-sm" placeholder="Personne ou mot-clé…" maxlength="40">
             <input type="datetime-local" id="logs-filter-from" class="ea-input-sm" title="Depuis">
             <input type="datetime-local" id="logs-filter-to" class="ea-input-sm" title="Jusqu'à">
             <button type="button" class="btn btn-ghost btn-xs" id="logs-filter-apply">
@@ -1280,6 +1286,7 @@
             </button>
           </div>
         </div>
+        <div class="logs-summary" id="logs-summary" hidden></div>
         <div id="logs-list">
           <p style="color:var(--ink-400);">
             <i class="fa-solid fa-circle-notch fa-spin"></i>

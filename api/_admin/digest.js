@@ -9,6 +9,7 @@ import { json, handleError } from '../_lib/http.js';
 import { notifyTeam } from '../_lib/notify.js';
 import { sendDueRelances, accountsToDelete, displayName } from '../_lib/relances.js';
 import { createNotification } from '../_lib/notifications.js';
+import { logActivity } from '../_lib/activity.js';
 
 const authorized = cronAuthorized;
 
@@ -68,6 +69,18 @@ export default async function handler(req, res) {
       ],
       note: 'Les emails et téléphones des lecteurs sont consultables dans le tableau de bord (onglet Leads). '
         + 'Les comptes à supprimer sont listés sur l’accueil du tableau de bord (SuperAdmin).',
+    });
+    if (relances.sent || relances.failed) {
+      await logActivity(supabase, {
+        categorie: 'adhesions', niveau: relances.failed ? 'attention' : 'info',
+        message: `Relances automatiques « Complétez votre adhésion » : ${relances.sent} envoyée(s)${relances.failed ? `, ${relances.failed} échec(s)` : ''}.`,
+      });
+    }
+    await logActivity(supabase, {
+      categorie: 'systeme', niveau: sent ? 'info' : 'attention',
+      message: sent
+        ? `Résumé quotidien envoyé à l’équipe : ${nLeads} téléchargement(s) du Livre blanc, ${members.count || 0} demande(s) d’adhésion, ${donations.count || 0} don(s) en 24 h.`
+        : 'Le résumé quotidien n’a pas pu être envoyé à l’équipe (service d’emails indisponible).',
     });
     return json(res, 200, { ok: true, sent, relances, a_supprimer: toDelete.length });
   } catch (error) {

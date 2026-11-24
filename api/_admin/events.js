@@ -5,6 +5,7 @@
 // DELETE : { id }
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
+import { logTeamAction } from '../_lib/activity.js';
 
 const isUuid = (value) => /^[0-9a-f-]{36}$/i.test(String(value || ''));
 
@@ -16,7 +17,7 @@ const parseDate = (value) => {
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requirePermission(req, 'gerer_evenements');
+    const { user } = await requirePermission(req, 'gerer_evenements');
 
     const supabase = getServiceClient();
     const body = getBody(req);
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
         .select()
         .single();
       if (error) throw error;
+      await logTeamAction(supabase, user, { categorie: 'contenus', message: `a ajouté l’événement « ${titre} »${data?.lieu ? ` (${data.lieu})` : ''}.` });
 
       return json(res, 201, { ok: true, event: data });
     }

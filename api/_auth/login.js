@@ -3,6 +3,7 @@ import { getAnonClient, getServiceClient } from '../_lib/supabase.js';
 import {
   json, methodGuard, getBody, handleError, clean,
 } from '../_lib/http.js';
+import { logActivity, actorName } from '../_lib/activity.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
@@ -36,6 +37,8 @@ export default async function handler(req, res) {
       return json(res, 403, { error: 'Adresse email non confirmée : ouvrez le lien reçu par email.' });
     }
     if (error || !data.session) {
+      const shown = identifier.includes('@') ? identifier.replace(/^(.).*(@.*)$/, '$1•••$2') : identifier.slice(0, 40);
+      await logActivity(null, { categorie: 'securite', niveau: 'attention', message: `Tentative de connexion refusée (identifiant ou mot de passe incorrect) pour « ${shown} ».` });
       return json(res, 401, { error: 'Identifiants incorrects.' });
     }
 
@@ -60,6 +63,15 @@ export default async function handler(req, res) {
         error: fiche?.status === 'rejected'
           ? 'Votre demande d’adhésion n’a pas été retenue. Pour toute question : contact@enavant.org.'
           : 'Votre adhésion est en cours d’examen. Vous recevrez un email dès qu’elle sera approuvée.',
+      });
+    }
+
+    if (['superadmin', 'editor', 'readonly'].includes(profile.role)) {
+      await logActivity(service, {
+        categorie: 'securite',
+        message: `Connexion à l’administration (${({ superadmin: 'SuperAdmin', editor: 'Éditeur', readonly: 'Lecture seule' })[profile.role]}).`,
+        acteur: await actorName(service, data.user),
+        acteurId: data.user.id,
       });
     }
 

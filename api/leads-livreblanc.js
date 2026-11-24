@@ -9,6 +9,7 @@ import {
   isEmail, isText, isPhone, clean,
 } from './_lib/http.js';
 import { escapeHtml, senderAddress } from './_lib/notify.js';
+import { logActivity, lieu } from './_lib/activity.js';
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 jours
 
@@ -39,13 +40,18 @@ export default async function handler(req, res) {
 
     const supabase = getServiceClient();
 
-    const { error: insertError } = await supabase.from('leads_livreblanc').insert({
+    const { data: lead, error: insertError } = await supabase.from('leads_livreblanc').insert({
       nom, email,
       ville: ville || null,
       telephone: telephone || null,
       sexe: ['femme', 'homme'].includes(sexe) ? sexe : null,
-    });
+    }).select('id').single();
     if (insertError) throw insertError;
+    await logActivity(supabase, {
+      categorie: 'contenus',
+      message: `Le Livre blanc a été téléchargé par ${nom}${lieu(ville)}.`,
+      ref: lead?.id ? `livre_blanc:${lead.id}` : null,
+    });
 
     // URL signée du PDF (bucket privé) — fallback : copie statique du site.
     let downloadUrl = '/docs/livre-blanc.pdf';

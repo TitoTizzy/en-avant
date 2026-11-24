@@ -4335,39 +4335,96 @@
   }
 
   /* ─── Panel Journal d'activité ───────────────────────────────────── */
+  const LOG_CATS = {
+    adhesions: { label: "Adhésions", icon: "fa-user-plus" },
+    dons: { label: "Dons", icon: "fa-hand-holding-heart" },
+    contenus: { label: "Contenus", icon: "fa-newspaper" },
+    newsletter: { label: "Newsletter", icon: "fa-envelope-open-text" },
+    quiz: { label: "Quiz", icon: "fa-trophy" },
+    equipe: { label: "Équipe", icon: "fa-users-gear" },
+    securite: { label: "Sécurité", icon: "fa-shield-halved" },
+    systeme: { label: "Système", icon: "fa-gears" },
+  };
+  const haitiTime = (iso) => {
+    try {
+      return new Intl.DateTimeFormat("fr-FR", { timeZone: "America/Port-au-Prince", dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+    } catch { return ""; }
+  };
+  const haitiDay = (iso) => {
+    try {
+      return new Intl.DateTimeFormat("fr-FR", { timeZone: "America/Port-au-Prince", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
+    } catch { return ""; }
+  };
+  /** Phrase complète : « Sébastien a approuvé… » ou message + auteur. */
+  function logSentence(l) {
+    const msg = String(l.message || "");
+    if (l.acteur && /^a\s/.test(msg)) return `<strong>${esc(l.acteur)}</strong> ${esc(msg)}`;
+    return esc(msg) + (l.acteur ? ` <span class="adm-log-by">— ${esc(l.acteur)}</span>` : "");
+  }
+
   function bindLogsPanel() {
     const host = document.getElementById("logs-list");
+    const summary = document.getElementById("logs-summary");
     const refreshBtn = document.getElementById("logs-refresh");
     const applyBtn  = document.getElementById("logs-filter-apply");
     if (!host) return;
+    let oldest = null;
 
-    const render = (logs) => {
-      if (!logs?.length) { host.innerHTML = '<p class="adm-empty">Aucune entrée dans le journal.</p>'; return; }
-      host.innerHTML = `<div class="u-card">${logs.map((l) => `
-        <div class="adm-log-row">
-          <span class="adm-log-cat">${esc(l.categorie || "—")}</span>
-          <span class="adm-log-msg">${esc(l.message || "")}</span>
-          <span class="adm-log-meta">${l.username ? esc(l.username) + " · " : ""}${l.created_at ? new Date(l.created_at).toLocaleString("fr-FR") : ""}</span>
-        </div>`).join("")}</div>`;
+    const row = (l) => {
+      const cat = LOG_CATS[l.categorie] || LOG_CATS.systeme;
+      return `<div class="adm-log-row adm-log--${esc(l.niveau || "info")}">
+          <span class="adm-log-cat adm-log-cat--${esc(l.categorie)}"><i class="fa-solid ${cat.icon}" aria-hidden="true"></i> ${cat.label}</span>
+          <span class="adm-log-msg">${l.niveau === "erreur" ? '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> ' : ""}${logSentence(l)}</span>
+          <span class="adm-log-meta">${esc(haitiTime(l.created_at))}</span>
+        </div>`;
+    };
+    const render = (logs, append) => {
+      if (!append) host.innerHTML = "";
+      if (!logs?.length && !append) { host.innerHTML = '<p class="adm-empty">Aucune activité pour ces critères.</p>'; return; }
+      let html = "";
+      let day = append ? host.dataset.lastDay : "";
+      logs.forEach((l) => {
+        const d = haitiDay(l.created_at);
+        if (d !== day) { html += `<h5 class="adm-log-day">${esc(d)}</h5>`; day = d; }
+        html += row(l);
+      });
+      host.dataset.lastDay = day;
+      host.querySelector(".adm-log-more")?.remove();
+      host.insertAdjacentHTML("beforeend", html);
+      if (logs.length >= 150) host.insertAdjacentHTML("beforeend", '<button type="button" class="btn btn-ghost btn-xs adm-log-more">Afficher les activités plus anciennes</button>');
+      oldest = logs.length ? logs[logs.length - 1].created_at : oldest;
+    };
+    const renderSummary = (r) => {
+      if (!summary || !r) return;
+      summary.hidden = false;
+      const parts = Object.entries(r.parCategorie || {}).sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `<span class="logs-chip adm-log-cat--${esc(k)}">${esc((LOG_CATS[k] || LOG_CATS.systeme).label)} : ${n}</span>`).join("");
+      summary.innerHTML = `<p><strong>Dernières 24 heures :</strong> ${r.total} activité(s)${r.erreurs ? ` · <span class="logs-alert">${r.erreurs} incident(s)</span>` : ""}</p><div class="logs-chips">${parts}</div>`;
     };
 
-    const load = async () => {
-      host.innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…</p>';
+    const params = () => {
+      const val = (id) => document.getElementById(id)?.value || "";
+      const toIso = (v) => (v ? new Date(v).toISOString() : "");
+      const p = { cat: val("logs-filter-cat"), niveau: val("logs-filter-niveau"), user: val("logs-filter-user"), from: toIso(val("logs-filter-from")), to: toIso(val("logs-filter-to")) };
+      return new URLSearchParams(Object.fromEntries(Object.entries(p).filter(([, v]) => v)));
+    };
+    const load = async (append = false) => {
+      if (!append) host.innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…</p>';
       try {
-        const cat  = document.getElementById("logs-filter-cat")?.value  || "";
-        const user = document.getElementById("logs-filter-user")?.value || "";
-        const from = document.getElementById("logs-filter-from")?.value || "";
-        const to   = document.getElementById("logs-filter-to")?.value   || "";
-        const params = new URLSearchParams({ ...(cat && { cat }), ...(user && { user }), ...(from && { from }), ...(to && { to }) });
-        const { logs } = await api(`/api/admin/dashboard?dataset=logs&${params}`);
-        render(logs);
-      } catch (_) {
-        host.innerHTML = '<p class="adm-empty">Journal non disponible (table activity_logs à créer côté DB).</p>';
+        const q = params();
+        if (append && oldest) q.set("before", oldest);
+        const data = await api(`/api/admin/dashboard?dataset=logs&${q}`);
+        if (data.manquant) { host.innerHTML = '<p class="adm-empty">Le journal sera disponible après la mise à jour de la base de données.</p>'; return; }
+        if (!append) renderSummary(data.resume24h);
+        render(data.logs, append);
+      } catch (error) {
+        host.innerHTML = `<p class="adm-empty">Journal indisponible : ${esc(error.message)}</p>`;
       }
     };
 
-    refreshBtn?.addEventListener("click", load);
-    applyBtn?.addEventListener("click", load);
+    refreshBtn?.addEventListener("click", () => load());
+    applyBtn?.addEventListener("click", () => load());
+    host.addEventListener("click", (event) => { if (event.target.closest(".adm-log-more")) load(true); });
     document.querySelector("[data-panel='panel-logs']")?.addEventListener("click", () => { if (!host.dataset.loaded) { load(); host.dataset.loaded = "1"; } });
   }
 })();

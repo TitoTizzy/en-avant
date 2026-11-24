@@ -11,6 +11,7 @@ import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import { json, getBody, handleError } from '../_lib/http.js';
 import { loadImageManifest, chantierNames } from '../_lib/quiz-generation.js';
 import { QUESTIONS_PAR_PARTIE, titreFor, prochainTitre, badgeInfo } from '../_lib/quiz-rules.js';
+import { logQuizDay } from '../_lib/activity.js';
 
 const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''));
 
@@ -94,6 +95,7 @@ export default async function handler(req, res) {
         const data = await rpc(supabase, 'quiz_answer', {
           p_game: body.game, p_user: user.id, p_index: body.index, p_answer: answer,
         });
+        if (data?.finished) await logQuizDay(supabase, body.game);
         return json(res, data?.error ? 409 : 200, data);
       }
       default:

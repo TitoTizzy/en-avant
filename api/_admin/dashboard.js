@@ -6,6 +6,7 @@ import {
 } from '../_lib/relances.js';
 import { notifyTeam, sendToMember } from '../_lib/notify.js';
 import { effectiveLocation, matchesGeo, cleanLocation, inferFromVille, geoFacets } from '../_lib/geo.js';
+import { logTeamAction, lieu, CATEGORIES } from '../_lib/activity.js';
 
 const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -111,7 +112,7 @@ async function activeAccounts(supabase) {
 async function loadMember(supabase, memberId) {
   const { data, error } = await supabase
     .from('members')
-    .select('id, nom, email, status, user_id')
+    .select('id, nom, email, status, user_id, ville, pays')
     .eq('id', memberId)
     .maybeSingle();
   if (error) throw error;
@@ -149,6 +150,14 @@ export default async function handler(req, res) {
         .update({ status })
         .eq('id', memberId);
       if (error) throw error;
+      if (status !== member.status || status === 'approved') {
+        await logTeamAction(supabase, identity.user, {
+          categorie: 'adhesions',
+          message: status === 'approved'
+            ? `a approuvé l’adhésion de ${member.nom}${lieu(member.ville, member.pays)}.`
+            : status === 'rejected' ? `a refusé la demande d’adhésion de ${member.nom}.` : `a remis en attente l’adhésion de ${member.nom}.`,
+        });
+      }
 
       // Ouverture de l'accès + email à chaque clic sur « Approuver »,
       // y compris pour une fiche déjà approuvée (anciennes adhésions sans compte).
@@ -183,6 +192,7 @@ export default async function handler(req, res) {
           .select('id').maybeSingle();
         if (error) throw error;
         if (!data) return json(res, 404, { error: 'Adhésion introuvable.' });
+        await logTeamAction(supabase, identity.user, { categorie: 'adhesions', message: `a corrigé le lieu d’une fiche d’adhésion : ${[location.ville, location.departement, location.pays].filter(Boolean).join(', ')}.` });
         return json(res, 200, { ok: true, ...location });
       }
 
@@ -202,6 +212,7 @@ export default async function handler(req, res) {
           if (upError) throw upError;
           updated += 1;
         }
+        await logTeamAction(supabase, identity.user, { categorie: 'adhesions', message: `a enregistré le pays et le département déduits de la ville pour ${updated} fiche(s).` });
         return json(res, 200, { ok: true, mises_a_jour: updated, restantes: (rows || []).length - updated });
       }
 
@@ -214,6 +225,7 @@ export default async function handler(req, res) {
           return json(res, 409, { error: 'Approuvez d’abord cette adhésion.' });
         }
         const sent = await sendAccessLink(supabase, member);
+        await logTeamAction(supabase, identity.user, { categorie: 'adhesions', niveau: sent ? 'info' : 'attention', message: sent ? `a renvoyé le lien d’accès à ${member.nom}.` : `n’a pas pu renvoyer le lien d’accès à ${member.nom} (email non parti).` });
         return json(res, sent ? 200 : 502, sent
           ? { ok: true }
           : { error: 'Le lien a été créé mais l’email n’est pas parti. Réessayez dans un instant.' });
@@ -234,6 +246,7 @@ export default async function handler(req, res) {
           .select('id');
         if (error) throw error;
         if (!updated?.length) return json(res, 409, { error: 'Seul un membre au compte actif peut être promu.' });
+        await logTeamAction(supabase, identity.user, { categorie: 'securite', niveau: 'attention', message: 'a promu un membre au rang d’utilisateur (Éditeur, sans permission pour l’instant).' });
         return json(res, 200, { ok: true });
       }
 
@@ -244,6 +257,7 @@ export default async function handler(req, res) {
           return json(res, 200, { ok: true, count: due.length });
         }
         const result = await sendDueRelances(supabase);
+        await logTeamAction(supabase, identity.user, { categorie: 'adhesions', message: `a envoyé les relances « Complétez votre adhésion » : ${result.sent || 0} envoyée(s)${result.failed ? `, ${result.failed} échec(s)` : ''}.` });
         return json(res, 200, { ok: true, ...result });
       }
 
@@ -280,6 +294,7 @@ export default async function handler(req, res) {
           ],
           note: 'Compte sans fiche d’adhésion, supprimé depuis l’onglet Membres.',
         });
+        await logTeamAction(supabase, identity.user, { categorie: 'adhesions', niveau: 'attention', message: `a supprimé le compte membre sans fiche de ${target.nom || 'un membre'}.` });
         return json(res, 200, { ok: true, account_deleted: true, email_sent: emailSent });
       }
 
@@ -314,6 +329,7 @@ export default async function handler(req, res) {
       if (delError) throw delError;
 
       const emailSent = await sendToMember(deletionEmail({ email: member.email, nom: member.nom, account: accountDeleted }));
+      await logTeamAction(supabase, identity.user, { categorie: 'adhesions', niveau: 'attention', message: `a supprimé la demande d’adhésion de ${member.nom}${accountDeleted ? ' et son compte' : ''}.` });
 
       const { data: actor } = await supabase
         .from('profiles')
@@ -341,6 +357,42 @@ export default async function handler(req, res) {
     }
 
     const dataset = clean(req.query?.dataset);
+    if (dataset === 'logs') {
+      // Journal d'activité : SuperAdmin uniquement (noms, lieux, actions de l'équipe).
+      if (!identity.isSuperAdmin) return forbidden(res);
+      const cat = clean(req.query?.cat);
+      const who = clean(req.query?.user).replace(/[%_,()]/g, '').slice(0, 40);
+      const niveau = clean(req.query?.niveau);
+      const from = Date.parse(clean(req.query?.from));
+      const to = Date.parse(clean(req.query?.to));
+      const before = Date.parse(clean(req.query?.before));
+      let query = supabase.from('activity_logs')
+        .select('id, created_at, categorie, niveau, message, acteur')
+        .order('created_at', { ascending: false }).limit(150);
+      if (Object.hasOwn(CATEGORIES, cat)) query = query.eq('categorie', cat);
+      if (['info', 'attention', 'erreur'].includes(niveau)) query = query.eq('niveau', niveau);
+      if (who) query = query.or(`acteur.ilike.%${who}%,message.ilike.%${who}%`);
+      if (!Number.isNaN(from)) query = query.gte('created_at', new Date(from).toISOString());
+      if (!Number.isNaN(to)) query = query.lte('created_at', new Date(to).toISOString());
+      if (!Number.isNaN(before)) query = query.lt('created_at', new Date(before).toISOString());
+      const since = new Date(Date.now() - 864e5).toISOString();
+      const [{ data, error }, recent] = await Promise.all([
+        query,
+        supabase.from('activity_logs').select('categorie, niveau').gte('created_at', since).limit(5000),
+      ]);
+      if (error) {
+        if (/activity_logs/.test(error.message || '')) return json(res, 200, { logs: [], categories: CATEGORIES, manquant: true });
+        throw error;
+      }
+      const resume = { total: 0, erreurs: 0, parCategorie: {} };
+      for (const r of recent.data || []) {
+        resume.total += 1;
+        if (r.niveau === 'erreur') resume.erreurs += 1;
+        resume.parCategorie[r.categorie] = (resume.parCategorie[r.categorie] || 0) + 1;
+      }
+      return json(res, 200, { logs: data || [], categories: CATEGORIES, resume24h: resume });
+    }
+
     if (dataset === 'sans_fiche') {
       if (!can(identity, 'voir_membres')) return forbidden(res);
       const rows = await accountsWithoutFiche(supabase);

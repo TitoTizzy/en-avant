@@ -27,6 +27,7 @@ import {
 } from '../_lib/newsletter.js';
 import { inviteContent, inviteRecipients, inviteOf, startInvite } from '../_lib/quiz-invite.js';
 import { renderQuizInvite } from '../_lib/quiz-email.js';
+import { logTeamAction } from '../_lib/activity.js';
 
 const IMAGE_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
@@ -258,6 +259,7 @@ export default async function handler(req, res) {
           return json(res, 422, { error: 'Retapez le nombre de destinataires pour confirmer.' });
         }
         try {
+          await logTeamAction(supabase, user, { categorie: 'quiz', message: `a lancé l’invitation au quiz de la semaine (${Number(body.confirmation)} adhérent(s)).` });
           const result = await startInvite(supabase, { week: await currentWeek(supabase), userId: user.id, expected: Number(body.confirmation) });
           return json(res, 200, { ok: true, ...result });
         } catch (error) {
@@ -299,6 +301,7 @@ export default async function handler(req, res) {
             { onConflict: 'newsletter_id,email', ignoreDuplicates: true });
           if (error) throw error;
         }
+        await logTeamAction(supabase, user, { categorie: 'newsletter', message: `a lancé l’envoi de la newsletter « ${newsletter.sujet} » à ${recipients.length} personne(s)${deja.length ? ' (envoi exceptionnel : une newsletter était déjà partie cette semaine)' : ''}.` });
         const progression = await processQueue(supabase, newsletter.id);
         return json(res, 200, { ok: true, progression });
       }

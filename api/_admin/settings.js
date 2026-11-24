@@ -3,6 +3,7 @@
 // PUT  : { key, value }  → upsert d'un réglage (validé selon la clé)
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
+import { logTeamAction } from '../_lib/activity.js';
 
 // Clés autorisées + normalisation de chaque valeur (anti-injection).
 const NORMALIZERS = {
@@ -38,7 +39,7 @@ const NORMALIZERS = {
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requirePermission(req, 'gerer_parametres');
+    const { user } = await requirePermission(req, 'gerer_parametres');
     const supabase = getServiceClient();
 
     if (req.method === 'GET') {
@@ -73,6 +74,7 @@ export default async function handler(req, res) {
         .select()
         .single();
       if (error) throw error;
+      await logTeamAction(supabase, user, { categorie: 'systeme', message: `a modifié le réglage du site « ${key} ».` });
 
       return json(res, 200, { ok: true, key, value: data.value });
     }

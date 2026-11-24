@@ -16,6 +16,7 @@ import getRawBody from 'raw-body';
 import { getServiceClient } from '../_lib/supabase.js';
 import { createNotification } from '../_lib/notifications.js';
 import { notifyTeam } from '../_lib/notify.js';
+import { logActivity } from '../_lib/activity.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -24,7 +25,12 @@ const API_VERSION = '2025-08-27.basil';
 const money = (cents, currency) =>
   `${((Number(cents) || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} ${String(currency || 'usd').toUpperCase()}`;
 
-async function notifyDonation(supabase, row) {
+async function notifyDonation(supabase, row, transaction) {
+  await logActivity(supabase, {
+    categorie: 'dons',
+    message: `${row.frequence === 'mensuel' ? 'Échéance de don mensuel reçue' : 'Don reçu'} : ${money(row.montant, row.devise)}${row.nom ? ` de ${row.nom}` : ''}${row.pays ? ` (${row.pays})` : ''}, par carte.`,
+    ref: transaction ? `don_tx:${transaction}` : null,
+  });
   await createNotification(supabase, {
     type: 'don',
     title: `${row.frequence === 'mensuel' ? 'Don mensuel' : 'Don'} reçu — ${money(row.montant, row.devise)}`,
@@ -71,9 +77,10 @@ export default async function handler(req, res) {
       case 'checkout.session.completed':
       case 'checkout.session.async_payment_succeeded':
       case 'invoice.paid':
-        await notifyDonation(supabase, record.p_row);
+        await notifyDonation(supabase, record.p_row, record.p_transaction);
         break;
       case 'charge.refunded': {
+        await logActivity(supabase, { categorie: 'dons', niveau: 'attention', message: `Un don a été remboursé : ${money(obj.amount_refunded, obj.currency)}.`, ref: `refund:${obj.id}` });
         await createNotification(supabase, {
           type: 'don_alerte',
           title: `Don remboursé — ${money(obj.amount_refunded, obj.currency)}`,
@@ -91,6 +98,7 @@ export default async function handler(req, res) {
 
       case 'charge.dispute.created': {
         console.warn('Litige Stripe ouvert:', obj.id);
+        await logActivity(supabase, { categorie: 'dons', niveau: 'erreur', message: `Un donateur conteste un paiement de ${money(obj.amount, obj.currency)} (motif : ${obj.reason || 'non précisé'}). À traiter dans Stripe avant la date limite.`, ref: `dispute:${obj.id}` });
         await createNotification(supabase, {
           type: 'don_alerte',
           title: `URGENT — litige sur un don (${money(obj.amount, obj.currency)})`,

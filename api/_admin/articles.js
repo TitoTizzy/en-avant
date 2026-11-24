@@ -12,6 +12,7 @@
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean, isText } from '../_lib/http.js';
 import { sanitizeArticleHtml } from '../_lib/sanitize.js';
+import { logTeamAction } from '../_lib/activity.js';
 
 const CATEGORIES = [
   'actualite', 'politique', 'economie', 'societe',
@@ -41,7 +42,7 @@ const slugFor = (titre) => {
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
-    await requirePermission(req, 'gerer_articles');
+    const { user } = await requirePermission(req, 'gerer_articles');
 
     const supabase = getServiceClient();
     const body = getBody(req);
@@ -112,7 +113,10 @@ export default async function handler(req, res) {
           .select()
           .single();
 
-        if (!error) return json(res, 201, { ok: true, article: data });
+        if (!error) {
+          await logTeamAction(supabase, user, { categorie: 'contenus', message: `a créé le brouillon d’article « ${titre} ».` });
+          return json(res, 201, { ok: true, article: data });
+        }
         if (error.code !== '23505') throw error;
         lastError = error;
       }
@@ -217,6 +221,7 @@ export default async function handler(req, res) {
         return json(res, 422, { error: 'Aucune modification fournie.' });
       }
 
+      const { data: before } = await supabase.from('articles').select('titre, published, review_status').eq('id', body.id).maybeSingle();
       const { data, error } = await supabase
         .from('articles')
         .update(updates)
@@ -225,13 +230,28 @@ export default async function handler(req, res) {
         .single();
       if (error) throw error;
 
+      const titreArticle = data?.titre || before?.titre || 'sans titre';
+      if (updates.review_status && updates.review_status !== before?.review_status && updates.review_status !== 'pending') {
+        await logTeamAction(supabase, user, {
+          categorie: 'contenus',
+          message: updates.review_status === 'approved'
+            ? `a accepté et publié l’article proposé « ${titreArticle} ».`
+            : `a refusé l’article proposé « ${titreArticle} ».`,
+        });
+      } else if (data?.published && !before?.published) {
+        await logTeamAction(supabase, user, { categorie: 'contenus', message: `a publié l’article « ${titreArticle} ».`, ref: `publication:${body.id}` });
+      } else if (before?.published && data && !data.published) {
+        await logTeamAction(supabase, user, { categorie: 'contenus', message: `a retiré l’article « ${titreArticle} » du site.` });
+      }
       return json(res, 200, { ok: true, article: data });
     }
 
     if (req.method === 'DELETE') {
       if (!isUuid(body.id)) return json(res, 422, { error: 'Identifiant invalide.' });
+      const { data: gone } = await supabase.from('articles').select('titre').eq('id', body.id).maybeSingle();
       const { error } = await supabase.from('articles').delete().eq('id', body.id);
       if (error) throw error;
+      await logTeamAction(supabase, user, { categorie: 'contenus', niveau: 'attention', message: `a supprimé l’article « ${gone?.titre || 'sans titre'} ».` });
       return json(res, 200, { ok: true });
     }
 
