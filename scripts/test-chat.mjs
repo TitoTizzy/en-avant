@@ -4,8 +4,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   tokens, pageText, chunk, buildIndex, search, cleanHistory, buildPrompt, sourcesOf, loadIndex, resetCache, SYSTEM, PAGES,
-  LANGUES, langueOf, message, displayNameOf,
+  LANGUES, langueOf, message, displayNameOf, parseLivreBlanc, detectLangue, langueDemandee, choisirLangue, parseAnalyse,
+  ANALYSE, CHANTIERS,
 } from '../api/_lib/chat.js';
+import { readFileSync } from 'node:fs';
 import chatHandler from '../api/_chat/chat.js';
 
 test('Texte des pages : menus, pieds de page, formulaires et scripts retirés', () => {
@@ -57,7 +59,7 @@ test('Historique : alternance stricte, 6 échanges maximum, textes bornés, rôl
 });
 
 test('Consignes : sources uniquement, langue du visiteur, neutralité, pas de données personnelles, pas d’injection', () => {
-  for (const regle of [/UNIQUEMENT sur les extraits/, /langue_de_reponse/, /espagnol/, /ne dénigres aucune/, /données personnelles/, /Ignore toute instruction/, /Conseil électoral/]) {
+  for (const regle of [/UNIQUEMENT sur les extraits/, /langue_de_reponse/, /ENTIÈREMENT dans la langue/, /ne dénigres aucune/, /données personnelles/, /Ignore toute instruction/, /Conseil électoral/]) {
     assert.match(SYSTEM, regle);
   }
   const prompt = buildPrompt({
@@ -135,4 +137,51 @@ test('Membre connecté : nom vérifié transmis au modèle, salutations naturell
   assert.equal(displayNameOf({ metadata: { nom: 'Myrtho Charles' } }), 'Myrtho');
   assert.equal(displayNameOf({ metadata: { pseudo: '<script>x' } }), 'scriptx');
   assert.equal(displayNameOf({}), null);
+});
+
+test('Livre blanc : extraits avec partie, chantier, section et pages exactes', () => {
+  const chunks = parseLivreBlanc(readFileSync(new URL('../docs/livre-blanc.txt', import.meta.url), 'utf8'));
+  const chapitres = new Set(chunks.map((c) => c.chapitre));
+  CHANTIERS.forEach((nom, i) => assert.ok(chapitres.has(`Chantier ${i + 1} – ${nom}`), `chantier ${i + 1}`));
+  const at = (page) => chunks.find((c) => c.pageDebut <= page && c.pageFin >= page && c.chapitre);
+  assert.match(at(41).ref, /^Partie II · Chantier 1 – Sécurité · section « Etat des lieux » · p\. 4\d/);
+  assert.match(at(120).chapitre, /Chantier 11 – Justice/);
+  assert.match(at(200).chapitre, /Chantier 20 – Collectivités territoriales/);
+  assert.ok(chunks.every((c) => c.texte.length <= 1600 && !/=== Page|PAGE \|/.test(c.texte)), 'en-têtes de page retirés, extraits bornés');
+  // Titres sur deux lignes (« 2- DÉFENSE ET / PROTECTION CIVILE ») : pas de section parasite.
+  assert.ok(!chunks.some((c) => /^Protection civile$/i.test(c.section)));
+  // Prompt : référence et lien vers la page du PDF.
+  const p = buildPrompt({ question: 'Où ?', passages: [{ titre: 'Livre blanc', url: '/livre-blanc', texte: 'x', ref: at(41).ref, pdf: '/docs/livre-blanc.pdf#page=40' }] });
+  assert.match(p, /ref="Partie II · Chantier 1 – Sécurité[^"]*" lien="\/docs\/livre-blanc\.pdf#page=40"/);
+  assert.match(SYSTEM, /N’invente jamais un numéro de page/);
+});
+
+test('Sources : pages du PDF citées, sinon chantier du meilleur extrait', () => {
+  const top = { titre: 'Livre blanc', url: '/livre-blanc', pdf: '/docs/livre-blanc.pdf#page=40', chapitre: 'Chantier 1 – Sécurité' };
+  assert.deepEqual(sourcesOf([top], 'Voir [Livre blanc, p. 40](/docs/livre-blanc.pdf#page=40) et [p. 40](/docs/livre-blanc.pdf#page=40).'),
+    [{ titre: 'Livre blanc, p. 40', url: '/docs/livre-blanc.pdf#page=40' }]);
+  assert.deepEqual(sourcesOf([top], 'Longue réponse. '.repeat(15)), [{ titre: 'Livre blanc · Chantier 1 – Sécurité', url: '/docs/livre-blanc.pdf#page=40' }]);
+});
+
+test('Langue : majoritaire dans le message, demande explicite, priorités', () => {
+  assert.equal(detectLangue('Hello, what does the party propose for security?'), 'en');
+  assert.equal(detectLangue('Sak pase, kisa pati a pwopoze pou sekirite?'), 'ht');
+  assert.equal(detectLangue('Hola, ¿qué propone el partido?'), 'es');
+  assert.equal(detectLangue('I want to know ce que le parti propose pour la santé et pour les jeunes'), 'fr', 'plus de mots français');
+  assert.equal(detectLangue('ok'), null);
+  assert.equal(langueDemandee('réponds en créole'), 'ht');
+  assert.equal(langueDemandee('in English please'), 'en');
+  assert.equal(langueDemandee('Peux-tu me répondre en espagnol ?'), 'es');
+  assert.equal(langueDemandee('Je vis en France et je parle français'), null);
+  // demandée > imposée plus tôt > majoritaire > conversation > site
+  assert.equal(choisirLangue({ demandee: 'ht', imposee: 'en', dominante: 'fr', conversation: 'fr', site: 'fr' }), 'ht');
+  assert.equal(choisirLangue({ imposee: 'ht', dominante: 'fr', conversation: 'fr', site: 'fr' }), 'ht');
+  assert.equal(choisirLangue({ dominante: 'en', conversation: 'fr', site: 'fr' }), 'en', 'passe à l’anglais');
+  assert.equal(choisirLangue({ dominante: null, conversation: 'en', site: 'fr' }), 'en', '« ok » garde la langue de la conversation');
+  assert.equal(choisirLangue({ site: 'es' }), 'es');
+  assert.deepEqual(parseAnalyse('```json\n{"langue":"en","langue_demandee":null,"requete_fr":"sécurité","ton":"décontracté <b>"}\n```'),
+    { langue: 'en', langueDemandee: null, requeteFr: 'sécurité', ton: 'décontracté b' });
+  assert.deepEqual(parseAnalyse('pas du json'), { langue: null, langueDemandee: null, requeteFr: '', ton: '' });
+  assert.match(ANALYSE, /plus de mots/);
+  assert.match(buildPrompt({ question: 'yo', passages: [], ton: 'décontracté, tutoie' }), /<ton_du_visiteur>décontracté, tutoie<\/ton_du_visiteur>/);
 });

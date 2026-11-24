@@ -555,3 +555,63 @@ test('Serveur local : URLs propres, dispatchers et fichiers internes protégés'
     await result.arrayBuffer();
   }
 });
+
+test('Assistant : réponse en flux affichée progressivement, langue de conversation renvoyée, référence du PDF cliquable', async () => {
+  const dom = await page('index.html', '/');
+  const { window } = dom;
+  window.TextDecoder = TextDecoder;
+  window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  const sent = [];
+  const lines = [
+    { type: 'meta', langue: 'ht', langue_imposee: 'ht' },
+    { type: 'delta', text: 'Dakò, m ap reponn ou an kreyòl.\n\nLiv blan an pale de sekirite ' },
+    { type: 'delta', text: '([Livre blanc, p. 40](/docs/livre-blanc.pdf#page=40)).' },
+    { type: 'done', reponse: 'Dakò, m ap reponn ou an kreyòl.\n\nLiv blan an pale de sekirite ([Livre blanc, p. 40](/docs/livre-blanc.pdf#page=40)).',
+      sources: [{ titre: 'Livre blanc, p. 40', url: '/docs/livre-blanc.pdf#page=40' }] },
+  ];
+  window.fetch = async (url, options = {}) => {
+    if (url !== '/api/chat') return response(200, {});
+    sent.push(JSON.parse(options.body));
+    const chunks = lines.map((l) => new TextEncoder().encode(`${JSON.stringify(l)}\n`));
+    const partial = [];
+    return {
+      ok: true, status: 200, headers: { get: () => 'application/x-ndjson; charset=utf-8' },
+      body: { getReader: () => ({ read: async () => {
+        await new Promise((r) => setTimeout(r, 15));
+        partial.push(1);
+        return chunks.length ? { value: chunks.shift(), done: false } : { value: undefined, done: true };
+      } }) },
+    };
+  };
+  try { window.eval(await read('js/premium.js')); } catch { /* modules décoratifs */ }
+  window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+  await settle();
+  const doc = window.document;
+  doc.getElementById('chatbotFab').click();
+  const panel = doc.getElementById('eaChatPanel');
+  const input = panel.querySelector('textarea');
+  input.value = 'réponds en créole';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settle();
+  assert.ok(panel.querySelector('.eac-typing .eac-thinking'), 'indicateur de réflexion');
+  assert.equal(sent[0].stream, true);
+  let sawPartial = false;
+  for (let i = 0; i < 200 && (panel.querySelector('.eac-typing') || panel.querySelector('.eac-streaming')); i += 1) {
+    if (panel.querySelector('.eac-streaming .eac-caret')) sawPartial = true;
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  assert.ok(sawPartial, 'texte révélé progressivement');
+  const bot = [...panel.querySelectorAll('.eac-msg--bot')].at(-1);
+  assert.equal(bot.querySelectorAll('p').length >= 2, true, 'paragraphes séparés');
+  assert.equal(bot.querySelector('.eac-caret'), null);
+  assert.deepEqual([...bot.querySelectorAll('.eac-sources a')].map((a) => a.getAttribute('href')), ['/docs/livre-blanc.pdf#page=40']);
+  assert.ok(bot.querySelector('p a[href="/docs/livre-blanc.pdf#page=40"]'));
+  assert.deepEqual(JSON.parse(window.sessionStorage.getItem('ea-chat-langue')), { conv: 'ht', imposee: 'ht' });
+
+  input.value = 'Et pour la santé ?';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(sent[1].langue_conv, 'ht');
+  assert.equal(sent[1].langue_imposee, 'ht');
+  dom.window.close();
+});
