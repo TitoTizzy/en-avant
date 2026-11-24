@@ -4515,3 +4515,13 @@ select option:checked { background-color: #ff6a2a; color: #fff; }
   .quiz-bank-row { flex-direction: column; }
   .quiz-bank-actions { width: 100%; justify-content: flex-end; }
 }
+
+/* Quiz — contrôle technique de la banque */
+.quiz-control { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  padding: 0.8rem 1rem; margin: 0.8rem 0; border-radius: var(--r-sm); background: var(--glass); border: 1px dashed var(--line-2); }
+.quiz-control small { display: block; color: var(--ink-400); margin-top: 0.2rem; }
+.quiz-control-result { padding: 0.8rem 1rem; margin-bottom: 0.8rem; border-radius: var(--r-sm); background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.35); }
+.quiz-control-result[hidden] { display: none; }
+.quiz-control-result ul { margin: 0.5rem 0 0.8rem; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
+.quiz-control-result small { color: var(--ink-400); }
+.quiz-control-ok { color: #4ade80; margin: 0; }

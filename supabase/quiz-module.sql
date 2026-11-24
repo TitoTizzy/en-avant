@@ -258,8 +258,9 @@ begin
   else
     select * into q from public.trivia_questions where id = g.question_ids[g.current_index + 1];
   end if;
-  if q.id is null then
-    -- Question supprimée entre-temps : on la saute sans pénalité.
+  if q.id is null or (g.current_q is null and q.active is false) then
+    -- Question supprimée ou désactivée avant d'être affichée (défi ou duel déjà
+    -- préparé, par exemple) : on la saute sans pénalité.
     insert into public.quiz_answers (game_id, idx, user_id, question_id, correct, timed_out, points)
       values (g.id, g.current_index, p_user, g.question_ids[g.current_index + 1], false, false, 0)
       on conflict do nothing;

@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
-import { toQuestionRow, reachable } from '../api/_lib/quiz-generation.js';
+import { toQuestionRow, reachable, auditQuestion, FORMAT_RULES } from '../api/_lib/quiz-generation.js';
 
 const A = '00000000-0000-4000-8000-00000000000a';
 const B = '00000000-0000-4000-8000-00000000000b';
@@ -198,6 +198,51 @@ test('Générateur (retour Codex) : une réponse « chiffre » est toujours atte
     const row = chiffre(v, m);
     if (row) assert.ok(reachable(Number(row.correct_answer), row.meta.min, row.meta.max, row.meta.step, row.meta.tolerance), `${v} ${JSON.stringify(row.meta)}`);
   }
+});
+
+test('Question désactivée après la préparation d’un défi : sautée sans pénalité si pas encore affichée', async (t) => {
+  const db = await setup(); t.after(() => db.close());
+  const { game_id: g } = await call(db, 'quiz_start', A, 'defi', null, 15);
+  const q0 = await call(db, 'quiz_next', g, A);
+  // L'admin désactive la question affichée (figée) et la 2e (pas encore affichée).
+  await db.exec(`update trivia_questions set active = false where id in
+    (select unnest(question_ids[1:2]) from quiz_challenges)`);
+  assert.equal((await call(db, 'quiz_next', g, A)).question, q0.question, 'question affichée conservée');
+  await wait(db, g, 1);
+  assert.equal((await call(db, 'quiz_answer', g, A, 0, 'B')).correct, true);
+  const suivante = await call(db, 'quiz_next', g, A);
+  assert.equal(suivante.index, 2, 'la 2e question, désactivée, est sautée');
+  const sautee = await one(db, `select correct, points from quiz_answers where game_id = $1 and idx = 1`, [g]);
+  assert.deepEqual(sautee, { correct: false, points: 0 });
+});
+
+test('Contrôle technique : mêmes règles pour le générateur, l’édition admin et le bouton de contrôle', () => {
+  const base = { question: 'Une question assez longue ?', correct_answer: 'B' };
+  const images = new Set(['img-1']);
+  assert.equal(auditQuestion({ ...base, format: 'qcm', options: ['A', 'B', 'C', 'D'] }), null);
+  assert.match(auditQuestion({ ...base, format: 'qcm', options: ['A', 'B', 'C'] }), /4 options/);
+  assert.match(auditQuestion({ ...base, format: 'qcm', options: ['A', 'B', 'B ', 'D'] }), /double/);
+  assert.match(auditQuestion({ ...base, format: 'qcm', options: ['A', 'X', 'C', 'D'] }), /absente/);
+  assert.match(auditQuestion({ ...base, format: 'image', options: ['A', 'B', 'C', 'D'], image_id: 'inconnue' }, images), /image/);
+  assert.equal(auditQuestion({ ...base, format: 'image', options: ['A', 'B', 'C', 'D'], image_id: 'img-1' }, images), null);
+  assert.match(auditQuestion({ ...base, format: 'vrai_faux', options: ['Vrai', 'Faux'], correct_answer: 'Peut-être' }), /vrai\/faux/);
+  assert.equal(auditQuestion({ ...base, format: 'ordre', options: ['c', 'a', 'b'], correct_answer: '["a","b","c"]' }), null);
+  assert.match(auditQuestion({ ...base, format: 'ordre', options: ['c', 'a', 'x'], correct_answer: '["a","b","c"]' }), /ordre/);
+  assert.match(auditQuestion({ ...base, format: 'ordre', options: ['a', 'b', 'c'], correct_answer: 'pas du json' }), /illisible/);
+  // Les 3 questions signalées par Codex en production.
+  for (const [v, min, max, step] of [['4545', 1000, 10000, 10], ['148355', 50000, 600000, 1000], ['515804', 100000, 1000000, 1000]]) {
+    assert.match(auditQuestion({ ...base, format: 'chiffre', options: [], correct_answer: v, meta: { min, max, step, tolerance: 0 } }), /impossible à sélectionner/);
+  }
+  assert.equal(auditQuestion({ ...base, format: 'chiffre', options: [], correct_answer: '35', meta: { min: 0, max: 100, step: 5 } }), null);
+  assert.match(auditQuestion({ ...base, format: 'chiffre', options: ['1'], correct_answer: '35', meta: { min: 0, max: 100, step: 5 } }), /options/);
+  // Toute question produite par le générateur passe le contrôle.
+  for (const meta of [{ min: 0, max: 10, step: 1 }, { min: 2, max: 20, step: 2 }, { min: 0, max: 1, step: 0.25 }]) {
+    const row = toQuestionRow({ format: 'chiffre', question: 'Combien selon le document ?', correct_answer: '7', meta });
+    if (row) assert.equal(auditQuestion(row), null, JSON.stringify(row.meta));
+  }
+  // Consigne donnée à l'IA.
+  assert.match(FORMAT_RULES, /min \+ k × step/);
+  assert.match(FORMAT_RULES, /148355/);
 });
 
 test('Duel : même jeu pour l’invité, une partie chacun, résultat côte à côte, expiration à 7 jours', async (t) => {

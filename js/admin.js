@@ -2000,7 +2000,43 @@
     });
   }
 
+  function controlMessage(text, isError = false) {
+    const box = document.getElementById("quiz-control-result");
+    box.hidden = false;
+    box.innerHTML = `<p class="${isError ? "ea-form-status is-error" : "quiz-control-ok"}">${esc(text)}</p>`;
+  }
+
+  async function runQuizControl() {
+    const box = document.getElementById("quiz-control-result");
+    box.hidden = false;
+    box.innerHTML = '<p class="adm-loading">Contrôle en cours…</p>';
+    const { risques } = await api("/api/admin/trivia?view=controle");
+    const actives = risques.filter((q) => q.active);
+    if (!risques.length) {
+      box.innerHTML = '<p class="quiz-control-ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Aucune question à risque : toute la banque est jouable.</p>';
+      return;
+    }
+    box.innerHTML = `<p><strong>${risques.length} question(s) à risque</strong>, dont ${actives.length} encore active(s).</p>
+      <ul>${risques.slice(0, 50).map((q) => `<li>${q.active ? "" : "<em>(désactivée)</em> "}${esc(q.question)} <small>— ${esc(QUIZ_FORMATS[q.format] || q.format)} · ${esc(q.raison)}</small></li>`).join("")}</ul>
+      ${actives.length ? `<button type="button" class="btn btn-primary btn-xs" id="quiz-control-fix">Désactiver les ${actives.length} question(s) actives à risque</button>` : ""}`;
+  }
+
   function bindTriviaBank() {
+    document.getElementById("quiz-control-run")?.addEventListener("click", () =>
+      runQuizControl().catch((error) => controlMessage(error.message, true)));
+    document.getElementById("quiz-control-result")?.addEventListener("click", async (event) => {
+      if (!event.target.closest("#quiz-control-fix")) return;
+      try {
+        const { desactivees } = await api("/api/admin/trivia", { method: "POST", body: JSON.stringify({ action: "desactiver_risques" }) });
+        await runQuizControl();
+        document.getElementById("quiz-control-result").insertAdjacentHTML("afterbegin",
+          `<p class="quiz-control-ok">${desactivees} question(s) désactivée(s).</p>`);
+        await loadQuizBank();
+      } catch (error) {
+        controlMessage(error.message, true);
+      }
+    });
+
     document.querySelectorAll("[data-quiz-tab]").forEach((button) =>
       button.addEventListener("click", () => showQuizTab(button.dataset.quizTab)));
 

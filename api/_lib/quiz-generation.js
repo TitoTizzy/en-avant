@@ -185,6 +185,61 @@ export function toQuestionRow(q, { imageIds = new Set(), generationId = null } =
   }
 }
 
+/**
+ * Contrôle technique d'une question telle qu'elle est (ou sera) en base.
+ * Renvoie la raison du problème, ou null si la question est jouable.
+ * Mêmes règles que l'audit SQL de la banque : sert au générateur, à l'édition
+ * dans le back-office et au bouton « Contrôler la banque ».
+ */
+export function auditQuestion(q, imageIds = null) {
+  if (!q || !FORMATS.includes(q.format)) return 'format inconnu';
+  if (typeof q.question !== 'string' || q.question.trim().length < 8) return 'énoncé vide ou trop court';
+  const options = Array.isArray(q.options) ? q.options : null;
+  const correct = typeof q.correct_answer === 'string' ? q.correct_answer : null;
+  if (!options || correct === null) return 'options ou réponse manquantes';
+  switch (q.format) {
+    case 'qcm':
+    case 'citation':
+    case 'image': {
+      if (options.length !== 4) return 'il faut exactement 4 options';
+      if (options.some((o) => typeof o !== 'string' || !o.trim())) return 'option vide';
+      if (new Set(options.map((o) => o.trim())).size !== 4) return 'options en double';
+      if (!options.includes(correct)) return 'bonne réponse absente des options';
+      if (q.format === 'image' && (!q.image_id || (imageIds && !imageIds.has(q.image_id)))) return 'image introuvable';
+      return null;
+    }
+    case 'vrai_faux':
+      if (JSON.stringify(options) !== '["Vrai","Faux"]' || !['Vrai', 'Faux'].includes(correct)) return 'vrai/faux mal formé';
+      return null;
+    case 'ordre': {
+      let answer;
+      try { answer = JSON.parse(correct); } catch { return 'ordre : réponse illisible'; }
+      if (!Array.isArray(answer) || answer.some((x) => typeof x !== 'string')) return 'ordre : réponse illisible';
+      if (answer.length < 3 || answer.length > 6) return 'ordre : 3 à 6 éléments';
+      if (new Set(answer).size !== answer.length) return 'ordre : éléments en double';
+      if (JSON.stringify([...options].sort()) !== JSON.stringify([...answer].sort())) return 'ordre : options différentes de la réponse';
+      return null;
+    }
+    case 'chiffre': {
+      const meta = q.meta || {};
+      const value = num(correct);
+      const min = num(meta.min);
+      const max = num(meta.max);
+      const step = num(meta.step);
+      const tolerance = num(meta.tolerance) ?? 0;
+      if ([value, min, max, step].includes(null)) return 'chiffre : données manquantes';
+      if (!(min < max) || !(step > 0)) return 'chiffre : curseur invalide';
+      if (value < min || value > max) return 'chiffre : réponse hors du curseur';
+      if ((max - min) / step > MAX_CRANS) return 'chiffre : curseur trop fin';
+      if (!reachable(value, min, max, step, tolerance)) return 'chiffre : réponse impossible à sélectionner';
+      if (options.length) return 'chiffre : ne doit pas avoir d’options';
+      return null;
+    }
+    default:
+      return 'format inconnu';
+  }
+}
+
 /** Extrait du Livre blanc : une fenêtre différente pour chaque appel. */
 export function sourceWindow(text, index, total, size = 30000) {
   if (text.length <= size) return text;
@@ -251,8 +306,13 @@ export const FORMAT_RULES = [
   'Formats :',
   '- qcm : 4 options distinctes ; `correct_answer` = copie exacte de l’une d’elles.',
   '- vrai_faux : une affirmation à juger ; options ["Vrai","Faux"] ; `correct_answer` = "Vrai" ou "Faux". Alterne les deux.',
-  '- chiffre : un nombre exact du document à deviner avec un curseur. `options` = [] ; `correct_answer` = le nombre (ex. "15") ;',
-  '  `meta` = { min, max, step, unite, tolerance } avec min < réponse < max, la réponse pas au centre, `tolerance` souvent 0.',
+  '- chiffre : un nombre du document à deviner avec un curseur. `options` = [] ; `correct_answer` = le nombre (ex. "15") ;',
+  '  `meta` = { min, max, step, unite, tolerance } avec min < réponse < max, la réponse pas au centre.',
+  '  IMPÉRATIF : la réponse doit tomber EXACTEMENT sur un cran du curseur, c.-à-d. réponse = min + k × step (k entier),',
+  '  et le curseur doit avoir au plus 200 crans ((max − min) / step ≤ 200). Exemples valides : réponse 35, min 0, max 100, step 5 ;',
+  '  réponse 2.5, min 0, max 10, step 0.5. INTERDIT : réponse 4545 avec step 10, réponse 148355 avec step 1000.',
+  '  Ne choisis donc QUE des nombres « ronds » à cette échelle (pourcentages, années, petits effectifs, montants ronds).',
+  '  Un grand nombre précis (ex. 148 355 touristes) ne doit PAS devenir une question chiffre : fais-en un qcm.',
   '- citation : une phrase recopiée MOT POUR MOT du document, entre guillemets dans `question` ; on demande qui l’a dite si le document',
   '  l’attribue explicitement, sinon de quel chantier elle provient. 4 options.',
   '- image : une question sur l’UNE des images fournies, à partir de ses faits uniquement ; `image_id` = son identifiant exact. 4 options.',
