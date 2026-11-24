@@ -59,11 +59,12 @@ Myrtho demande explicitement cette production avant la reprise de DEV-01 ; l'ord
 
 | Référence | Statut | Périmètre et livraison |
 |---|---|---|
-| QUIZ-IMAGES | **En cours** | 20 chantiers, 10 chiffres, 5 cartogrammes schématiques et 5 frises/schémas ; source unique PDF ; 2 formats WebP par image ; manifeste et contrôle des sources. Branche `feat/quiz-images`, PR à ouvrir, aucune poussée directe sur main. |
+| QUIZ-IMAGES | **Terminé** | Production livrée en [PR #35](https://github.com/TitoTizzy/en-avant/pull/35), à relire et fusionner séparément : 20 chantiers, 10 chiffres, 5 cartogrammes schématiques et 5 frises/schémas ; source unique PDF ; 2 formats WebP par image ; manifeste et contrôle des sources. Branche `feat/quiz-images`, aucune poussée directe sur main. Les cartogrammes ne représentent pas des frontières géographiques : limite documentée dans la PR et les fiches. |
 
 | Date | Référence | Auteur | Réalisation et vérification | Commit / déploiement |
 |---|---|---|---|---|
 | 2026-11-21 | Suivi partagé | Codex | Regroupement des feedbacks, distinction technique / externe, ordre de travail et éléments déjà terminés consignés. Aucune fonction du site modifiée. | Non effectué à la création du suivi. |
+| 2026-11-23 | QUIZ-IMAGES — **Terminé** | Codex | 40 fiches et 80 WebP ; dimensions 1200×675 et 800×450 ; qualité 80 ; maximum 23 402 octets en 1200 px ; textes et faits vérifiés contre les pages PDF citées ; revue visuelle des 40 compositions. Scripts de génération et validation inclus. Aucun fait textuel non vérifié ; cartes limitées à des cartogrammes schématiques, sans données de frontières. | Commit assets `3b932fd`, [PR #35](https://github.com/TitoTizzy/en-avant/pull/35). Pas de déploiement en production demandé pour cette livraison. |
 
 ## Communication à l'équipe
 
