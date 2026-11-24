@@ -3932,6 +3932,16 @@ body { top: 0 !important; }
 /* Empêche le parent de rogner le dropdown */
 .adm-content-field { overflow: visible; }
 .article-editor-surface { overflow: visible; }
+/* Texte toujours sombre dans TOUS les éditeurs (newsletter, articles…), quel que soit le thème
+   sombre autour (.u-card p, h1–h4…). Spécificité élevée sans !important : les couleurs
+   choisies dans la barre d'outils (style en ligne) restent prioritaires. */
+.ql-container.ql-snow .ql-editor,
+.ql-container.ql-snow .ql-editor :is(p, h1, h2, h3, h4, h5, h6, li, ol, ul, blockquote, pre, strong, b, em, i, u, s, span, sub, sup) {
+  color: #111827;
+}
+.ql-container.ql-snow .ql-editor a { color: #c2410c; text-decoration: underline; }
+.ql-container.ql-snow .ql-editor blockquote { border-left-color: #e0551f; }
+.ql-container.ql-snow .ql-editor pre.ql-syntax, .ql-container.ql-snow .ql-editor pre { background: #f3f4f6; color: #111827; }
 .ql-editor.ql-blank::before { color: #6b7280; font-style: normal; }
 .ql-editor {
   min-height: 200px;
