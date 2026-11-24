@@ -17,6 +17,8 @@
   const modalClose = document.getElementById("adh-modal-close");
   const ninuInput = document.getElementById("adh-ninu");
   const passwordInput = document.getElementById("adh-password");
+  const geo = window.EA_GEO;
+  geo?.bindLocation(form);
 
   const RULES = {
     nom: (v) => v.trim().length >= 2 && v.trim().length <= 120,
@@ -25,6 +27,8 @@
     email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()),
     telephone: (v) => (v.replace(/\D/g, "").length >= 8 && v.trim().length <= 25),
     ville: (v) => v.trim().length >= 2 && v.trim().length <= 80,
+    pays: (v) => v.trim().length >= 2 && v.trim().length <= 60,
+    departement: (v) => !geo?.isHaiti(form.elements.pays.value) || (geo?.DEPARTEMENTS || []).includes(v),
     pseudo: (v) => /^[\p{L}\p{N}_.-]{2,30}$/u.test(v.trim()),
     password: (v) => v.length >= 10 && v.length <= 200,
     confirm: (v) => v.length > 0 && v === passwordInput.value,
@@ -105,6 +109,8 @@
           email: data.email.trim().toLowerCase(),
           telephone: data.telephone.trim(),
           ville: data.ville.trim(),
+          pays: (data.pays || "").trim(),
+          departement: data.departement || "",
           consent: true,
           website: data.website || "",
         }),

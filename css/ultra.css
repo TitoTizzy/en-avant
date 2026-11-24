@@ -4525,3 +4525,52 @@ select option:checked { background-color: #ff6a2a; color: #fff; }
 .quiz-control-result ul { margin: 0.5rem 0 0.8rem; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
 .quiz-control-result small { color: var(--ink-400); }
 .quiz-control-ok { color: #4ade80; margin: 0; }
+
+/* Newsletter — back-office */
+.nl-admin-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
+.nl-admin-stat { padding: 1rem; text-align: center; }
+.nl-admin-stat strong { display: block; font-size: 1.5rem; }
+.nl-admin-stat span { font-size: 0.8rem; color: var(--ink-400); }
+.nl-badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--glass-2); }
+.nl-badge--envoyee { background: rgba(34, 197, 94, 0.18); color: #4ade80; }
+.nl-badge--en_cours { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+.nl-actions { white-space: nowrap; text-align: right; }
+.nl-editor-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1rem; align-items: start; }
+.nl-quill { min-height: 240px; background: #fff; color: #0e1726; border-radius: 0 0 var(--r-sm) var(--r-sm); }
+#nl-editor-view .ql-toolbar { background: #f2f4f8; border-radius: var(--r-sm) var(--r-sm) 0 0; }
+.nl-target { border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 1rem; margin: 0 0 1rem; }
+.nl-target legend { padding: 0 0.4rem; font-weight: 700; }
+.nl-public { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-bottom: 0.6rem; }
+.nl-target-label { margin: 0.8rem 0 0.4rem; font-weight: 600; font-size: 0.9rem; }
+.nl-target-label small { font-weight: 400; color: var(--ink-400); }
+.nl-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.nl-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.7rem; border-radius: 999px;
+  border: 1px solid var(--line-2); background: var(--glass); font-size: 0.82rem; cursor: pointer; color: inherit; font: inherit; }
+.nl-chip:has(input:checked), .nl-chip.is-on { background: rgba(255, 106, 42, 0.18); border-color: var(--orange); }
+.nl-chip input { accent-color: var(--orange); }
+.nl-city-input { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.nl-city-input input { flex: 1; }
+#nl-dep-block[hidden] { display: none; }
+.nl-audience { position: sticky; top: 1rem; padding: 1.2rem; }
+.nl-audience-label { margin: 0; color: var(--ink-400); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.nl-audience-total { margin: 0.2rem 0; font-size: 1.6rem; }
+.nl-audience-split { margin: 0 0 0.8rem; color: var(--ink-300); font-size: 0.85rem; }
+.nl-aud-title { margin: 0.6rem 0 0.2rem; font-weight: 700; font-size: 0.82rem; }
+#nl-aud-detail ul { list-style: none; margin: 0; padding: 0; font-size: 0.82rem; }
+#nl-aud-detail li { display: flex; justify-content: space-between; padding: 0.15rem 0; border-bottom: 1px dashed var(--line-1); }
+#nl-send { margin-top: 1rem; }
+.nl-confirm { margin-top: 0.8rem; padding: 0.8rem; border-radius: var(--r-sm); background: rgba(255, 106, 42, 0.1); border: 1px solid var(--orange); font-size: 0.88rem; }
+.nl-confirm[hidden], .nl-progress[hidden], .nl-force[hidden], .nl-preview-modal[hidden] { display: none; }
+.nl-force { display: flex; gap: 0.4rem; margin: 0.5rem 0; font-size: 0.82rem; }
+.nl-progress { margin-top: 0.8rem; font-size: 0.85rem; }
+.nl-progress-bar { height: 10px; border-radius: 999px; background: var(--glass-2); overflow: hidden; margin-bottom: 0.4rem; }
+.nl-progress-bar span { display: block; height: 100%; width: 0; background: var(--grad-btn); transition: width 0.4s ease; }
+.nl-preview-modal { position: fixed; inset: 0; z-index: 200; background: rgba(2, 6, 12, 0.7); display: grid; place-items: center; padding: 1rem; }
+.nl-preview-box { width: min(720px, 100%); height: min(90vh, 900px); background: #fff; border-radius: var(--r-md); overflow: hidden; display: flex; flex-direction: column; }
+.nl-preview-head { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; background: #0e1726; color: #fff; }
+.nl-preview-box iframe { flex: 1; border: 0; width: 100%; }
+@media (max-width: 960px) {
+  .nl-editor-grid { grid-template-columns: 1fr; }
+  .nl-audience { position: static; }
+  .nl-admin-summary { grid-template-columns: repeat(2, 1fr); }
+}

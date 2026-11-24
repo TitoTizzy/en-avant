@@ -103,6 +103,9 @@
       <button class="adm-nav-item" data-panel="panel-events" type="button">
         <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Événements
       </button>
+      <button class="adm-nav-item" data-panel="panel-newsletter" type="button">
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Newsletter
+      </button>
       <button class="adm-nav-item" data-panel="panel-gallery" type="button">
         <i class="fa-solid fa-images" aria-hidden="true"></i> Galerie
       </button>
@@ -490,6 +493,138 @@
             </div>
             <div class="ea-form-status" id="event-status" role="status" aria-live="polite"></div>
           </form>
+        </div>
+      </section>
+
+      <!-- ════════════════════ NEWSLETTER ════════════════════════════ -->
+      <section class="adm-panel" id="panel-newsletter" hidden>
+        <div id="nl-list-view">
+          <div class="adm-articles-heading">
+            <div>
+              <h3>Newsletter</h3>
+              <p>Une lettre par semaine aux adhérents et aux inscrits, filtrable par pays, département et ville.</p>
+            </div>
+            <button class="btn btn-primary" type="button" id="nl-new">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle newsletter
+            </button>
+          </div>
+          <div class="nl-admin-summary">
+            <div class="u-card nl-admin-stat"><strong id="nl-contacts-total">—</strong><span>contacts joignables</span></div>
+            <div class="u-card nl-admin-stat"><strong id="nl-contacts-adherents">—</strong><span>adhérents</span></div>
+            <div class="u-card nl-admin-stat"><strong id="nl-contacts-abonnes">—</strong><span>inscrits au formulaire</span></div>
+            <div class="u-card nl-admin-stat nl-admin-week"><strong id="nl-week-state">—</strong><span id="nl-week-detail">cette semaine</span></div>
+          </div>
+          <div class="ea-form-status" id="nl-list-status" role="status" aria-live="polite"></div>
+          <div class="u-card">
+            <div class="u-table">
+              <table>
+                <thead><tr><th>Objet</th><th>Statut</th><th>Destinataires</th><th>Envoyés</th><th>Date</th><th></th></tr></thead>
+                <tbody id="nl-history"><tr><td colspan="6">Chargement…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="nl-editor-view" hidden>
+          <div class="adm-articles-heading">
+            <div>
+              <button class="adm-back-button" type="button" id="nl-back">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux newsletters
+              </button>
+              <h3 id="nl-editor-title">Nouvelle newsletter</h3>
+              <p>Rédigez, ciblez, vérifiez l’aperçu, envoyez-vous un test, puis envoyez à tous.</p>
+            </div>
+          </div>
+          <div class="nl-editor-grid">
+            <form class="u-card adm-article-editor" id="nl-form" novalidate>
+              <input type="hidden" id="nl-id">
+              <div class="ea-field">
+                <label for="nl-sujet">Objet de l’email</label>
+                <input id="nl-sujet" maxlength="150" required placeholder="Ex. Grand rassemblement au Cap-Haïtien samedi">
+              </div>
+              <div class="ea-field">
+                <label for="nl-apercu">Texte d’aperçu <small>(affiché après l’objet dans la boîte de réception)</small></label>
+                <input id="nl-apercu" maxlength="200">
+              </div>
+              <div class="ea-field">
+                <label>Contenu</label>
+                <div id="nl-content-editor" class="nl-quill"></div>
+              </div>
+              <div class="ea-field">
+                <label for="nl-event">Annoncer un événement <small>(facultatif)</small></label>
+                <select id="nl-event"><option value="">Aucun événement</option></select>
+              </div>
+              <div class="ea-form-row">
+                <div class="ea-field">
+                  <label for="nl-cta-label">Texte du bouton <small>(facultatif)</small></label>
+                  <input id="nl-cta-label" maxlength="60" placeholder="Ex. Je m’inscris">
+                </div>
+                <div class="ea-field">
+                  <label for="nl-cta-url">Lien du bouton</label>
+                  <input id="nl-cta-url" type="url" placeholder="https://enavant.org/…">
+                </div>
+              </div>
+
+              <fieldset class="nl-target">
+                <legend>Destinataires</legend>
+                <div class="nl-public" role="radiogroup" aria-label="Public">
+                  <label><input type="radio" name="nl-public" value="tous" checked> Tous</label>
+                  <label><input type="radio" name="nl-public" value="adherents"> Adhérents seulement</label>
+                  <label><input type="radio" name="nl-public" value="abonnes"> Inscrits au formulaire seulement</label>
+                </div>
+                <p class="nl-target-label">Pays <small>(aucun coché = tous les pays)</small></p>
+                <div class="nl-chips" id="nl-pays"></div>
+                <div id="nl-dep-block">
+                  <p class="nl-target-label">Départements d’Haïti <small>(aucun coché = tous)</small></p>
+                  <div class="nl-chips" id="nl-departements"></div>
+                </div>
+                <p class="nl-target-label">Villes <small>(facultatif)</small></p>
+                <div class="nl-city-input">
+                  <input id="nl-ville-input" list="nl-villes-list" placeholder="Ajouter une ville…">
+                  <datalist id="nl-villes-list"></datalist>
+                  <button type="button" class="btn btn-ghost btn-xs" id="nl-ville-add">Ajouter</button>
+                </div>
+                <div class="nl-chips" id="nl-villes"></div>
+              </fieldset>
+
+              <div class="adm-editor-actions">
+                <button class="btn btn-ghost" type="button" id="nl-preview">Aperçu</button>
+                <button class="btn btn-ghost" type="button" id="nl-test">M’envoyer un test</button>
+                <button class="btn btn-ghost" type="submit" id="nl-save">Enregistrer le brouillon</button>
+              </div>
+              <div class="ea-form-status" id="nl-status" role="status" aria-live="polite"></div>
+            </form>
+
+            <aside class="u-card nl-audience" aria-live="polite">
+              <p class="nl-audience-label">Destinataires</p>
+              <p class="nl-audience-total"><strong id="nl-aud-total">—</strong></p>
+              <p class="nl-audience-split" id="nl-aud-split"></p>
+              <div id="nl-aud-detail"></div>
+              <button class="btn btn-primary btn-full" type="button" id="nl-send" disabled>
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> <span id="nl-send-label">Envoyer à tous</span>
+              </button>
+              <div class="nl-confirm" id="nl-confirm" hidden>
+                <p id="nl-confirm-text"></p>
+                <label class="nl-force" id="nl-force-wrap" hidden><input type="checkbox" id="nl-force"> Envoyer quand même (une newsletter est déjà partie cette semaine)</label>
+                <div class="adm-editor-actions">
+                  <button class="btn btn-ghost btn-xs" type="button" id="nl-confirm-cancel">Annuler</button>
+                  <button class="btn btn-primary btn-xs" type="button" id="nl-confirm-ok">Confirmer l’envoi</button>
+                </div>
+              </div>
+              <div class="nl-progress" id="nl-progress" hidden>
+                <div class="nl-progress-bar"><span id="nl-progress-fill"></span></div>
+                <p id="nl-progress-text"></p>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="nl-preview-modal" id="nl-preview-modal" hidden>
+          <div class="nl-preview-box" role="dialog" aria-modal="true" aria-label="Aperçu de la newsletter">
+            <div class="nl-preview-head"><strong>Aperçu</strong>
+              <button type="button" class="btn btn-ghost btn-xs" id="nl-preview-close">Fermer</button></div>
+            <iframe id="nl-preview-frame" title="Aperçu de l’email" sandbox=""></iframe>
+          </div>
         </div>
       </section>
 
@@ -1119,6 +1254,7 @@
 <script src="/js/premium.js"></script>
 <script src="/js/vendor/purify.min.js"></script>
 <script src="/js/sanitize-html.js"></script>
+  <script src="/js/geo.js"></script>
   <script src="/js/admin.js"></script>
 </body>
 </html>

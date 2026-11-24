@@ -210,7 +210,31 @@
               </div>
 
               <div class="ea-field">
-                <label for="adh-ville">Ville</label>
+                <label for="adh-pays">Pays de résidence</label>
+                <input
+                  type="text"
+                  id="adh-pays"
+                  name="pays"
+                  autocomplete="country-name"
+                  placeholder="Haïti, États-Unis, Canada…"
+                  value="Haïti"
+                  required
+                />
+                <span class="ea-error">Veuillez indiquer votre pays.</span>
+              </div>
+            </div>
+
+            <div class="ea-form-row">
+              <div class="ea-field" data-departement-field>
+                <label for="adh-departement">Département</label>
+                <select id="adh-departement" name="departement">
+                  <option value="">Choisir…</option>
+                </select>
+                <span class="ea-error">Veuillez choisir votre département.</span>
+              </div>
+
+              <div class="ea-field">
+                <label for="adh-ville">Ville / commune</label>
                 <input
                   type="text"
                   id="adh-ville"
@@ -270,7 +294,8 @@
               <input type="checkbox" id="adh-consent" name="consent" required />
               <span>
                 J'accepte que mes données soient traitées par En Avant dans le cadre de ma
-                demande d'adhésion et de mon compte membre, conformément à la <a href="/mentions-legales#confidentialite" target="_blank" rel="noopener">politique de confidentialité</a> (en cours de rédaction).
+                demande d'adhésion et de mon compte membre, et de recevoir la newsletter du parti
+                (désinscription possible à tout moment), conformément à la <a href="/mentions-legales#confidentialite" target="_blank" rel="noopener">politique de confidentialité</a> (en cours de rédaction).
               </span>
             </label>
 
@@ -339,6 +364,7 @@
         <ul>
           <li><a href="/adherer.html">Rejoindre le parti</a></li>
           <li><a href="/don.html">Faire un don</a></li>
+          <li><a href="/newsletter">Recevoir la newsletter</a></li>
           <li><a href="/livre-blanc.html">Lire le Livre blanc</a></li>
           <li><a href="/blog.html">Suivre l'actualité</a></li>
         </ul>
@@ -369,6 +395,7 @@
 
   <script src="/js/premium.js"></script>
   <script src="/js/app.js"></script>
+  <script src="/js/geo.js"></script>
   <script src="/js/adherer.js"></script>
   <script src="/js/env.js"></script>
 </body>

@@ -9,6 +9,7 @@
 //   pour choisir leur mot de passe (le compte est créé à ce moment-là).
 import { isPhone, isText, clean } from './http.js';
 import { sendToMember, siteUrl } from './notify.js';
+import { cleanLocation } from './geo.js';
 
 export const SEXES = ['femme', 'homme'];
 
@@ -25,6 +26,16 @@ export function validateFiche(body) {
   if (!/^1\d{9}$/.test(values.ninu)) errors.ninu = 'NINU invalide : 10 chiffres requis (carte ONI).';
   if (!isPhone(values.telephone)) errors.telephone = 'Numéro de téléphone invalide.';
   if (!isText(values.ville, 2, 80)) errors.ville = 'Ville invalide.';
+  // Pays et département (Haïti) : servent aux filtres et à la newsletter.
+  const location = cleanLocation(body);
+  if (location.error) {
+    if (/Pays/.test(location.error)) errors.pays = location.error;
+    else if (/Département/.test(location.error)) errors.departement = location.error;
+  } else {
+    values.pays = location.pays;
+    values.departement = location.departement;
+    values.ville = location.ville;
+  }
   if (body.consent !== true) errors.consent = 'Le consentement est requis.';
   return { values, errors };
 }

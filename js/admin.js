@@ -137,6 +137,7 @@
       }
       const error = new Error(payload.error || "Requête impossible.");
       error.status = response.status;
+      error.data = payload;
       throw error;
     }
     return payload;
@@ -250,6 +251,7 @@
     "panel-stats":        "Statistiques",
     "panel-articles":     "Articles",
     "panel-events":       "Événements",
+    "panel-newsletter":   "Newsletter",
     "panel-gallery":      "Galerie",
     "panel-organisation": "Organisation",
     "panel-members":      "Membres",
@@ -3220,6 +3222,7 @@
       const panelPerms = {
         "panel-articles":     "gerer_articles",
         "panel-events":       "gerer_evenements",
+        "panel-newsletter":   "gerer_newsletter",
         "panel-gallery":      "gerer_galerie",
         "panel-organisation": "gerer_organigramme",
         "panel-trivia":       "gerer_trivia",
@@ -3279,6 +3282,7 @@
     bindOrgSections();
     bindSettings();
     bindStaffPanel();
+    bindNewsletter();
     bindLogsPanel();
 
     // Chargement des données API (optionnel — silencieux si API indisponible)
@@ -3437,6 +3441,355 @@
   }
 
   /* ─── Panel Équipe staff ──────────────────────────────────────────── */
+  /* ----- Newsletter ----- */
+  function bindNewsletter() {
+    const listView = document.getElementById("nl-list-view");
+    const editorView = document.getElementById("nl-editor-view");
+    if (!listView || !editorView) return;
+    const $ = (id) => document.getElementById(id);
+    const STATUTS = { brouillon: "Brouillon", en_cours: "Envoi en cours", envoyee: "Envoyée" };
+    const state = { options: null, filtres: { public: "tous", pays: [], departements: [], villes: [] }, audience: null, week: [], current: null, quill: null, timer: null };
+    const status = (type, msg) => setModuleStatus("nl-status", type, msg);
+    const listStatus = (type, msg) => setModuleStatus("nl-list-status", type, msg);
+
+    async function loadOptions(force = false) {
+      if (state.options && !force) return state.options;
+      state.options = await api("/api/admin/newsletter?view=options");
+      $("nl-contacts-total").textContent = state.options.contacts.total;
+      $("nl-contacts-adherents").textContent = state.options.contacts.adherents;
+      $("nl-contacts-abonnes").textContent = state.options.contacts.abonnes;
+      return state.options;
+    }
+
+    async function loadList() {
+      const body = $("nl-history");
+      body.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
+      try {
+        const [data] = await Promise.all([api("/api/admin/newsletter"), loadOptions(true)]);
+        state.week = data.envois_semaine || [];
+        $("nl-week-state").textContent = state.week.length ? "Envoyée" : "Disponible";
+        $("nl-week-detail").textContent = state.week.length
+          ? `cette semaine : « ${state.week[0].sujet} »`
+          : `aucun envoi depuis le lundi ${fmtDate(data.semaine)}`;
+        body.innerHTML = data.newsletters.length ? "" : '<tr><td colspan="6">Aucune newsletter pour l’instant.</td></tr>';
+        data.newsletters.forEach((n) => {
+          const tr = document.createElement("tr");
+          const actions = n.statut === "brouillon"
+            ? `<button class="btn btn-ghost btn-xs" data-edit="${esc(n.id)}">Modifier</button>
+               <button class="btn btn-ghost btn-xs" data-delete="${esc(n.id)}" title="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>`
+            : `<button class="btn btn-ghost btn-xs" data-view="${esc(n.id)}">Voir</button>
+               <button class="btn btn-ghost btn-xs" data-dup="${esc(n.id)}">Dupliquer</button>`;
+          tr.innerHTML = `<td><strong>${esc(n.sujet)}</strong>${n.forcee ? ' <small>(envoi exceptionnel)</small>' : ""}</td>
+            <td><span class="nl-badge nl-badge--${esc(n.statut)}">${esc(STATUTS[n.statut] || n.statut)}</span></td>
+            <td>${n.statut === "brouillon" ? "—" : n.destinataires}</td>
+            <td>${n.statut === "brouillon" ? "—" : `${n.envoyes}${n.echecs ? ` <small>(${n.echecs} échec(s))</small>` : ""}`}</td>
+            <td>${fmtDate(n.sent_at || n.started_at || n.updated_at)}</td>
+            <td class="nl-actions">${actions}</td>`;
+          body.appendChild(tr);
+        });
+      } catch (error) {
+        body.innerHTML = `<tr><td colspan="6">${esc(error.message)}</td></tr>`;
+      }
+    }
+
+    function chips(hostId, values, selected, onChange) {
+      const host = $(hostId);
+      host.innerHTML = "";
+      values.forEach((value) => {
+        const label = document.createElement("label");
+        label.className = "nl-chip";
+        label.innerHTML = `<input type="checkbox" value="${esc(value)}"${selected.includes(value) ? " checked" : ""}> <span>${esc(value)}</span>`;
+        label.querySelector("input").addEventListener("change", (event) => onChange(value, event.target.checked));
+        host.appendChild(label);
+      });
+    }
+
+    function toggle(list, value, on) {
+      const i = list.indexOf(value);
+      if (on && i < 0) list.push(value);
+      if (!on && i >= 0) list.splice(i, 1);
+    }
+
+    function renderTargets() {
+      const f = state.filtres;
+      const o = state.options;
+      document.querySelectorAll('input[name="nl-public"]').forEach((r) => { r.checked = r.value === f.public; });
+      chips("nl-pays", [...new Set([...o.pays, ...f.pays])], f.pays, (v, on) => { toggle(f.pays, v, on); renderTargets(); refreshAudience(); });
+      const showDeps = !f.pays.length || f.pays.some((p) => window.EA_GEO?.isHaiti?.(p) ?? p === "Haïti");
+      $("nl-dep-block").hidden = !showDeps;
+      if (!showDeps) f.departements = [];
+      chips("nl-departements", o.departements, f.departements, (v, on) => { toggle(f.departements, v, on); refreshAudience(); });
+      const villes = $("nl-villes");
+      villes.innerHTML = "";
+      f.villes.forEach((v) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "nl-chip is-on";
+        chip.innerHTML = `${esc(v)} <i class="fa-solid fa-xmark" aria-hidden="true"></i>`;
+        chip.title = "Retirer";
+        chip.addEventListener("click", () => { toggle(f.villes, v, false); renderTargets(); refreshAudience(); });
+        villes.appendChild(chip);
+      });
+      $("nl-villes-list").innerHTML = o.villes.map((v) => `<option value="${esc(v)}"></option>`).join("");
+    }
+
+    let audienceSeq = 0;
+    async function refreshAudience() {
+      const seq = ++audienceSeq;
+      $("nl-aud-total").textContent = "…";
+      $("nl-send").disabled = true;
+      try {
+        const data = await api(`/api/admin/newsletter?view=audience&filtres=${encodeURIComponent(JSON.stringify(state.filtres))}`);
+        if (seq !== audienceSeq) return;
+        state.audience = data;
+        $("nl-aud-total").textContent = `${data.total} personne(s)`;
+        $("nl-aud-split").textContent = `${data.adherents} adhérent(s) · ${data.abonnes} inscrit(s)`;
+        const top = (rows, title) => rows.length
+          ? `<p class="nl-aud-title">${title}</p><ul>${rows.slice(0, 6).map((r) => `<li>${esc(r.nom)} <b>${r.total}</b></li>`).join("")}</ul>` : "";
+        $("nl-aud-detail").innerHTML = top(data.pays, "Par pays") + top(data.departements, "Par département") + top(data.villes, "Par ville");
+        updateSendButton();
+      } catch (error) {
+        if (seq === audienceSeq) $("nl-aud-total").textContent = error.message;
+      }
+    }
+
+    function updateSendButton() {
+      const n = state.current;
+      const total = state.audience?.total || 0;
+      const sendable = n && n.statut === "brouillon" && total > 0;
+      $("nl-send").disabled = !sendable;
+      $("nl-send-label").textContent = total ? `Envoyer à tous (${total})` : "Envoyer à tous";
+      if (!n) $("nl-send").title = "Enregistrez d’abord le brouillon.";
+      else $("nl-send").removeAttribute("title");
+    }
+
+    function ensureQuill() {
+      if (state.quill || typeof Quill === "undefined") return;
+      try {
+        state.quill = new Quill("#nl-content-editor", {
+          theme: "snow",
+          placeholder: "Écrivez votre message…",
+          modules: { toolbar: [["bold", "italic", "underline"], [{ header: [2, 3, false] }], [{ list: "ordered" }, { list: "bullet" }], ["link"], ["clean"]] },
+        });
+      } catch (_) { /* éditeur indisponible */ }
+    }
+
+    async function openEditor(newsletter = null, readOnly = false) {
+      await loadOptions();
+      listView.hidden = true;
+      editorView.hidden = false;
+      ensureQuill();
+      state.current = newsletter;
+      $("nl-id").value = newsletter?.id || "";
+      $("nl-editor-title").textContent = newsletter ? (readOnly ? "Newsletter envoyée" : "Modifier la newsletter") : "Nouvelle newsletter";
+      $("nl-sujet").value = newsletter?.sujet || "";
+      $("nl-apercu").value = newsletter?.apercu || "";
+      $("nl-cta-label").value = newsletter?.cta_label || "";
+      $("nl-cta-url").value = newsletter?.cta_url || "";
+      if (state.quill) state.quill.root.innerHTML = newsletter?.contenu || "";
+      const events = state.options.evenements || [];
+      $("nl-event").innerHTML = '<option value="">Aucun événement</option>' + events.map((e) =>
+        `<option value="${esc(e.id)}">${esc(fmtDate(e.date_cible))} — ${esc(e.titre)}${e.lieu ? ` (${esc(e.lieu)})` : ""}</option>`).join("");
+      if (newsletter?.evenement_id && !events.some((e) => e.id === newsletter.evenement_id)) {
+        $("nl-event").insertAdjacentHTML("beforeend", `<option value="${esc(newsletter.evenement_id)}">Événement passé</option>`);
+      }
+      $("nl-event").value = newsletter?.evenement_id || "";
+      const f = newsletter?.filtres || {};
+      state.filtres = { public: f.public || "tous", pays: [...(f.pays || [])], departements: [...(f.departements || [])], villes: [...(f.villes || [])] };
+      renderTargets();
+      $("nl-form").querySelectorAll("input, select, button[type=submit], #nl-test").forEach((el) => { el.disabled = readOnly; });
+      if (state.quill) state.quill.enable(!readOnly);
+      $("nl-confirm").hidden = true;
+      $("nl-progress").hidden = true;
+      status("", "");
+      await refreshAudience();
+      if (newsletter && newsletter.statut !== "brouillon") await showProgress(newsletter.id);
+    }
+
+    function closeEditor() {
+      clearTimeout(state.timer);
+      editorView.hidden = true;
+      listView.hidden = false;
+      state.current = null;
+      loadList();
+    }
+
+    function payload() {
+      return {
+        id: $("nl-id").value || undefined,
+        sujet: $("nl-sujet").value,
+        apercu: $("nl-apercu").value,
+        contenu: state.quill ? state.quill.root.innerHTML : "",
+        evenement_id: $("nl-event").value || null,
+        cta_label: $("nl-cta-label").value,
+        cta_url: $("nl-cta-url").value,
+        filtres: state.filtres,
+      };
+    }
+
+    async function save(quiet = false) {
+      const data = await api("/api/admin/newsletter", { method: "POST", body: JSON.stringify({ action: "enregistrer", ...payload() }) });
+      state.current = data.newsletter;
+      $("nl-id").value = data.newsletter.id;
+      $("nl-editor-title").textContent = "Modifier la newsletter";
+      if (!quiet) status("success", "Brouillon enregistré.");
+      updateSendButton();
+      return data.newsletter;
+    }
+
+    async function showProgress(id, loop = false) {
+      const box = $("nl-progress");
+      box.hidden = false;
+      const { progression: p, newsletter, echecs } = await api(`/api/admin/newsletter?view=detail&id=${encodeURIComponent(id)}`);
+      const pct = p.destinataires ? Math.round(((p.envoyes + p.echecs) / p.destinataires) * 100) : 0;
+      $("nl-progress-fill").style.width = `${pct}%`;
+      $("nl-progress-text").innerHTML = `${p.envoyes} envoyé(s) sur ${p.destinataires}${p.echecs ? ` · ${p.echecs} échec(s)` : ""}${p.restants ? ` · ${p.restants} restant(s)` : " · terminé"}
+        ${echecs?.length ? `<br><small>Dernière erreur : ${esc(echecs[0].erreur || "")}</small>` : ""}
+        ${p.restants && newsletter.statut !== "brouillon" ? '<br><button type="button" class="btn btn-ghost btn-xs" data-nl-continue>Reprendre l’envoi</button>' : ""}
+        ${!p.restants && p.echecs ? '<br><button type="button" class="btn btn-ghost btn-xs" data-nl-retry>Relancer les échecs</button>' : ""}`;
+      if (loop && p.restants) await runQueue(id, "continuer");
+    }
+
+    async function runQueue(id, action) {
+      try {
+        const { progression } = await api("/api/admin/newsletter", { method: "POST", body: JSON.stringify({ action, id }) });
+        await showProgress(id);
+        if (!progression.termine) {
+          state.timer = setTimeout(() => runQueue(id, "continuer"), 1500);
+        } else {
+          status("success", progression.echecs ? `Envoi terminé avec ${progression.echecs} échec(s).` : "Envoi terminé.");
+        }
+      } catch (error) {
+        status("error", `${error.message} Vous pouvez reprendre l’envoi : rien ne sera envoyé deux fois.`);
+        await showProgress(id).catch(() => {});
+      }
+    }
+
+    // ----- Événements -----
+    $("nl-new").addEventListener("click", () => openEditor().catch((e) => listStatus("error", e.message)));
+    $("nl-back").addEventListener("click", closeEditor);
+    $("nl-history").addEventListener("click", async (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      try {
+        if (button.dataset.edit || button.dataset.view) {
+          const { newsletter } = await api(`/api/admin/newsletter?view=detail&id=${encodeURIComponent(button.dataset.edit || button.dataset.view)}`);
+          await openEditor(newsletter, Boolean(button.dataset.view));
+        } else if (button.dataset.dup) {
+          const { newsletter } = await api("/api/admin/newsletter", { method: "POST", body: JSON.stringify({ action: "dupliquer", id: button.dataset.dup }) });
+          await openEditor(newsletter);
+        } else if (button.dataset.delete) {
+          if (!window.confirm("Supprimer ce brouillon ?")) return;
+          await api("/api/admin/newsletter", { method: "DELETE", body: JSON.stringify({ id: button.dataset.delete }) });
+          await loadList();
+        }
+      } catch (error) {
+        listStatus("error", error.message);
+      }
+    });
+
+    document.querySelectorAll('input[name="nl-public"]').forEach((radio) => radio.addEventListener("change", () => {
+      state.filtres.public = radio.value;
+      refreshAudience();
+    }));
+    const addCity = () => {
+      const input = $("nl-ville-input");
+      const value = input.value.trim();
+      if (value.length >= 2 && !state.filtres.villes.some((v) => v.toLowerCase() === value.toLowerCase())) {
+        state.filtres.villes.push(value);
+        renderTargets();
+        refreshAudience();
+      }
+      input.value = "";
+    };
+    $("nl-ville-add").addEventListener("click", addCity);
+    $("nl-ville-input").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); addCity(); } });
+
+    $("nl-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try { await save(); } catch (error) { status("error", error.message); }
+    });
+    $("nl-preview").addEventListener("click", async () => {
+      try {
+        const n = state.current?.statut === "brouillon" || !state.current ? await save(true) : state.current;
+        const { html } = await api(`/api/admin/newsletter?view=apercu&id=${encodeURIComponent(n.id)}`);
+        $("nl-preview-frame").srcdoc = html;
+        $("nl-preview-modal").hidden = false;
+      } catch (error) {
+        status("error", error.message);
+      }
+    });
+    $("nl-preview-close").addEventListener("click", () => { $("nl-preview-modal").hidden = true; });
+    $("nl-preview-modal").addEventListener("click", (event) => { if (event.target.id === "nl-preview-modal") event.target.hidden = true; });
+    $("nl-test").addEventListener("click", async () => {
+      try {
+        const n = await save(true);
+        const { email } = await api("/api/admin/newsletter", { method: "POST", body: JSON.stringify({ action: "test", id: n.id }) });
+        status("success", `Test envoyé à ${email}.`);
+      } catch (error) {
+        status("error", error.message);
+      }
+    });
+
+    $("nl-send").addEventListener("click", async () => {
+      try {
+        await save(true);
+        await refreshAudience();
+        const total = state.audience?.total || 0;
+        const f = state.filtres;
+        const cible = [
+          f.public === "adherents" ? "adhérents seulement" : f.public === "abonnes" ? "inscrits au formulaire seulement" : "adhérents et inscrits",
+          f.pays.length ? `pays : ${f.pays.join(", ")}` : "tous les pays",
+          f.departements.length ? `départements : ${f.departements.join(", ")}` : "",
+          f.villes.length ? `villes : ${f.villes.join(", ")}` : "",
+        ].filter(Boolean).join(" · ");
+        $("nl-confirm-text").innerHTML = `Vous allez envoyer <strong>« ${esc($("nl-sujet").value)} »</strong> à <strong>${total} personne(s)</strong> (${esc(cible)}).<br>Un envoi ne peut pas être annulé.`;
+        $("nl-force-wrap").hidden = !state.week.length;
+        $("nl-force").checked = false;
+        $("nl-confirm").hidden = false;
+      } catch (error) {
+        status("error", error.message);
+      }
+    });
+    $("nl-confirm-cancel").addEventListener("click", () => { $("nl-confirm").hidden = true; });
+    $("nl-confirm-ok").addEventListener("click", async () => {
+      const id = state.current?.id;
+      if (!id) return;
+      const ok = $("nl-confirm-ok");
+      ok.disabled = true;
+      try {
+        status("", "Envoi en cours… ne fermez pas cette page.");
+        const { progression } = await api("/api/admin/newsletter", {
+          method: "POST",
+          body: JSON.stringify({ action: "envoyer", id, confirmation: state.audience?.total, forcer: $("nl-force").checked }),
+        });
+        $("nl-confirm").hidden = true;
+        state.current = { ...state.current, statut: "en_cours" };
+        updateSendButton();
+        $("nl-form").querySelectorAll("input, select, button[type=submit], #nl-test").forEach((el) => { el.disabled = true; });
+        await showProgress(id);
+        if (!progression.termine) runQueue(id, "continuer");
+        else status("success", "Newsletter envoyée.");
+      } catch (error) {
+        if (error.data?.code === "deja_cette_semaine") $("nl-force-wrap").hidden = false;
+        if (error.data?.code === "audience_changee") await refreshAudience();
+        status("error", error.message);
+      } finally {
+        ok.disabled = false;
+      }
+    });
+    $("nl-progress").addEventListener("click", (event) => {
+      const id = state.current?.id;
+      if (!id) return;
+      if (event.target.closest("[data-nl-continue]")) runQueue(id, "continuer");
+      if (event.target.closest("[data-nl-retry]")) runQueue(id, "relancer_echecs");
+    });
+
+    document.querySelector('[data-panel="panel-newsletter"]')?.addEventListener("click", () => {
+      if (editorView.hidden) loadList();
+    });
+  }
+
   function bindStaffPanel() {
     const host = document.getElementById("staff-list");
     const form = document.getElementById("user-create-form");
@@ -3454,6 +3807,7 @@
       { key: "gerer_trivia",       label: "Gérer le Trivia" },
       { key: "voir_membres",       label: "Voir et traiter les membres" },
       { key: "voir_dons",          label: "Voir les dons et les leads" },
+      { key: "gerer_newsletter",   label: "Gérer et envoyer la newsletter" },
       { key: "gerer_parametres",   label: "Gérer les paramètres et la sécurité" },
       { key: "espace_membre",      label: "Accès à l'espace membre" },
       { key: "jouer_trivia",       label: "Participer au Trivia" },
@@ -3461,7 +3815,7 @@
       { key: "voir_reserves",      label: "Contenus réservés aux membres" },
     ];
     const ROLE_DEFAULTS = {
-      superadmin: ["acces_dashboard","gerer_utilisateurs","gerer_articles","gerer_evenements","gerer_galerie","gerer_organigramme","gerer_trivia","voir_membres","voir_dons","gerer_parametres","espace_membre","jouer_trivia","voir_public","voir_reserves"],
+      superadmin: ["acces_dashboard","gerer_utilisateurs","gerer_articles","gerer_evenements","gerer_galerie","gerer_organigramme","gerer_trivia","voir_membres","voir_dons","gerer_newsletter","gerer_parametres","espace_membre","jouer_trivia","voir_public","voir_reserves"],
       editor:    ["espace_membre","voir_public"],
       readonly:  ["espace_membre","voir_public"],
       member:    ["espace_membre","jouer_trivia","voir_reserves"],
