@@ -12,7 +12,9 @@
     { "source": "/register.html", "destination": "/adherer", "permanent": true }
   ],
   "crons": [
-    { "path": "/api/cron/digest", "schedule": "0 12 * * *" }
+    { "path": "/api/cron/digest", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/quiz", "schedule": "0 4 * * 2" },
+    { "path": "/api/cron/quiz", "schedule": "0 5 * * 2" }
   ],
   "rewrites": [
     { "source": "/api/auth/login",        "destination": "/api/auth?action=login" },
@@ -35,6 +37,7 @@
     { "source": "/api/admin/settings",    "destination": "/api/admin?action=settings" },
     { "source": "/api/admin/users",       "destination": "/api/admin?action=users" },
     { "source": "/api/cron/digest",       "destination": "/api/admin?action=digest" },
+    { "source": "/api/cron/quiz",         "destination": "/api/admin?action=quiz-cron" },
     { "source": "/api/trivia/answer", "destination": "/api/trivia?action=answer" },
     { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },

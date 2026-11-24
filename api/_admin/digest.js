@@ -3,20 +3,14 @@
 //   2. envoie le résumé quotidien à l'équipe (avec les comptes à supprimer).
 // Authentification : en-tête « Authorization: Bearer <CRON_SECRET> » ajouté par Vercel.
 // Sans CRON_SECRET configuré, la route est fermée (503).
-import { timingSafeEqual } from 'node:crypto';
+import { cronAuthorized } from '../_lib/cron.js';
 import { getServiceClient } from '../_lib/supabase.js';
 import { json, handleError } from '../_lib/http.js';
 import { notifyTeam } from '../_lib/notify.js';
 import { sendDueRelances, accountsToDelete, displayName } from '../_lib/relances.js';
 import { createNotification } from '../_lib/notifications.js';
 
-function authorized(req) {
-  const secret = process.env.CRON_SECRET || '';
-  const header = String(req.headers.authorization || '');
-  const expected = `Bearer ${secret}`;
-  if (secret.length < 16 || header.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(header), Buffer.from(expected));
-}
+const authorized = cronAuthorized;
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');

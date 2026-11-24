@@ -371,6 +371,9 @@
     if (panel === "members" && tab) {
       document.querySelector(`.member-tab[data-tab="${tab}"]`)?.click();
     }
+    if (panel === "trivia" && tab) {
+      document.querySelector(`[data-quiz-tab="${tab}"]`)?.click();
+    }
   }
 
   function markRead(body) {
@@ -2036,7 +2039,113 @@
     });
   }
 
+  /* Invitation au quiz de la semaine (permission « Gérer la newsletter ») */
+  const quizInvite = { destinataires: 0, invitation: null };
+  async function loadQuizInvite() {
+    const info = document.getElementById("quiz-invite-info");
+    if (!info) return;
+    const actions = document.getElementById("quiz-invite-actions");
+    try {
+      const data = await api("/api/admin/newsletter?view=quiz");
+      quizInvite.destinataires = data.destinataires;
+      quizInvite.invitation = data.invitation;
+      const inv = data.invitation;
+      const p = data.progression || {};
+      if (inv) {
+        const quand = fmtDate(inv.sent_at || inv.started_at);
+        info.innerHTML = inv.statut === "envoyee"
+          ? `Invitation de la semaine envoyée${inv.envoi_auto ? " automatiquement" : ""} le ${esc(quand)} : <strong>${p.envoyes ?? inv.envoyes}</strong> adhérent(s)${p.echecs ? `, ${p.echecs} échec(s)` : ""}.`
+          : `Invitation en cours d’envoi : ${p.envoyes ?? 0} / ${p.destinataires ?? inv.destinataires}.`;
+        actions.hidden = inv.statut === "envoyee";
+        document.getElementById("quiz-invite-open").textContent = "Continuer l’envoi";
+      } else {
+        info.innerHTML = `<strong>${data.destinataires}</strong> adhérent(s) à inviter · ${data.deja_joue} ont déjà joué cette semaine (non relancés).`;
+        actions.hidden = false;
+        document.getElementById("quiz-invite-open").textContent = "Inviter les adhérents";
+        document.getElementById("quiz-invite-open").disabled = !data.destinataires;
+      }
+    } catch (error) {
+      info.textContent = error.status === 403
+        ? "Réservé aux comptes autorisés à gérer la newsletter."
+        : error.message;
+      actions.hidden = true;
+    }
+  }
+
+  async function runQuizInvite(action, body = {}) {
+    const status = "quiz-invite-status";
+    const progress = document.getElementById("quiz-invite-progress");
+    let result = await api("/api/admin/newsletter", { method: "POST", body: JSON.stringify({ action, ...body }) });
+    let id = result.id || quizInvite.invitation?.id;
+    progress.hidden = false;
+    for (;;) {
+      const p = result.progression || {};
+      const pct = p.destinataires ? Math.round(((p.envoyes + p.echecs) / p.destinataires) * 100) : 100;
+      document.getElementById("quiz-invite-progress-fill").style.width = `${pct}%`;
+      document.getElementById("quiz-invite-progress-text").textContent = `${p.envoyes || 0} envoyé(s) sur ${p.destinataires || 0}${p.echecs ? ` · ${p.echecs} échec(s)` : ""}`;
+      if (p.termine || !id) break;
+      setModuleStatus(status, "", "Envoi en cours… ne fermez pas cette page.");
+      result = await api("/api/admin/newsletter", { method: "POST", body: JSON.stringify({ action: "continuer", id }) });
+    }
+    setModuleStatus(status, "success", "Invitation envoyée.");
+    await loadQuizInvite();
+  }
+
+  function bindQuizInvite() {
+    const open = document.getElementById("quiz-invite-open");
+    if (!open || open.dataset.bound) return;
+    open.dataset.bound = "1";
+    const form = document.getElementById("quiz-invite-confirm");
+    const status = "quiz-invite-status";
+    document.getElementById("quiz-invite-test").addEventListener("click", async (event) => {
+      event.currentTarget.disabled = true;
+      try {
+        const { email } = await api("/api/admin/newsletter", { method: "POST", body: JSON.stringify({ action: "quiz_test" }) });
+        setModuleStatus(status, "success", `Test envoyé à ${email}.`);
+      } catch (error) {
+        setModuleStatus(status, "error", error.message);
+      } finally {
+        event.currentTarget.disabled = false;
+      }
+    });
+    open.addEventListener("click", async () => {
+      if (quizInvite.invitation?.statut === "en_cours") {
+        try { await runQuizInvite("continuer", { id: quizInvite.invitation.id }); } catch (error) { setModuleStatus(status, "error", error.message); }
+        return;
+      }
+      await loadQuizInvite();
+      document.getElementById("quiz-invite-confirm-text").innerHTML =
+        `Vous allez inviter <strong>${quizInvite.destinataires} adhérent(s)</strong> au quiz de la semaine. Un envoi ne peut pas être annulé.`;
+      document.getElementById("quiz-invite-count").value = "";
+      form.hidden = false;
+      document.getElementById("quiz-invite-count").focus();
+    });
+    document.getElementById("quiz-invite-cancel").addEventListener("click", () => { form.hidden = true; });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const count = Number(document.getElementById("quiz-invite-count").value);
+      if (count !== quizInvite.destinataires) {
+        setModuleStatus(status, "error", `Le nombre ne correspond pas : ${quizInvite.destinataires} destinataire(s).`);
+        return;
+      }
+      const send = document.getElementById("quiz-invite-send");
+      send.disabled = true;
+      try {
+        setModuleStatus(status, "", "Envoi en cours… ne fermez pas cette page.");
+        form.hidden = true;
+        await runQuizInvite("quiz_envoyer", { confirmation: count });
+      } catch (error) {
+        if (error.data?.code === "audience_changee") await loadQuizInvite();
+        setModuleStatus(status, "error", error.message);
+      } finally {
+        send.disabled = false;
+      }
+    });
+  }
+
   async function loadQuizDefi() {
+    bindQuizInvite();
+    loadQuizInvite();
     const data = await api("/api/admin/trivia?view=defi");
     document.getElementById("quiz-defi-courante-info").textContent = data.courante
       ? `Semaine du ${fmtDate(data.semaines.courante)} · ${data.courante.joueurs} joueur(s). Modifiable tant que personne ne l'a joué.`

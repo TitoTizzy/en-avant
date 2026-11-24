@@ -303,3 +303,42 @@ test('Classement public : actif à partir de 10 adhérents différents ayant ter
   assert.ok(countPlayers(parties(12)) < SEUIL, '12 parties mais 9 joueurs : pas encore');
   assert.ok(countPlayers(Array.from({ length: 10 }, (_, i) => ({ user_id: `u${i}` }))) >= SEUIL);
 });
+
+test('Défi de la semaine : aucune question du défi de la semaine précédente ni de la suivante', async (t) => {
+  const db = await setup(); t.after(() => db.close());
+  const ws = (await one(db, 'select public.quiz_week_start() as w')).w;
+  const bank = (await db.query('select id from trivia_questions where active')).rows.map((r) => r.id);
+  const previous = bank.slice(0, 3);
+  const next = bank.slice(3, 5);
+  await db.query(`insert into quiz_challenges (week_start, question_ids) values ($1::date - 7, $2), ($1::date + 7, $3)`, [ws, previous, next]);
+  const start = await call(db, 'quiz_start', A, 'defi', null, 15);
+  assert.ok(start.game_id, JSON.stringify(start));
+  const ids = (await one(db, 'select question_ids from quiz_challenges where week_start = $1', [ws])).question_ids;
+  assert.equal(ids.length, 15);
+  assert.ok(!ids.some((id) => previous.includes(id)), 'pas de question de la semaine précédente');
+  assert.ok(!ids.some((id) => next.includes(id)), 'pas de question de la semaine suivante');
+  // Banque trop petite (20 questions, 15 déjà prises la semaine d'avant) : le défi reste
+  // complet, avec toutes les questions libres d'abord et le minimum de questions reprises.
+  const picked = (await one(db, 'select public.quiz_pick_defi(15, $1::date + 7) as r', [ws])).r;
+  assert.equal(picked.length, 15);
+  assert.ok(bank.filter((id) => !ids.includes(id)).every((id) => picked.includes(id)), 'toutes les questions libres sont prises d’abord');
+  assert.equal(new Set(picked).size, picked.length, 'jamais deux fois la même question dans un défi');
+});
+
+test('Invitations au quiz : migration réexécutable, une seule invitation par semaine', async (t) => {
+  const db = await setup(); t.after(() => db.close());
+  await db.exec(`create table newsletters (id uuid primary key default gen_random_uuid(), sujet text not null,
+    statut text not null default 'brouillon', semaine date)`);
+  const sql = await readFile(new URL('../supabase/quiz-invitations.sql', import.meta.url), 'utf8');
+  const runnable = sql.replace(/notify pgrst[^;]*;/, '');
+  await db.exec(runnable);
+  await db.exec(runnable);
+  await db.query(`insert into newsletters (sujet, type, semaine, statut) values ('Quiz', 'quiz', '2026-11-23', 'en_cours')`);
+  await assert.rejects(db.query(`insert into newsletters (sujet, type, semaine) values ('Quiz bis', 'quiz', '2026-11-23')`), /duplicate|unique/i);
+  await db.query(`insert into newsletters (sujet, semaine, statut) values ('Lettre', '2026-11-23', 'envoyee'), ('Lettre 2', '2026-11-23', 'envoyee')`);
+  await assert.rejects(db.query(`insert into newsletters (sujet, type) values ('X', 'autre')`), /check/i);
+  // La fonction de départ reste identique au module (hors tirage du défi).
+  const ws = (await one(db, 'select public.quiz_week_start() as w')).w;
+  assert.ok((await call(db, 'quiz_start', B, 'defi', null, 15)).game_id);
+  assert.ok((await one(db, 'select count(*)::int as n from quiz_challenges where week_start = $1', [ws])).n === 1);
+});

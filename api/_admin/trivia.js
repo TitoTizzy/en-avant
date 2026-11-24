@@ -49,8 +49,9 @@ async function challengeFor(supabase, weekStart, create) {
   const { data, error } = await supabase.from('quiz_challenges').select('*').eq('week_start', weekStart).maybeSingle();
   if (error) throw error;
   if ((data && data.question_ids?.length >= 5) || !create) return data;
-  // Tirage vérifié avant l'enregistrement : jamais de défi vide ou trop court.
-  const ids = await rpc(supabase, 'quiz_pick', { p_count: 15 });
+  // Tirage vérifié avant l'enregistrement : jamais de défi vide ou trop court,
+  // ni de question du défi de la semaine précédente ou suivante.
+  const ids = await rpc(supabase, 'quiz_pick_defi', { p_count: 15, p_week: weekStart });
   if (!ids || ids.length < 5) return data || null;
   const { data: created, error: insertError } = data
     ? await supabase.from('quiz_challenges').update({ question_ids: ids }).eq('week_start', weekStart).select('*').maybeSingle()
@@ -59,6 +60,16 @@ async function challengeFor(supabase, weekStart, create) {
       .select('*').maybeSingle();
   if (insertError) throw insertError;
   return created || (await supabase.from('quiz_challenges').select('*').eq('week_start', weekStart).single()).data;
+}
+
+/** Questions des défis des semaines voisines (jamais deux semaines d'affilée). */
+export async function neighbourQuestions(supabase, weekStart) {
+  const day = 864e5;
+  const shift = (n) => new Date(Date.parse(`${weekStart}T00:00:00Z`) + n * day).toISOString().slice(0, 10);
+  const { data, error } = await supabase.from('quiz_challenges').select('question_ids')
+    .in('week_start', [shift(-7), shift(7)]);
+  if (error) throw error;
+  return new Set((data || []).flatMap((c) => c.question_ids || []));
 }
 
 /** Questions de la banque qui ne passent pas le contrôle technique. */
@@ -323,13 +334,15 @@ export default async function handler(req, res) {
           if (count) return json(res, 409, { error: 'Des membres ont déjà joué le défi de cette semaine : préparez plutôt celui de la semaine suivante.' });
         }
         let replacement = body.question_id;
+        const voisines = await neighbourQuestions(supabase, week);
         if (replacement) {
           if (!isUuid(replacement) || challenge.question_ids.includes(replacement)) return json(res, 422, { error: 'Question de remplacement invalide.' });
+          if (voisines.has(replacement)) return json(res, 409, { error: 'Cette question est déjà dans le défi de la semaine précédente ou suivante.' });
           const { data } = await supabase.from('trivia_questions').select('id').eq('id', replacement).eq('active', true).maybeSingle();
           if (!data) return json(res, 422, { error: 'Question de remplacement introuvable ou désactivée.' });
         } else {
-          const picks = await rpc(supabase, 'quiz_pick', { p_count: 40 });
-          replacement = (picks || []).find((id) => !challenge.question_ids.includes(id));
+          const picks = await rpc(supabase, 'quiz_pick_defi', { p_count: 40, p_week: week });
+          replacement = (picks || []).find((id) => !challenge.question_ids.includes(id) && !voisines.has(id));
           if (!replacement) return json(res, 409, { error: 'Aucune autre question disponible.' });
         }
         const ids = [...challenge.question_ids];
