@@ -87,6 +87,9 @@ create table if not exists public.quiz_games (
   started_at timestamptz not null default now(),
   finished_at timestamptz
 );
+-- Copie de la question en cours, figée à son affichage : une modification
+-- administrative ultérieure ne change ni l'énoncé ni la correction de la partie.
+alter table public.quiz_games add column if not exists current_q jsonb;
 create index if not exists quiz_games_user_idx on public.quiz_games (user_id, finished_at);
 create index if not exists quiz_games_finished_idx on public.quiz_games (finished_at) where finished_at is not null;
 create unique index if not exists quiz_games_defi_unique on public.quiz_games (user_id, week_start) where mode = 'defi';
@@ -187,10 +190,19 @@ begin
       return jsonb_build_object('game_id', g.id, 'mode', g.mode, 'total', cardinality(g.question_ids),
         'index', g.current_index, 'points', g.points, 'repris', true);
     end if;
-    insert into public.quiz_challenges (week_start, question_ids)
-      select ws, public.quiz_pick(n)
-      on conflict (week_start) do nothing;
     select question_ids into ids from public.quiz_challenges where week_start = ws;
+    -- Tirage vérifié AVANT l'enregistrement : un défi vide ou trop court
+    -- (banque insuffisante au premier lancement) est retiré dès que possible.
+    if ids is null or cardinality(ids) < 5 then
+      ids := public.quiz_pick(n);
+      if cardinality(ids) < 5 then
+        return jsonb_build_object('error', 'Banque de questions insuffisante.');
+      end if;
+      insert into public.quiz_challenges (week_start, question_ids) values (ws, ids)
+        on conflict (week_start) do update set question_ids = excluded.question_ids
+        where cardinality(public.quiz_challenges.question_ids) < 5;
+      select question_ids into ids from public.quiz_challenges where week_start = ws;
+    end if;
   elsif p_mode = 'duel' then
     if p_duel is null then
       ids := public.quiz_pick(n);
@@ -240,19 +252,25 @@ begin
   if g.finished_at is not null or g.current_index >= total then
     return jsonb_build_object('finished', true, 'points', g.points);
   end if;
-  select * into q from public.trivia_questions where id = g.question_ids[g.current_index + 1];
-  if not found then
+  if g.shown_at is not null and g.current_q is not null then
+    -- Question déjà affichée : on réaffiche la version figée.
+    q := jsonb_populate_record(null::public.trivia_questions, g.current_q);
+  else
+    select * into q from public.trivia_questions where id = g.question_ids[g.current_index + 1];
+  end if;
+  if q.id is null then
     -- Question supprimée entre-temps : on la saute sans pénalité.
     insert into public.quiz_answers (game_id, idx, user_id, question_id, correct, timed_out, points)
       values (g.id, g.current_index, p_user, g.question_ids[g.current_index + 1], false, false, 0)
       on conflict do nothing;
-    update public.quiz_games set current_index = current_index + 1, shown_at = null,
+    update public.quiz_games set current_index = current_index + 1, shown_at = null, current_q = null,
       finished_at = case when current_index + 1 >= total then now() end
       where id = g.id;
     return public.quiz_next(p_game, p_user);
   end if;
-  if g.shown_at is null then
-    update public.quiz_games set shown_at = now() where id = g.id returning * into g;
+  if g.shown_at is null or g.current_q is null then
+    update public.quiz_games set shown_at = coalesce(shown_at, now()), current_q = to_jsonb(q)
+      where id = g.id returning * into g;
   end if;
   opts := case when q.format = 'chiffre' then '[]'::jsonb else q.options end;
   return jsonb_build_object(
@@ -282,7 +300,12 @@ begin
   if p_index is distinct from g.current_index or g.shown_at is null then
     return jsonb_build_object('error', 'Question non affichée ou déjà répondue.');
   end if;
-  select * into q from public.trivia_questions where id = g.question_ids[g.current_index + 1];
+  -- Correction selon la version affichée au joueur, pas la version actuelle de la banque.
+  if g.current_q is not null then
+    q := jsonb_populate_record(null::public.trivia_questions, g.current_q);
+  else
+    select * into q from public.trivia_questions where id = g.question_ids[g.current_index + 1];
+  end if;
 
   elapsed := extract(epoch from (now() - g.shown_at));
   -- 15 s de chrono + 2 s de tolérance réseau.
@@ -300,7 +323,7 @@ begin
           least(floor(elapsed * 1000), 2147483647)::integer, pts);
 
   update public.quiz_games set
-    current_index = current_index + 1, shown_at = null, streak = s,
+    current_index = current_index + 1, shown_at = null, current_q = null, streak = s,
     best_streak = greatest(best_streak, s), correct = correct + (case when ok then 1 else 0 end),
     fast = fast + (case when is_fast then 1 else 0 end), points = points + pts,
     finished_at = case when done then now() else null end
