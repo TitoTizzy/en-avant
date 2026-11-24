@@ -1171,3 +1171,28 @@ body.eac-open .ea-nudge, body:has(.u-links.open, .u-links.is-open, .u-links.menu
 .sp-full-toc ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; }
 .sp-full-toc a { color: #ffd9c6; }
 .sp-full .sp-article { padding: 0.5rem 1.3rem 1.3rem; max-width: none; }
+
+/* ─── Œil « afficher / masquer » des champs de mot de passe ─── */
+.pw-wrap { position: relative; display: block; width: 100%; }
+.pw-wrap > input { width: 100%; padding-right: 2.8rem !important; }
+.pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.2rem;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.pw-toggle:hover, .pw-toggle:focus-visible { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.pw-toggle:focus-visible { outline: 2px solid #ff6a2a; outline-offset: 1px; }
+.pw-toggle[aria-pressed="true"] { color: #ff8a4c; }
+/* Masque l'œil natif d'Edge pour n'en garder qu'un. */
+.pw-wrap > input::-ms-reveal, .pw-wrap > input::-ms-clear { display: none; }
