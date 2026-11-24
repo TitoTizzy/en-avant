@@ -634,6 +634,47 @@
     }
   }
 
+  /* ----- Filtres géographiques des adhérents ----- */
+  const memberGeo = () => ({
+    pays: document.getElementById("mg-pays")?.value || "",
+    departement: document.getElementById("mg-dep")?.value || "",
+    ville: document.getElementById("mg-ville")?.value.trim() || "",
+  });
+  const memberGeoActive = () => Object.values(memberGeo()).some(Boolean);
+  function memberGeoParams(params) {
+    const g = memberGeo();
+    if (g.pays) params.set("pays", g.pays);
+    if (g.departement) params.set("departement", g.departement);
+    if (g.ville) params.set("ville", g.ville);
+  }
+  function memberGeoLabel(m) {
+    if (!m.pays) return '<span class="member-geo-none">Non renseigné</span>';
+    const label = `${esc(m.pays)}${m.departement ? ` · ${esc(m.departement)}` : ""}`;
+    return m.geo_deduit ? `${label} <small class="member-geo-deduit" title="Déduit de la ville saisie">(déduit)</small>` : label;
+  }
+  function renderMemberGeo(geo) {
+    if (!geo) return;
+    const fill = (id, rows, first, current) => {
+      const select = document.getElementById(id);
+      const keep = current || select.value;
+      select.innerHTML = `<option value="">${first}</option>` + rows.map((r) =>
+        `<option value="${esc(r.nom)}">${esc(r.nom)} (${r.total})</option>`).join("");
+      if (keep && !rows.some((r) => r.nom === keep)) select.insertAdjacentHTML("beforeend", `<option value="${esc(keep)}">${esc(keep)}</option>`);
+      select.value = keep;
+    };
+    fill("mg-pays", geo.pays, "Tous les pays");
+    fill("mg-dep", geo.departements, "Tous les départements");
+    const pays = document.getElementById("mg-pays").value;
+    const showDep = !pays || window.EA_GEO?.isHaiti(pays);
+    document.getElementById("mg-dep").hidden = !showDep;
+    if (!showDep) document.getElementById("mg-dep").value = "";
+    document.getElementById("mg-villes").innerHTML = geo.communes.map((c) => `<option value="${esc(c.nom)}"></option>`).join("");
+    document.getElementById("mg-summary").textContent = memberGeoActive() ? `${geo.total_filtre} fiche(s) pour ce lieu` : "";
+    const validate = document.getElementById("mg-validate");
+    validate.hidden = !(viewerIsSuperAdmin && geo.a_valider > 0);
+    validate.textContent = `Enregistrer ${geo.a_valider} lieu(x) déduit(s)`;
+  }
+
   function renderMembers(members) {
     const tbody = document.getElementById("tbl-members");
     // Envoi groupé : accès jamais envoyé, ou à renvoyer (lien expiré / pas encore utilisé).
@@ -645,7 +686,7 @@
     updateBulkCount();
 
     if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="9">${TAB_EMPTY[currentMemberTab] || "Aucune adhésion."}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10">${memberGeoActive() ? "Aucune fiche pour ce lieu dans cet onglet." : (TAB_EMPTY[currentMemberTab] || "Aucune adhésion.")}</td></tr>`;
       return;
     }
 
@@ -656,6 +697,8 @@
         <td style="font-variant-numeric:tabular-nums;">${esc(member.ninu || "—")}</td>
         <td>${esc(member.email)}</td>
         <td>${esc(member.ville)}</td>
+        <td class="member-geo-cell">${memberGeoLabel(member)}
+          <button class="btn btn-ghost btn-xs" data-geo="edit" type="button" title="Corriger le lieu" aria-label="Corriger le lieu de ${esc(member.nom)}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button></td>
         <td>${fmtDate(member.created_at)}</td>
         <td><span class="badge ${esc(member.status)}">${esc(member.status)}</span></td>
         <td>${accountBadge(member.account, member.is_user)}</td>
@@ -792,6 +835,10 @@
       ["NINU", "ninu"],
       ["Email", "email"],
       ["Ville", "ville"],
+      ["Commune", "commune"],
+      ["Département", "departement"],
+      ["Pays", "pays"],
+      ["Lieu déduit de la ville", "geo_deduit"],
       ["Statut", "status"],
       ["Date", "created_at"],
     ],
@@ -856,12 +903,18 @@
           page_size: String(pageSize),
           search: input.value.trim(),
         });
-        if (dataset === "members") params.set("tab", currentMemberTab);
+        if (dataset === "members") {
+          params.set("tab", currentMemberTab);
+          memberGeoParams(params);
+        }
         try {
           const payload = await api(`/api/admin/dashboard?${params}`);
           total = payload.total;
           listRenderers[dataset](payload.records);
-          if (dataset === "members") renderMemberCounts(payload.counts);
+          if (dataset === "members") {
+            renderMemberCounts(payload.counts);
+            renderMemberGeo(payload.geo);
+          }
           const pages = Math.max(1, Math.ceil(total / pageSize));
           pageLabel.textContent = `Page ${page}/${pages}`;
           prev.disabled = page <= 1;
@@ -897,6 +950,34 @@
       if (dataset === "members") {
         // Rechargement de l'onglet courant après une action (la fiche change d'onglet).
         reloadMembers = () => load();
+        const reloadFirstPage = () => { page = 1; load(); };
+        document.getElementById("mg-pays")?.addEventListener("change", () => {
+          document.getElementById("mg-dep").value = "";
+          reloadFirstPage();
+        });
+        document.getElementById("mg-dep")?.addEventListener("change", reloadFirstPage);
+        document.getElementById("mg-ville")?.addEventListener("change", reloadFirstPage);
+        document.getElementById("mg-ville")?.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") { event.preventDefault(); reloadFirstPage(); }
+        });
+        document.getElementById("mg-clear")?.addEventListener("click", () => {
+          ["mg-pays", "mg-dep", "mg-ville"].forEach((id) => { document.getElementById(id).value = ""; });
+          reloadFirstPage();
+        });
+        document.getElementById("mg-validate")?.addEventListener("click", async (event) => {
+          const button = event.currentTarget;
+          if (!window.confirm(`${button.textContent} : le pays et le département déduits de la ville seront enregistrés dans ces fiches. Les lieux déjà déclarés ne changent pas. Continuer ?`)) return;
+          button.disabled = true;
+          try {
+            const r = await api("/api/admin/dashboard", { method: "POST", body: JSON.stringify({ action: "valider_localisations" }) });
+            membersStatus("success", `${r.mises_a_jour} fiche(s) mise(s) à jour.${r.restantes ? ` ${r.restantes} sans lieu reconnaissable : corrigez-les à la main (crayon).` : ""}`);
+            load();
+          } catch (error) {
+            membersStatus("error", error.message);
+          } finally {
+            button.disabled = false;
+          }
+        });
         document.querySelectorAll(".member-tab").forEach((tabBtn) => {
           tabBtn.addEventListener("click", () => {
             currentMemberTab = tabBtn.dataset.tab;
@@ -917,7 +998,10 @@
             export: "1",
             search: input.value.trim(),
           });
-          if (dataset === "members") params.set("tab", currentMemberTab);
+          if (dataset === "members") {
+            params.set("tab", currentMemberTab);
+            memberGeoParams(params);
+          }
           const payload = await api(`/api/admin/dashboard?${params}`);
           downloadCsv(dataset, payload.records);
           if (payload.truncated) {
@@ -2406,6 +2490,47 @@
         ? `${sent} nouveau(x) lien(s) envoyé(s). Les fiches passeront dans « Actifs » dès la première connexion.`
         : `${sent} accès envoyé(s). Ces fiches passent dans « Approuvés — en attente d'activation ».`);
     reloadMembers();
+  });
+
+  // Correction du lieu d'une fiche (crayon de la colonne « Pays · Département »).
+  document.getElementById("tbl-members").addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-geo]");
+    if (!button) return;
+    const row = button.closest("tr");
+    const cell = row.querySelector(".member-geo-cell");
+    if (button.dataset.geo === "edit") {
+      const ville = row.children[4]?.textContent.trim() || "";
+      const [paysTxt, depTxt] = (cell.textContent.replace("(déduit)", "").split("·").map((t) => t.trim()));
+      const pays = paysTxt && paysTxt !== "Non renseigné" ? paysTxt : "";
+      const deps = (window.EA_GEO?.DEPARTEMENTS || []).map((d) => `<option${d === depTxt ? " selected" : ""}>${esc(d)}</option>`).join("");
+      cell.innerHTML = `<form class="member-geo-form">
+        <input name="pays" list="mg-pays-list" value="${esc(pays)}" placeholder="Pays" aria-label="Pays" required>
+        <datalist id="mg-pays-list">${(window.EA_GEO?.PAYS || []).map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>
+        <select name="departement" aria-label="Département"><option value="">Département…</option>${deps}</select>
+        <input name="ville" value="${esc(ville)}" placeholder="Ville" aria-label="Ville" required>
+        <button class="btn btn-primary btn-xs" data-geo="save" type="button">OK</button>
+        <button class="btn btn-ghost btn-xs" data-geo="cancel" type="button">Annuler</button></form>`;
+      return;
+    }
+    if (button.dataset.geo === "cancel") { reloadMembers(); return; }
+    if (button.dataset.geo === "save") {
+      const form = cell.querySelector("form");
+      button.disabled = true;
+      try {
+        await api("/api/admin/dashboard", {
+          method: "POST",
+          body: JSON.stringify({
+            action: "localisation", member_id: row.dataset.id,
+            pays: form.elements.pays.value, departement: form.elements.departement.value, ville: form.elements.ville.value,
+          }),
+        });
+        membersStatus("success", "Lieu enregistré.");
+        reloadMembers();
+      } catch (error) {
+        membersStatus("error", error.message);
+        button.disabled = false;
+      }
+    }
   });
 
   document.getElementById("tbl-members").addEventListener("click", async (event) => {
