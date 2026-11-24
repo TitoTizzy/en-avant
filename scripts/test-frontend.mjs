@@ -742,3 +742,25 @@ test('Don : PayPal disponible avec le bouton de dons d’En Avant Miami Inc, ouv
   assert.match(link.getAttribute('rel'), /noopener/);
   assert.ok(![...doc.querySelectorAll('.don-methods-row--soon h3')].some((h) => /PayPal/.test(h.textContent)), 'plus dans « Bientôt disponibles »');
 });
+
+test('Formulaires : options des listes déroulantes lisibles (texte clair sur fond sombre)', async () => {
+  const css = (await read('css/ultra.css')) + (await read('css/premium.css'));
+  // Aucune règle ne remet un texte sombre sur les options (fond sombre du thème).
+  assert.doesNotMatch(css, /select option[^{]*\{[^}]*color:\s*var\(--ea-ink\)/);
+  assert.match(css, /\.ea-field select option,[\s\S]*?\{[^}]*background-color:\s*#0b1730;[^}]*color:\s*#f5f7fb/);
+  const dom = await page('adherer.html', '/adherer');
+  const style = dom.window.document.createElement('style');
+  style.textContent = css;
+  dom.window.document.head.appendChild(style);
+  const option = dom.window.document.querySelector('#adh-sexe option[value="femme"]');
+  const cs = dom.window.getComputedStyle(option);
+  assert.equal(cs.color, 'rgb(245, 247, 251)');
+  assert.equal(cs.backgroundColor, 'rgb(11, 23, 48)');
+  // Département (options ajoutées par le script) : même rendu.
+  const dep = dom.window.document.getElementById('adh-departement');
+  dep.add(new dom.window.Option('Ouest', 'Ouest'));
+  const dcs = dom.window.getComputedStyle([...dep.options].at(-1));
+  assert.equal(dcs.color, 'rgb(245, 247, 251)');
+  assert.equal(dcs.backgroundColor, 'rgb(11, 23, 48)');
+  dom.window.close();
+});
