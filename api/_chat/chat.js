@@ -131,6 +131,8 @@ export default async function handler(req, res) {
     const events = (eventsResult.data || []).map((e) => ({ titre: e.titre, date: formatDate(e.date_cible), lieu: e.lieu }));
     const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events, langue, visiteur: membre, ton: info.ton }) }];
     const stream = body.stream === true;
+    // Statistiques : une question de plus dans cette langue (sans contenu ; jamais bloquant).
+    supabase.rpc('chat_stats_add', { p_langue: langue }).then(({ error }) => { if (error) console.warn('[chat] stats :', error.message); }, () => {});
 
     let response;
     try {
