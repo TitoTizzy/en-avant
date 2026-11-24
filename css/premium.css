@@ -1033,13 +1033,13 @@ body.eac-open .ea-nudge, body:has(.u-links.open, .u-links.is-open, .u-links.menu
   overflow: hidden;
   background: linear-gradient(135deg, #060d1a 0%, #0b1830 52%, #13294a 100%);
 }
-.sp-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.55); }
+.sp-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); }
 .sp-hero-overlay {
   position: absolute;
   inset: 0;
   background:
     radial-gradient(circle at 15% 20%, rgba(255, 106, 42, 0.16), transparent 30%),
-    linear-gradient(180deg, rgba(5, 11, 29, 0.35), rgba(5, 11, 29, 0.92));
+    linear-gradient(180deg, rgba(5, 11, 29, 0.25), rgba(5, 11, 29, 0.85));
 }
 .sp-hero-content { position: relative; z-index: 2; max-width: 900px; }
 .sp-hero-content h1 {
