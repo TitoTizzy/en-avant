@@ -16,6 +16,7 @@ import statsHandler from './_admin/stats.js';
 import newsletterHandler from './_admin/newsletter.js';
 import quizCronHandler from './_admin/quiz-cron.js';
 import maintenanceHandler from './_admin/maintenance.js';
+import audienceHandler from './_admin/audience.js';
 import { json } from './_lib/http.js';
 
 export default async function handler(req, res) {
@@ -37,6 +38,7 @@ export default async function handler(req, res) {
     case 'newsletter':   return newsletterHandler(req, res);
     case 'quiz-cron':    return quizCronHandler(req, res);
     case 'maintenance':  return maintenanceHandler(req, res);
+    case 'audience':     return audienceHandler(req, res);
     default:             return json(res, 404, { error: 'Route inconnue.' });
   }
 }

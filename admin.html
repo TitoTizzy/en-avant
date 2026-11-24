@@ -94,6 +94,9 @@
       <button class="adm-nav-item active" data-panel="panel-home" type="button">
         <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Tableau de bord
       </button>
+      <button class="adm-nav-item" data-panel="panel-audience" type="button">
+        <i class="fa-solid fa-chart-line" aria-hidden="true"></i> Audience du site
+      </button>
 
       <p class="adm-nav-section">Contenu</p>
       <button class="adm-nav-item" data-panel="panel-articles" type="button">
@@ -1293,6 +1296,28 @@
       </section>
 
       <!-- ════════════════════ JOURNAL D'ACTIVITÉ ══════════════════════ -->
+      <section class="adm-panel" id="panel-audience" hidden>
+        <div class="ga-head">
+          <div>
+            <h3 class="adm-box-title" style="margin:0;">Audience du site <span class="ga-src">Google Analytics</span></h3>
+            <p class="kpi-sub" id="ga-sub">Visites d’enavant.org, comparées à la période précédente.</p>
+          </div>
+          <div class="ga-tools">
+            <div class="kpi-periods" role="group" aria-label="Période">
+              <button type="button" class="kpi-period ga-period" data-periode="1">Aujourd’hui</button>
+              <button type="button" class="kpi-period ga-period" data-periode="7">7 jours</button>
+              <button type="button" class="kpi-period ga-period is-active" data-periode="30">30 jours</button>
+              <button type="button" class="kpi-period ga-period" data-periode="90">3 mois</button>
+              <button type="button" class="kpi-period ga-period" data-periode="365">12 mois</button>
+            </div>
+            <button type="button" class="btn btn-ghost btn-xs" id="ga-refresh"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualiser</button>
+          </div>
+        </div>
+        <div class="ga-live" id="ga-live" hidden></div>
+        <div id="ga-page-banner" class="ga-page-banner" hidden></div>
+        <div id="ga-body"><p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement des statistiques…</p></div>
+      </section>
+
       <section class="adm-panel" id="panel-logs" hidden>
         <div class="u-card" style="margin-bottom:1.2rem;">
           <div class="adm-record-head">

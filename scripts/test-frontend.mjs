@@ -536,11 +536,26 @@ test('Admin : indicateurs de l’accueil avec choix de la période et contenu é
   const dom = new JSDOM(html);
   const doc = dom.window.document;
   assert.ok(doc.getElementById('kpi-sections'));
-  assert.deepEqual([...doc.querySelectorAll('.kpi-period')].map((b) => b.dataset.periode), ['7', '30', '90', '365']);
-  assert.equal(doc.querySelectorAll('.kpi-period.is-active').length, 1);
+  assert.deepEqual([...doc.querySelectorAll('#kpi-board .kpi-period')].map((b) => b.dataset.periode), ['7', '30', '90', '365']);
+  assert.equal(doc.querySelectorAll('#kpi-board .kpi-period.is-active').length, 1);
   assert.match(js, /\/api\/admin\/stats\?kind=overview&periode=\$\{periode\}/);
   assert.match(js, /\$\{esc\(i\.label\)\}/, 'libellés des listes échappés');
+  assert.doesNotMatch(js, /querySelectorAll\("\.kpi-period"\)/, 'sélecteur limité aux indicateurs de l’accueil');
   dom.window.close();
+});
+
+test('Admin : page Audience reliée à Google Analytics, réservée au droit voir_statistiques', async () => {
+  const html = await read('admin.html');
+  const js = await read('js/admin.js');
+  const vercel = JSON.parse(await read('vercel.json'));
+  const doc = new JSDOM(html).window.document;
+  assert.ok(doc.querySelector('.adm-nav-item[data-panel="panel-audience"]'));
+  assert.ok(doc.getElementById('panel-audience')?.hidden);
+  assert.deepEqual([...doc.querySelectorAll('.ga-period')].map((b) => b.dataset.periode), ['1', '7', '30', '90', '365']);
+  assert.match(js, /"panel-audience":\s+"voir_statistiques"/);
+  assert.match(js, /key: "voir_statistiques"/);
+  assert.match(js, /\/api\/admin\/audience\?temps_reel=1/);
+  assert.ok(vercel.rewrites.some((r) => r.source === '/api/admin/audience' && r.destination === '/api/admin?action=audience'));
 });
 
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
