@@ -17,6 +17,7 @@ principal d'`Apropos.html`, `historique.html` et `organisation.html`.
 Une modification à la main sera écrasée au prochain lancement. Modifier plutôt :
 - `api/_lib/site-pages.js` : structure (rubriques, sous-pages, 20 chantiers) — sert aussi au sitemap et à l'assistant ;
 - `pages-src/*.html` : textes propres à une sous-page (candidats, diaspora) ;
+- `pages-src/chantiers-resumes.mjs` : résumés des 20 chantiers (3 ou 4 paragraphes, fidèles au Livre blanc) ;
 - `pages-src/_orig/*` : sections reprises des anciennes pages ;
 - `docs/livre-blanc.txt` : texte du Livre blanc (avec les marqueurs `=== Page N ===`) ;
 puis relancer `node scripts/build-pages.mjs` et commiter le résultat.
