@@ -118,6 +118,8 @@
     .don-logo-zelle   { background: #6D1ED4; color: #fff; }
     .don-logo-stripe  { background: #635BFF; color: #fff; }
     .don-logo-paypal  { background: #003087; color: #fff; }
+    .don-paypal-btn { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 0.8rem; padding: 0.55rem 1.1rem; border-radius: 999px; background: #ffc439; color: #003087; font-weight: 800; font-size: 0.92rem; text-decoration: none; }
+    .don-paypal-btn:hover, .don-paypal-btn:focus-visible { background: #f2b52e; color: #003087; }
     .don-logo-moncash { background: #fff; padding: .2rem; }
     .don-logo-natcash { background: #fff; padding: .2rem; }
 
@@ -285,6 +287,24 @@
         <div class="don-methods-row don-methods-row--active">
 
           <div class="don-card don-card--active">
+            <div class="don-logo don-logo-paypal" aria-hidden="true">
+              <i class="fa-brands fa-paypal"></i>
+            </div>
+            <div class="don-card-body">
+              <h3>PayPal</h3>
+              <div class="don-card-info">
+                <div class="don-info-row">
+                  <i class="fa-solid fa-building-columns" aria-hidden="true"></i>
+                  <span>En Avant Miami Inc</span>
+                </div>
+              </div>
+              <a class="don-paypal-btn" href="https://www.paypal.com/donate/?hosted_button_id=L7ZGQVJNM5KPU" target="_blank" rel="noopener noreferrer">
+                <i class="fa-brands fa-paypal" aria-hidden="true"></i> Donner avec PayPal
+              </a>
+            </div>
+          </div>
+
+          <div class="don-card don-card--active">
             <div class="don-logo don-logo-cashapp" aria-hidden="true">$</div>
             <div class="don-card-body">
               <h3>Cash App</h3>
@@ -315,16 +335,6 @@
         <!-- Bientôt disponibles -->
         <p class="don-section-label">Bientôt disponibles</p>
         <div class="don-methods-row don-methods-row--soon">
-
-          <div class="don-card don-card--soon" aria-disabled="true">
-            <div class="don-logo don-logo-paypal" aria-hidden="true">
-              <i class="fa-brands fa-paypal"></i>
-            </div>
-            <div class="don-card-body">
-              <h3>PayPal</h3>
-              <span class="don-badge">Bientôt disponible</span>
-            </div>
-          </div>
 
           <div class="don-card don-card--soon" aria-disabled="true">
             <div class="don-logo don-logo-moncash">
