@@ -104,28 +104,43 @@
     applySeo(article);
   }
 
-  async function loadRecent() {
+  /* Autres articles : miniature + date + titre, sans l'article en cours de lecture.
+     Image toujours créée neuve (aucun srcset hérité), avec repli si elle manque. */
+  async function loadRecent(currentSlug) {
     let items = [];
     try {
-      const response = await fetch("/api/articles?limit=4", { signal: AbortSignal.timeout(4000) });
+      const response = await fetch("/api/articles?limit=5", { signal: AbortSignal.timeout(6000) });
       const payload = await response.json();
       if (response.ok && payload.articles?.length) {
-        items = payload.articles.map((a) => ({
-          titre: a.titre,
-          href: `/article-details.html?slug=${encodeURIComponent(a.slug)}`,
-        }));
+        items = payload.articles.filter((a) => a.slug !== currentSlug).slice(0, 4);
       }
-    } catch { /* fallback silencieux */ }
+    } catch { /* repli : seul le lien « Voir toute l'actualité » reste */ }
 
-    recentEl.innerHTML = "";
-    items.forEach(({ titre, href }) => {
+    const fmt = (iso) => { try { return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); } catch { return ""; } };
+    recentEl.replaceChildren(...items.map((a) => {
       const li = document.createElement("li");
-      const a = document.createElement("a");
-      a.href = href;
-      a.textContent = titre;
-      li.appendChild(a);
-      recentEl.appendChild(li);
-    });
+      const link = document.createElement("a");
+      link.className = "art-other";
+      link.href = `/article-details.html?slug=${encodeURIComponent(a.slug)}`;
+      const thumb = document.createElement("div");
+      thumb.className = "art-other-thumb";
+      const img = document.createElement("img");
+      img.loading = "lazy"; img.decoding = "async"; img.alt = "";
+      img.src = a.image_url || "/pictures/foule-Assise-800.webp";
+      img.addEventListener("error", () => { if (!img.dataset.fallback) { img.dataset.fallback = "1"; img.src = "/pictures/foule-Assise-800.webp"; } });
+      thumb.appendChild(img);
+      const body = document.createElement("div");
+      body.className = "art-other-body";
+      const date = document.createElement("small");
+      date.textContent = fmt(a.published_at);
+      const title = document.createElement("strong");
+      title.textContent = a.titre;
+      body.append(date, title);
+      link.append(thumb, body);
+      li.appendChild(link);
+      return li;
+    }));
+    recentEl.hidden = !items.length;
   }
 
   async function load() {
@@ -177,5 +192,5 @@
   }
 
   load().finally(setupShare);
-  loadRecent();
+  loadRecent(new URLSearchParams(window.location.search).get("slug"));
 })();

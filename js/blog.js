@@ -285,9 +285,15 @@
         renderPagination();
         return;
       }
-    } catch { /* API indisponible — repli silencieux */ }
+      if (res.ok) {
+        grid.innerHTML = `<p class="blog-status">Aucun article publié pour le moment.</p>`;
+        return;
+      }
+    } catch { /* API indisponible */ }
 
-    // Mode statique : le HTML de la page reste intact, on câble juste les boutons
-    wireShareButtons(grid);
+    // Échec : jamais de faux articles, un message et un bouton pour réessayer.
+    grid.innerHTML = `<p class="blog-status">L’actualité n’a pas pu être chargée.
+      <button type="button" class="btn btn-ghost" data-blog-retry>Réessayer</button></p>`;
+    grid.querySelector("[data-blog-retry]")?.addEventListener("click", () => window.location.reload());
   })();
 })();

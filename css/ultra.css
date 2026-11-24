@@ -4597,3 +4597,87 @@ select option:checked { background-color: #ff6a2a; color: #fff; }
 .member-geo-deduit { color: var(--ink-400); }
 .member-geo-form { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
 .member-geo-form input, .member-geo-form select { max-width: 140px; }
+
+/* ----------------------------------------------------------------------------
+   ACTUALITÉS (accueil) — « Autres articles » avec miniatures, séparation nette
+---------------------------------------------------------------------------- */
+.feature-media { display: block; }
+.feature-media img { display: block; }
+.feature-body h3 a, .feature-body h3 { color: var(--ink-100); }
+
+.news-stack { gap: 1rem; }
+.news-stack-title {
+  display: flex; align-items: center; gap: .8rem;
+  margin: 0; font-size: .78rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--peach);
+}
+.news-stack-title::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line-2), transparent); }
+
+.news-list { display: flex; flex-direction: column; gap: .9rem; }
+.news-item {
+  display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 1rem; align-items: center;
+  padding: .8rem; border-radius: var(--r-md, 16px);
+  background: linear-gradient(180deg, rgba(16, 26, 44, 0.78), rgba(10, 17, 30, 0.66));
+  border: 1px solid var(--line-2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 30px rgba(2, 6, 12, 0.3);
+  color: inherit; text-decoration: none;
+  transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.news-item:hover, .news-item:focus-visible {
+  border-color: rgba(255, 138, 76, 0.55);
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 36px rgba(2, 6, 12, 0.4), 0 0 0 1px rgba(255, 138, 76, 0.18);
+}
+.news-item:focus-visible { outline: 2px solid var(--orange-light); outline-offset: 2px; }
+.news-thumb { position: relative; width: 112px; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,.05); }
+.news-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--ease, ease); }
+.news-item:hover .news-thumb img { transform: scale(1.06); }
+.news-item-body { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.news-item-meta { font-size: .76rem; color: var(--ink-400); }
+.news-item h4 {
+  margin: 0; font-size: 1rem; line-height: 1.35; color: var(--ink-100);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.news-item-more { font-size: .82rem; font-weight: 800; color: var(--orange-light); }
+.news-error { margin: 0; padding: 1rem 1.2rem; border-radius: var(--r-md, 16px); border: 1px dashed var(--line-2); color: var(--ink-300); font-size: .92rem; }
+.u-news.is-empty { grid-template-columns: 1fr; max-width: 560px; margin-inline: auto; }
+.news-cta-box { padding: 1.1rem; }
+
+/* Squelettes de chargement */
+.news-skel { display: block; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.11), rgba(255,255,255,.05)); background-size: 200% 100%; animation: news-shimmer 1.4s ease-in-out infinite; }
+.news-skel--media { position: absolute; inset: 0; border-radius: 0; }
+.news-skel--title { height: 1.6rem; width: 85%; }
+.news-skel--line { height: .8rem; width: 100%; margin: .35rem 0; }
+.news-item--skel { pointer-events: none; }
+.news-item--skel .news-item-body { gap: .2rem; }
+@keyframes news-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .news-skel { animation: none; } .news-item, .news-thumb img { transition: none; } }
+
+@media (max-width: 560px) {
+  .news-item { grid-template-columns: 92px minmax(0, 1fr); gap: .8rem; padding: .7rem; }
+  .news-thumb { width: 92px; }
+  .news-item h4 { font-size: .95rem; }
+}
+
+/* ----------------------------------------------------------------------------
+   PAGE ARTICLE — « Autres articles » avec miniatures
+---------------------------------------------------------------------------- */
+.art-aside ul.art-others { gap: 0; }
+.art-others li + li { border-top: 1px solid var(--line-2); }
+.art-others a.art-other {
+  display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: .85rem; align-items: center;
+  padding: .85rem 0; color: inherit; text-decoration: none;
+}
+.art-others li:first-child a.art-other { padding-top: 0; }
+.art-others li:last-child a.art-other { padding-bottom: 0; }
+.art-other-thumb { width: 76px; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,.05); }
+.art-other-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.art-other-body { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.art-other-body small { font-size: .74rem; color: var(--ink-400); }
+.art-other-body strong {
+  font-size: .92rem; line-height: 1.4; font-weight: 600; color: var(--ink-200);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.art-others a.art-other:hover strong { color: var(--peach); }
+.art-others-all { display: inline-block; margin-top: 1rem; font-size: .88rem; font-weight: 700; color: var(--orange-light); }
+.blog-status { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .8rem; padding: 3rem 0; margin: 0; color: var(--ink-400); text-align: center; }
+.blog-pagination[hidden], .u-news [hidden], .art-others[hidden] { display: none !important; }

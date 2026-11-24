@@ -367,60 +367,29 @@
           <h2 class="section-title">L'actualité du parti</h2>
         </div>
 
-        <div class="u-news">
-          <article class="feature-card reveal-left">
-            <div class="feature-media">
-              <img loading="lazy" decoding="async" src="/pictures/foule-Assise.webp" srcset="/pictures/foule-Assise-800.webp 800w, /pictures/foule-Assise.webp 1280w" sizes="(max-width: 800px) 100vw, 800px" alt="Communiqué En Avant" />
-              <span class="feature-badge">Communiqué de presse</span>
-            </div>
-
+        <!-- Rempli par js/app.js à partir des articles publiés (aucun contenu fictif en dur). -->
+        <div class="u-news is-loading" data-news aria-busy="true">
+          <article class="feature-card reveal-left" data-news-feature>
+            <a class="feature-media" href="/blog.html" tabindex="-1" aria-hidden="true">
+              <div class="news-skel news-skel--media"></div>
+              <span class="feature-badge" hidden></span>
+            </a>
             <div class="feature-body">
-              <div class="meta-row">
-                <span>12 mars 2026</span>
-                <span>Programme</span>
-              </div>
-
-              <h3>Le parti En Avant annonce ses 20 chantiers prioritaires</h3>
-              <p>
-                Découvrez les mesures phares proposées par notre équipe pour inscrire
-                Haïti dans une nouvelle dynamique politique, économique et institutionnelle.
-              </p>
-
-              <a href="/article-details.html" class="text-link">
-                Lire l'article
-                <i class="fa-solid fa-arrow-right"></i>
-              </a>
+              <div class="meta-row"><span class="news-skel news-skel--line" style="width:9rem"></span></div>
+              <h3><span class="news-skel news-skel--title"></span></h3>
+              <p><span class="news-skel news-skel--line"></span><span class="news-skel news-skel--line" style="width:70%"></span></p>
+              <a href="/blog.html" class="text-link">Lire l'article <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
             </div>
           </article>
 
-          <aside class="news-stack">
-            <article class="mini-news-card">
-              <div class="mini-news-meta">
-                <span>12 mars 2026</span>
-                <span>Diaspora</span>
-              </div>
-              <h4>Rencontre avec la diaspora à Boston</h4>
-              <a href="/blog.html">Lire plus</a>
-            </article>
-
-            <article class="mini-news-card">
-              <div class="mini-news-meta">
-                <span>10 mars 2026</span>
-                <span>Campagne</span>
-              </div>
-              <h4>Lancement de la campagne nationale</h4>
-              <a href="/blog.html">Lire plus</a>
-            </article>
-
-            <article class="mini-news-card">
-              <div class="mini-news-meta">
-                <span>08 mars 2026</span>
-                <span>Organisation</span>
-              </div>
-              <h4>Renforcement des coordinations régionales</h4>
-              <a href="/blog.html">Lire plus</a>
-            </article>
-
+          <aside class="news-stack" aria-labelledby="news-others-title">
+            <h3 class="news-stack-title" id="news-others-title">Autres articles</h3>
+            <div class="news-list" data-news-list>
+              <div class="news-item news-item--skel"><div class="news-thumb news-skel"></div><div class="news-item-body"><span class="news-skel news-skel--line" style="width:6rem"></span><span class="news-skel news-skel--line"></span></div></div>
+              <div class="news-item news-item--skel"><div class="news-thumb news-skel"></div><div class="news-item-body"><span class="news-skel news-skel--line" style="width:6rem"></span><span class="news-skel news-skel--line"></span></div></div>
+              <div class="news-item news-item--skel"><div class="news-thumb news-skel"></div><div class="news-item-body"><span class="news-skel news-skel--line" style="width:6rem"></span><span class="news-skel news-skel--line"></span></div></div>
+            </div>
+            <p class="news-error" data-news-error hidden>L’actualité n’a pas pu être chargée pour le moment.</p>
             <div class="news-cta-box">
               <a href="/blog.html" class="btn btn-ghost btn-full">Voir tous les articles</a>
             </div>
