@@ -91,9 +91,16 @@ export const CHANTIERS = [
 const CAPS = /^[A-ZÀ-ÖØ-Ý0-9’'«»“”().,:;&\-–\s]+$/;
 const isCaps = (line) => line.length >= 4 && CAPS.test(line) && /[A-ZÀ-Ý]{3}/.test(line);
 const sentenceCase = (text) => {
-  const lower = text.toLowerCase().replace(/\s+/g, ' ').trim();
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
+  const lower = text.toLowerCase().replace(/\s+/g, ' ').trim().replace(/\s*[:.]$/, '');
+  return (lower.charAt(0).toUpperCase() + lower.slice(1))
+    .replace(/\b(haïti|en avant)\b/g, (m) => m.replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase()))
+    .replace(/(l’|l')état\b/g, '$1État')
+    .replace(/\(([\p{L}]{2,8})\)/gu, (m, sigle) => `(${sigle.toUpperCase()})`)
+    .replace(/^(Le mot d[eu]) (.+)$/, (m, a, nom) => `${a} ${nom.replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase())}`);
 };
+
+// Intertitres reconnus comme sections (les autres lignes en capitales restent dans le texte).
+const SECTIONS = /^(État des lieux|Objectifs?\b|Dispositions à prendre|Le mot d[eu]|D[ée]partement d|Ile de la gonave|Conclusion|Annexes|Sigles)/i;
 
 /** Référence lisible d'un extrait du Livre blanc. */
 export function formatRef({ partie, chapitre, section, pageDebut, pageFin }) {
@@ -138,13 +145,22 @@ export function parseLivreBlanc(text, size = 1100) {
   };
   const closeSection = () => {
     if (!pendingCaps.length) return;
-    flush();
-    section = sentenceCase(pendingCaps.join(' '));
+    const titre = sentenceCase(pendingCaps.join(' ')).replace(/\s*[:.]$/, '').replace(/^Etat\b/, 'État');
+    if (SECTIONS.test(titre)) {
+      flush();
+      section = titre;
+    } else {
+      // Lignes en capitales du texte courant (sigles, intertitres).
+      for (const caps of pendingCaps) {
+        buffer.push(caps);
+        if (buffer.join(' ').length > size) flush();
+      }
+    }
     pendingCaps = [];
   };
 
   for (const raw of lines) {
-    const line = raw.trim();
+    const line = raw.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
     const pageMark = /^=== Page (\d+) ===$/.exec(line);
     if (pageMark) {
       page = Number(pageMark[1]);
@@ -281,6 +297,7 @@ Références au Livre blanc :
 - Chaque extrait du Livre blanc a un attribut « ref » (partie, chapitre ou chantier, section, pages) et un « lien » vers la page du PDF.
 - Quand la personne demande une référence, une source, « où c’est écrit », un chapitre ou une page : donne-la exactement d’après « ref » (ex. « Livre blanc, Partie II, Chantier 1 – Sécurité, section « État des lieux », p. 40-41 ») avec le lien [Livre blanc, p. 40](/docs/livre-blanc.pdf#page=40). N’invente jamais un numéro de page ou de chapitre : s’il n’y a pas de « ref », dis que tu ne peux pas préciser la page.
 - Sans demande de la personne, tu peux mentionner brièvement le chantier concerné, sans détailler les pages.
+- Donne chaque référence une seule fois (pas de ligne « Référence : » qui répète ce que tu viens d’écrire) et ne commente pas les limites des extraits fournis.
 
 Règles absolues :
 1. Programme, positions, propositions, chiffres, histoire du parti : appuie-toi UNIQUEMENT sur les extraits fournis dans <sources> (le Livre blanc et les pages du site). N’invente aucun chiffre, nom, date, promesse ni position. Si l’information n’y figure pas, dis clairement que ce n’est pas mentionné dans le Livre blanc (dans la langue de réponse), puis propose un sujet proche qui, lui, y figure, ou d’écrire à contact@enavant.org.
