@@ -445,6 +445,12 @@ export const MESSAGES = {
     fr: 'L’assistant est momentanément indisponible.', en: 'The assistant is temporarily unavailable.',
     ht: 'Asistan an pa disponib pou kounye a.', es: 'El asistente no está disponible por el momento.',
   },
+  rythme: {
+    fr: 'Vous envoyez beaucoup de messages : patientez quelques minutes avant de continuer.',
+    en: 'You are sending a lot of messages: please wait a few minutes before continuing.',
+    ht: 'Ou voye anpil mesaj : tann kèk minit anvan ou kontinye.',
+    es: 'Está enviando muchos mensajes: espere unos minutos antes de continuar.',
+  },
   vide_reponse: {
     fr: 'Pas de réponse pour le moment. Réessayez.', en: 'No answer for now. Please try again.',
     ht: 'Pa gen repons pou kounye a. Eseye ankò.', es: 'Sin respuesta por ahora. Inténtelo de nuevo.',

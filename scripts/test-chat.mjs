@@ -119,7 +119,7 @@ test('Langues : 4 langues du site, réponse imposée dans la langue choisie, mes
   assert.equal(langueOf('de'), 'fr', 'langue inconnue → français');
   assert.match(buildPrompt({ question: 'Hello', passages: [], langue: 'ht' }), /<langue_de_reponse>créole haïtien/);
   assert.match(buildPrompt({ question: 'Hola', passages: [], langue: 'es' }), /<langue_de_reponse>espagnol/);
-  for (const key of ['vide', 'long', 'quota', 'occupe', 'indispo', 'vide_reponse']) {
+  for (const key of ['vide', 'long', 'quota', 'occupe', 'indispo', 'vide_reponse', 'rythme']) {
     for (const l of Object.keys(LANGUES)) assert.ok(message(key, l), `${key}/${l}`);
   }
   const res = fakeRes();
