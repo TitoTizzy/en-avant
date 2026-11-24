@@ -100,7 +100,7 @@ export default async function handler(req, res) {
     if (question.length < 2) return json(res, 422, { error: message('vide', langue) });
     if (question.length > 800) return json(res, 422, { error: message('long', langue) });
     if (!process.env.ANTHROPIC_API_KEY) return json(res, 503, { error: message('indispo', langue) });
-    if (!await enforceDurableRateLimit(req, res, { key: 'chat', limit: 10, windowMs: 300000 })) return;
+    if (!await enforceDurableRateLimit(req, res, { key: 'chat', limit: 10, windowMs: 300000, message: message('rythme', langue) })) return;
 
     const supabase = getServiceClient();
     const membre = await connectedMember(req, supabase);
