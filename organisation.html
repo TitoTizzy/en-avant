@@ -46,10 +46,22 @@
 
       <nav class="u-links" id="main-nav" aria-label="Menu principal">
         <a href="/index.html">Accueil</a>
-        <a href="/Apropos.html">À propos</a>
-        <a href="/historique.html">Historique</a>
-        <a href="/organisation.html" class="active" aria-current="page">Organisation</a>
-        <a href="/vingt-chantiers.html">Vingt chantiers</a>
+        <div class="u-dd" data-dd>
+          <div class="u-dd-row"><a href="/Apropos">À propos</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-apropos" aria-label="Ouvrir le sous-menu À propos"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu" id="dd-apropos"><a href="/a-propos/identite">Notre identité</a><a href="/a-propos/valeurs">Nos valeurs</a><a href="/a-propos/heritage">L’idéal christophien</a><a href="/a-propos/vision-2054">Démocratie et vision 2054</a><a href="/a-propos/mot-du-coordonnateur">Le mot du coordonnateur national</a></div>
+        </div>
+        <div class="u-dd" data-dd>
+          <div class="u-dd-row"><a href="/historique">Historique</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-historique" aria-label="Ouvrir le sous-menu Historique"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu" id="dd-historique"><a href="/historique/origines">Nos origines</a><a href="/historique/engagement">Le temps de l’engagement</a><a href="/historique/remettre-de-l-ordre">Remettre de l’ordre dans la République</a></div>
+        </div>
+        <div class="u-dd is-current" data-dd>
+          <div class="u-dd-row"><a href="/organisation" class="active" aria-current="page">Organisation</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-organisation" aria-label="Ouvrir le sous-menu Organisation"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu" id="dd-organisation"><a href="/organisation/organisme">L’organisme En Avant</a><a href="/organisation/candidats">Nos candidats</a><a href="/organisation/diaspora">Diaspora et branches extérieures</a></div>
+        </div>
+        <div class="u-dd" data-dd>
+          <div class="u-dd-row"><a href="/vingt-chantiers">Vingt chantiers</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-chantiers" aria-label="Ouvrir le sous-menu Vingt chantiers"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu u-dd-wide" id="dd-chantiers"><a class="u-dd-all" href="/vingt-chantiers">Voir les 20 chantiers</a><div class="u-dd-cols"><div class="u-dd-col"><p class="u-dd-head">Souveraineté</p><a href="/vingt-chantiers/securite"><span class="u-dd-num">01</span>Sécurité</a><a href="/vingt-chantiers/defense-protection-civile"><span class="u-dd-num">02</span>Défense et protection civile</a></div><div class="u-dd-col"><p class="u-dd-head">Social</p><a href="/vingt-chantiers/education"><span class="u-dd-num">04</span>Éducation</a><a href="/vingt-chantiers/sante"><span class="u-dd-num">06</span>Santé</a><a href="/vingt-chantiers/egalite-femmes-hommes"><span class="u-dd-num">07</span>Égalité femmes-hommes</a><a href="/vingt-chantiers/culture"><span class="u-dd-num">09</span>Culture</a><a href="/vingt-chantiers/jeunesse-sport"><span class="u-dd-num">10</span>Jeunesse, sport et action civique</a></div><div class="u-dd-col"><p class="u-dd-head">Développement</p><a href="/vingt-chantiers/economie-emploi"><span class="u-dd-num">03</span>Économie et création d’emploi</a><a href="/vingt-chantiers/environnement"><span class="u-dd-num">08</span>Environnement et aménagement du territoire</a><a href="/vingt-chantiers/tourisme"><span class="u-dd-num">12</span>Tourisme</a><a href="/vingt-chantiers/infrastructures"><span class="u-dd-num">13</span>Infrastructures</a><a href="/vingt-chantiers/agriculture"><span class="u-dd-num">15</span>Production nationale et agriculture</a><a href="/vingt-chantiers/secteur-prive"><span class="u-dd-num">17</span>Secteur privé</a><a href="/vingt-chantiers/energie"><span class="u-dd-num">18</span>Énergie</a><a href="/vingt-chantiers/mines"><span class="u-dd-num">19</span>Mines</a></div><div class="u-dd-col"><p class="u-dd-head">Gouvernance</p><a href="/vingt-chantiers/diaspora"><span class="u-dd-num">05</span>Intégration de la diaspora</a><a href="/vingt-chantiers/justice"><span class="u-dd-num">11</span>Justice</a><a href="/vingt-chantiers/diplomatie"><span class="u-dd-num">14</span>Diplomatie, politique étrangère et coopération externe</a><a href="/vingt-chantiers/transparence"><span class="u-dd-num">16</span>Transparence et reddition des comptes</a><a href="/vingt-chantiers/collectivites-territoriales"><span class="u-dd-num">20</span>Collectivités territoriales</a></div></div></div>
+        </div>
         <a href="/blog.html">Blog</a>
         <a href="/livre-blanc.html">Livre blanc</a>
 
@@ -83,150 +95,45 @@
       </div>
     </section>
 
-    <section class="intro-section">
-      <div class="container reading-block">
-        <h2>Comment le parti est structuré</h2>
-
-        <p>Le Parti EN AVANT est doté de la structure organisationnelle suivante :</p>
-
-        <ul class="structure-list">
-          <li>Le Congrès National</li>
-          <li>La Coordination Nationale</li>
-          <li>Les Coordinations des Branches Extérieures (la diaspora)</li>
-          <li>Les Coordinations Départementales</li>
-          <li>Les Coordinations Communales</li>
-          <li>Le Bureau des Élections</li>
-          <li>Le Bureau de Conflit</li>
-          <li>Le Comité Éthique</li>
-        </ul>
-
-        <p><strong>Article 3.1.</strong> Le Congrès National est l’autorité suprême qui décide sur toutes les questions relatives à l’orientation générale et aux activités du parti. Il comprend l’ensemble des coordonnateurs départementaux et ceux des branches extérieures. Il se réunit de plein droit tous les 3 ans après les 5 premières années du parti.</p>
-
-        <p>La structure dirigeante du parti est composée notamment d’un <strong>Conseil Stratégique</strong> dirigé par un président et formé de personnalités chargées de produire une réflexion à long terme, définir des objectifs réalistes à moyen et long terme, négocier des alliances conjoncturelles ou électorales, suivre la progression du parti et trancher les conflits ou litiges internes.</p>
-
-        <p>Le président du Conseil Stratégique est assisté d’un comité en charge des questions politiques et d’un comité en charge de la communication et de la stratégie numérique. Le comité politique encadre le conseil stratégique dans ses décisions importantes relatives au positionnement du parti sur la vie nationale, les thèmes d’intérêt public et électoraux.</p>
-
-        <p>Le comité en charge de la communication et de la stratégie numérique du Parti EN AVANT conçoit, planifie et exécute la politique de communication du parti et gère ses plateformes numériques. Il veille à la cohérence du message politique, à la visibilité publique du parti et à son influence dans l’espace numérique national et international.</p>
-
-        <p>Le président du Conseil Stratégique dispose d’un droit de veto sur toutes les décisions devant engager le parti, surtout lorsqu’il estime que la philosophie du parti et les intérêts du pays ne sont pas pris en compte.</p>
-
-        <h3>La Coordination Nationale</h3>
-
-        <p>La Coordination Nationale est l’instance centrale de pilotage et de supervision de l’organisation. Elle assure la cohérence des actions menées sur l’ensemble du territoire national ainsi qu’au sein de la diaspora, tout en veillant au respect de la vision, des valeurs et des orientations stratégiques définies par les instances supérieures.</p>
-
-        <p>Composée d’une direction nationale, de coordonnateurs départementaux et de représentants à l’international, la Coordination Nationale garantit la remontée des besoins du terrain, la circulation efficace de l’information et la mise en œuvre harmonisée des décisions à tous les niveaux.</p>
-
-        <p>Elle joue un rôle clé dans la planification, l’accompagnement des structures locales, le suivi des programmes et la représentation de l’organisation auprès des partenaires, des institutions et des communautés.</p>
-
-        <p>Pour découvrir la composition détaillée et l’architecture complète de cette instance, cliquez sur le bouton ci-dessous :</p>
-
-        <div class="cta-row">
-          <a href="#structure" id="scrollToStructure" class="btn btn-primary">Voir la structure</a>
+    <section class="section section-light sp-hub">
+      <div class="container">
+        <div class="section-head reveal-up">
+          <span class="section-kicker">Découvrir</span>
+          <h2 class="section-title">Comment le parti est organisé</h2>
+          <p class="sp-lead">Les instances du parti, ses candidats aux élections et ses coordinations dans la diaspora.</p>
+        </div>
+        <div class="sp-cards">
+          <a class="sp-card" href="/organisation/organisme">
+            <span class="sp-card-icon" aria-hidden="true"><i class="fa-solid fa-sitemap"></i></span>
+            <strong>L’organisme En Avant</strong>
+            <span>Congrès national, Coordination nationale, Conseil stratégique et coordinations.</span>
+            <span class="sp-card-more">Découvrir <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+          </a>
+          <a class="sp-card" href="/organisation/candidats">
+            <span class="sp-card-icon" aria-hidden="true"><i class="fa-solid fa-check-to-slot"></i></span>
+            <strong>Nos candidats</strong>
+            <span>Les candidats de la bannière En Avant pour Haïti (n° 85) aux prochaines élections.</span>
+            <span class="sp-card-more">Découvrir <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+          </a>
+          <a class="sp-card" href="/organisation/diaspora">
+            <span class="sp-card-icon" aria-hidden="true"><i class="fa-solid fa-earth-americas"></i></span>
+            <strong>Diaspora et branches extérieures</strong>
+            <span>Les coordinations du parti hors d’Haïti et la place de la diaspora.</span>
+            <span class="sp-card-more">Découvrir <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+          </a>
         </div>
       </div>
     </section>
 
-    <section id="structure" class="organisation-structure">
-      <div class="container">
-        <p class="orga-kicker">Organigramme</p>
-        <h2>Architecture de la coordination</h2>
-
-        <div class="orga-section" data-section="coordination-nationale">
-          <h3>Coordination Nationale</h3>
-          <div class="orga-grid orga-grid-3">
-            <div class="orga-card">
-              <div class="orga-avatar" aria-hidden="true"></div>
-              <p>Saint-Jean JOSEPH</p>
-            </div>
-            <div class="orga-card">
-              <div class="orga-avatar" aria-hidden="true"></div>
-              <p>Frantz AZEMAR</p>
-            </div>
-            <div class="orga-card">
-              <div class="orga-avatar" aria-hidden="true"></div>
-              <p>Nancy VILCE</p>
-            </div>
-          </div>
+    <section class="section section-dark sp-cta">
+      <div class="container sp-cta-inner">
+        <div>
+          <h2>Ce projet vous parle ?</h2>
+          <p>Rejoignez En Avant ou soutenez le parti pour porter ce programme partout en Haïti et dans la diaspora.</p>
         </div>
-
-        <div class="orga-divider"></div>
-
-        <div class="orga-section" data-section="conseil-strategique">
-          <h3>Conseil Stratégique</h3>
-          <div class="orga-grid orga-grid-1">
-            <div class="orga-card">
-              <div class="orga-avatar" aria-hidden="true"></div>
-              <p>Jerry TARDIEU</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="orga-divider"></div>
-
-        <div class="orga-section" data-section="coordonnateurs-adjoints">
-          <h3>Les Coordonnateurs Nationaux Adjoints</h3>
-          <div class="orga-grid orga-grid-6">
-            <div class="orga-card">
-              <span>Branches Extérieures</span>
-              <div class="orga-avatar" aria-hidden="true"></div>
-            </div>
-            <div class="orga-card">
-              <span>Questions Féminines</span>
-              <div class="orga-avatar" aria-hidden="true"></div>
-            </div>
-            <div class="orga-card">
-              <span>Questions Politiques</span>
-              <div class="orga-avatar" aria-hidden="true"></div>
-            </div>
-            <div class="orga-card">
-              <span>Questions Jeunesse</span>
-              <div class="orga-avatar" aria-hidden="true"></div>
-            </div>
-            <div class="orga-card">
-              <span>Questions Financières</span>
-              <div class="orga-avatar" aria-hidden="true"></div>
-            </div>
-            <div class="orga-card">
-              <span>Branches Départementales</span>
-              <div class="orga-avatar" aria-hidden="true"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="orga-divider"></div>
-
-        <div class="orga-section" data-section="coordonnateurs-departementaux">
-          <h3>Les Coordonnateurs Départementaux</h3>
-          <div class="orga-grid orga-grid-10">
-            <div class="orga-card"><span>Sud</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Nord</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Ouest</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Nippes</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Grande-Anse</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Nord-Est</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Nord-Ouest</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Sud-Est</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Centre</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Artibonite</span><div class="orga-avatar" aria-hidden="true"></div></div>
-          </div>
-        </div>
-
-        <div class="orga-divider"></div>
-
-        <div class="orga-section" data-section="branches-exterieures">
-          <h3>Les Coordonnateurs des Branches Extérieures</h3>
-          <div class="orga-grid orga-grid-10">
-            <div class="orga-card"><span>Massachusetts</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Europe</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>République Dominicaine</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Floride</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Connecticut</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Georgia</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>New-York 1</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>New-York 2</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Canada</span><div class="orga-avatar" aria-hidden="true"></div></div>
-            <div class="orga-card"><span>Amérique du Sud</span><div class="orga-avatar" aria-hidden="true"></div></div>
-          </div>
+        <div class="sp-cta-actions">
+          <a class="btn btn-primary" href="/adherer.html">Adhérer</a>
+          <a class="btn btn-ghost" href="/don.html"><i class="fa-solid fa-heart" aria-hidden="true"></i> Faire un don</a>
         </div>
       </div>
     </section>
@@ -304,8 +211,6 @@
   </button>
 
   <script src="/js/premium.js"></script>
-  <script src="/js/organisation.js"></script>
-  <script src="/js/organisation-team.js"></script>
   <script src="/js/env.js"></script>
 </body>
 </html>

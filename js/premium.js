@@ -33,6 +33,7 @@ document.documentElement.classList.add("js-ready");
     initScrollProgress();
     initSmartHeader();
     initMobileMenu();
+    initDropdowns();
     initRevealEngine();
     initGlowCards();
     initBackToTop();
@@ -175,6 +176,33 @@ document.documentElement.classList.add("js-ready");
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") close();
     });
+  }
+
+  /* Sous-menus (À propos, Historique, Organisation, Vingt chantiers) :
+     survol ou flèche sur ordinateur, accordéon dans le menu mobile. */
+  function initDropdowns() {
+    const items = [...document.querySelectorAll("[data-dd]")];
+    if (!items.length) return;
+    const closeAll = (except) => items.forEach((dd) => {
+      if (dd === except) return;
+      dd.classList.remove("is-open");
+      dd.querySelector(".u-dd-toggle")?.setAttribute("aria-expanded", "false");
+    });
+    items.forEach((dd) => {
+      const toggle = dd.querySelector(".u-dd-toggle");
+      if (!toggle || toggle.dataset.eaBound) return;
+      toggle.dataset.eaBound = "1";
+      toggle.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const open = !dd.classList.contains("is-open");
+        closeAll(dd);
+        dd.classList.toggle("is-open", open);
+        toggle.setAttribute("aria-expanded", String(open));
+      });
+    });
+    document.addEventListener("click", (event) => { if (!event.target.closest("[data-dd]")) closeAll(); });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeAll(); });
   }
 
   /* Reveal au scroll :

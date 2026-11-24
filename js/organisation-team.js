@@ -99,10 +99,13 @@
         // Reconstruction complète de l'organigramme selon l'ordre DB
         const root = document.querySelector("#structure .container");
         if (!root) return;
+        // Page Diaspora : seulement les branches extérieures.
+        const only = document.getElementById("structure")?.dataset.teamOnly;
+        const shown = only ? sections.filter((sec) => sec.key === only) : sections;
 
         root.querySelectorAll(".orga-section, .orga-divider").forEach((el) => el.remove());
 
-        sections.forEach((sec, i) => {
+        shown.forEach((sec, i) => {
           const rows = members
             .filter((m) => m.section === sec.key)
             .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));

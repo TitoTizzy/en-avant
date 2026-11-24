@@ -233,15 +233,27 @@
         </a>
 
         <nav class="u-links" id="main-nav" aria-label="Menu principal">
-          <a href="/index.html">Accueil</a>
-          <a href="/Apropos.html">À propos</a>
-          <a href="/historique.html">Historique</a>
-          <a href="/organisation.html">Organisation</a>
-          <a href="/vingt-chantiers.html" class="active" aria-current="page">Vingt chantiers</a>
-          <a href="/blog.html">Blog</a>
-          <a href="/livre-blanc.html">Livre blanc</a>
+        <a href="/index.html">Accueil</a>
+        <div class="u-dd" data-dd>
+          <div class="u-dd-row"><a href="/Apropos">À propos</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-apropos" aria-label="Ouvrir le sous-menu À propos"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu" id="dd-apropos"><a href="/a-propos/identite">Notre identité</a><a href="/a-propos/valeurs">Nos valeurs</a><a href="/a-propos/heritage">L’idéal christophien</a><a href="/a-propos/vision-2054">Démocratie et vision 2054</a><a href="/a-propos/mot-du-coordonnateur">Le mot du coordonnateur national</a></div>
+        </div>
+        <div class="u-dd" data-dd>
+          <div class="u-dd-row"><a href="/historique">Historique</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-historique" aria-label="Ouvrir le sous-menu Historique"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu" id="dd-historique"><a href="/historique/origines">Nos origines</a><a href="/historique/engagement">Le temps de l’engagement</a><a href="/historique/remettre-de-l-ordre">Remettre de l’ordre dans la République</a></div>
+        </div>
+        <div class="u-dd" data-dd>
+          <div class="u-dd-row"><a href="/organisation">Organisation</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-organisation" aria-label="Ouvrir le sous-menu Organisation"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu" id="dd-organisation"><a href="/organisation/organisme">L’organisme En Avant</a><a href="/organisation/candidats">Nos candidats</a><a href="/organisation/diaspora">Diaspora et branches extérieures</a></div>
+        </div>
+        <div class="u-dd is-current" data-dd>
+          <div class="u-dd-row"><a href="/vingt-chantiers" class="active" aria-current="page">Vingt chantiers</a><button type="button" class="u-dd-toggle" aria-expanded="false" aria-controls="dd-chantiers" aria-label="Ouvrir le sous-menu Vingt chantiers"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></div>
+          <div class="u-dd-menu u-dd-wide" id="dd-chantiers"><a class="u-dd-all" href="/vingt-chantiers">Voir les 20 chantiers</a><div class="u-dd-cols"><div class="u-dd-col"><p class="u-dd-head">Souveraineté</p><a href="/vingt-chantiers/securite"><span class="u-dd-num">01</span>Sécurité</a><a href="/vingt-chantiers/defense-protection-civile"><span class="u-dd-num">02</span>Défense et protection civile</a></div><div class="u-dd-col"><p class="u-dd-head">Social</p><a href="/vingt-chantiers/education"><span class="u-dd-num">04</span>Éducation</a><a href="/vingt-chantiers/sante"><span class="u-dd-num">06</span>Santé</a><a href="/vingt-chantiers/egalite-femmes-hommes"><span class="u-dd-num">07</span>Égalité femmes-hommes</a><a href="/vingt-chantiers/culture"><span class="u-dd-num">09</span>Culture</a><a href="/vingt-chantiers/jeunesse-sport"><span class="u-dd-num">10</span>Jeunesse, sport et action civique</a></div><div class="u-dd-col"><p class="u-dd-head">Développement</p><a href="/vingt-chantiers/economie-emploi"><span class="u-dd-num">03</span>Économie et création d’emploi</a><a href="/vingt-chantiers/environnement"><span class="u-dd-num">08</span>Environnement et aménagement du territoire</a><a href="/vingt-chantiers/tourisme"><span class="u-dd-num">12</span>Tourisme</a><a href="/vingt-chantiers/infrastructures"><span class="u-dd-num">13</span>Infrastructures</a><a href="/vingt-chantiers/agriculture"><span class="u-dd-num">15</span>Production nationale et agriculture</a><a href="/vingt-chantiers/secteur-prive"><span class="u-dd-num">17</span>Secteur privé</a><a href="/vingt-chantiers/energie"><span class="u-dd-num">18</span>Énergie</a><a href="/vingt-chantiers/mines"><span class="u-dd-num">19</span>Mines</a></div><div class="u-dd-col"><p class="u-dd-head">Gouvernance</p><a href="/vingt-chantiers/diaspora"><span class="u-dd-num">05</span>Intégration de la diaspora</a><a href="/vingt-chantiers/justice"><span class="u-dd-num">11</span>Justice</a><a href="/vingt-chantiers/diplomatie"><span class="u-dd-num">14</span>Diplomatie, politique étrangère et coopération externe</a><a href="/vingt-chantiers/transparence"><span class="u-dd-num">16</span>Transparence et reddition des comptes</a><a href="/vingt-chantiers/collectivites-territoriales"><span class="u-dd-num">20</span>Collectivités territoriales</a></div></div></div>
+        </div>
+        <a href="/blog.html">Blog</a>
+        <a href="/livre-blanc.html">Livre blanc</a>
 
-          <div class="u-links-cta">
+        <div class="u-links-cta">
             <a href="/login.html" class="u-login"><i class="fa-solid fa-circle-user"></i> Connexion</a>
             <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
           <a href="/don.html" class="btn btn-primary btn-don"><i class="fa-solid fa-heart" aria-hidden="true"></i><span>Faire un don</span></a>
@@ -367,142 +379,142 @@
       <section class="section chantier-section" id="grille-chantiers">
         <div class="container">
           <div class="chantier-grid">
-            <article class="chantier-card reveal-up" data-theme="souverainete" data-img="/pictures/chantiers/chantier-01.webp">
+            <article class="chantier-card reveal-up" data-theme="souverainete" data-img="/pictures/chantiers/chantier-01.webp" data-href="/vingt-chantiers/securite">
               <div class="card-top"><span class="card-index">01</span><i class="fa-solid fa-shield"></i></div>
-              <h3>Sécurité</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/securite">Sécurité</a></h3>
               <p>Rétablir la sécurité sur l’ensemble du territoire afin de permettre le retour de la paix et la normalisation des activités économiques et sociales.</p>
               <span class="card-theme">Souveraineté</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-1" data-theme="souverainete" data-img="/pictures/chantiers/chantier-02.webp">
+            <article class="chantier-card reveal-up delay-1" data-theme="souverainete" data-img="/pictures/chantiers/chantier-02.webp" data-href="/vingt-chantiers/defense-protection-civile">
               <div class="card-top"><span class="card-index">02</span><i class="fa-solid fa-helmet-safety"></i></div>
-              <h3>Défense et protection civile</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/defense-protection-civile">Défense et protection civile</a></h3>
               <p>Reconstituer des forces de défense aux missions sécuritaires et civiques clairement encadrées, avec des garde-fous contre les dérives du passé.</p>
               <span class="card-theme">Souveraineté</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-03.webp">
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-03.webp" data-href="/vingt-chantiers/economie-emploi">
               <div class="card-top"><span class="card-index">03</span><i class="fa-solid fa-chart-line"></i></div>
-              <h3>Économie et création d’emploi</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/economie-emploi">Économie et création d’emploi</a></h3>
               <p>Relancer l’économie haïtienne pour produire de la croissance, créer des emplois durables et soutenir l’ambition d’une économie émergente en 2054.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-04.webp">
+            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-04.webp" data-href="/vingt-chantiers/education">
               <div class="card-top"><span class="card-index">04</span><i class="fa-solid fa-school"></i></div>
-              <h3>Éducation</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/education">Éducation</a></h3>
               <p>Garantir l’accès gratuit à l’école primaire et améliorer la qualité de l’éducation, de la formation professionnelle et de l’enseignement supérieur sur tout le territoire.</p>
               <span class="card-theme">Social</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-05.webp">
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-05.webp" data-href="/vingt-chantiers/diaspora">
               <div class="card-top"><span class="card-index">05</span><i class="fa-solid fa-earth-americas"></i></div>
-              <h3>Intégration de la diaspora</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/diaspora">Intégration de la diaspora</a></h3>
               <p>Associer la diaspora aux décisions d’avenir et réinscrire la communauté expatriée dans la construction politique, économique et institutionnelle du pays.</p>
               <span class="card-theme">Gouvernance</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-2" data-theme="social" data-img="/pictures/chantiers/chantier-06.webp">
+            <article class="chantier-card reveal-up delay-2" data-theme="social" data-img="/pictures/chantiers/chantier-06.webp" data-href="/vingt-chantiers/sante">
               <div class="card-top"><span class="card-index">06</span><i class="fa-solid fa-heart-pulse"></i></div>
-              <h3>Santé</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/sante">Santé</a></h3>
               <p>Mettre en place une politique nationale de santé garantissant l’accès aux services sanitaires de base, quelles que soient les ressources ou la région d’habitation.</p>
               <span class="card-theme">Social</span>
             </article>
 
-            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-07.webp">
+            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-07.webp" data-href="/vingt-chantiers/egalite-femmes-hommes">
               <div class="card-top"><span class="card-index">07</span><i class="fa-solid fa-venus-mars"></i></div>
-              <h3>Égalité femmes-hommes</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/egalite-femmes-hommes">Égalité femmes-hommes</a></h3>
               <p>Promouvoir l’égalité entre les femmes et les hommes dans toutes les sphères de la vie nationale et à tous les niveaux de responsabilité.</p>
               <span class="card-theme">Social</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-1" data-theme="developpement" data-img="/pictures/chantiers/chantier-08.webp">
+            <article class="chantier-card reveal-up delay-1" data-theme="developpement" data-img="/pictures/chantiers/chantier-08.webp" data-href="/vingt-chantiers/environnement">
               <div class="card-top"><span class="card-index">08</span><i class="fa-solid fa-leaf"></i></div>
-              <h3>Environnement et aménagement du territoire</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/environnement">Environnement et aménagement du territoire</a></h3>
               <p>Réhabiliter l’environnement par des actions concertées sur le foncier, l’agriculture, l’économie locale et la planification territoriale.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-2" data-theme="social" data-img="/pictures/chantiers/chantier-09.webp">
+            <article class="chantier-card reveal-up delay-2" data-theme="social" data-img="/pictures/chantiers/chantier-09.webp" data-href="/vingt-chantiers/culture">
               <div class="card-top"><span class="card-index">09</span><i class="fa-solid fa-masks-theater"></i></div>
-              <h3>Culture</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/culture">Culture</a></h3>
               <p>Déployer une politique culturelle capable de soutenir le développement économique, social et le rayonnement d’Haïti dans le monde.</p>
               <span class="card-theme">Social</span>
             </article>
 
-            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-10.webp">
+            <article class="chantier-card reveal-up" data-theme="social" data-img="/pictures/chantiers/chantier-10.webp" data-href="/vingt-chantiers/jeunesse-sport">
               <div class="card-top"><span class="card-index">10</span><i class="fa-solid fa-futbol"></i></div>
-              <h3>Jeunesse, sport et action civique</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/jeunesse-sport">Jeunesse, sport et action civique</a></h3>
               <p>Favoriser la pratique du sport et offrir à la jeunesse des espaces d’engagement civique en protection civile, environnement, hygiène publique et reboisement.</p>
               <span class="card-theme">Social</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-11.webp">
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-11.webp" data-href="/vingt-chantiers/justice">
               <div class="card-top"><span class="card-index">11</span><i class="fa-solid fa-scale-balanced"></i></div>
-              <h3>Justice</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/justice">Justice</a></h3>
               <p>Établir un pouvoir judiciaire fort, indépendant et accessible afin de consolider l’État de droit, la sécurité et la stabilité démocratique.</p>
               <span class="card-theme">Gouvernance</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-12.webp">
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-12.webp" data-href="/vingt-chantiers/tourisme">
               <div class="card-top"><span class="card-index">12</span><i class="fa-solid fa-umbrella-beach"></i></div>
-              <h3>Tourisme</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/tourisme">Tourisme</a></h3>
               <p>Faire d’Haïti une destination touristique de référence dans la Caraïbe pour transformer ce secteur en moteur de développement économique.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up" data-theme="developpement" data-img="/pictures/chantiers/chantier-13.webp">
+            <article class="chantier-card reveal-up" data-theme="developpement" data-img="/pictures/chantiers/chantier-13.webp" data-href="/vingt-chantiers/infrastructures">
               <div class="card-top"><span class="card-index">13</span><i class="fa-solid fa-road-bridge"></i></div>
-              <h3>Infrastructures</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/infrastructures">Infrastructures</a></h3>
               <p>Lancer un plan ambitieux de réhabilitation et de construction : routes, ponts, ports, eau, énergie, télécommunications, transport et gestion des déchets.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-14.webp">
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-14.webp" data-href="/vingt-chantiers/diplomatie">
               <div class="card-top"><span class="card-index">14</span><i class="fa-solid fa-handshake-angle"></i></div>
-              <h3>Diplomatie, politique étrangère et coopération externe</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/diplomatie">Diplomatie, politique étrangère et coopération externe</a></h3>
               <p>Faire de la diplomatie économique un levier de développement et d’amélioration durable de l’image d’Haïti à l’international.</p>
               <span class="card-theme">Gouvernance</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-15.webp">
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-15.webp" data-href="/vingt-chantiers/agriculture">
               <div class="card-top"><span class="card-index">15</span><i class="fa-solid fa-wheat-awn"></i></div>
-              <h3>Production nationale et agriculture</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/agriculture">Production nationale et agriculture</a></h3>
               <p>Construire une agriculture rentable, productive et performante au service de l’autosuffisance alimentaire et du redressement de la production nationale.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-16.webp">
+            <article class="chantier-card reveal-up" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-16.webp" data-href="/vingt-chantiers/transparence">
               <div class="card-top"><span class="card-index">16</span><i class="fa-solid fa-file-invoice-dollar"></i></div>
-              <h3>Transparence et reddition des comptes</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/transparence">Transparence et reddition des comptes</a></h3>
               <p>Combattre la corruption, renforcer les institutions et donner aux citoyens un accès direct à l’information sur l’utilisation des fonds publics.</p>
               <span class="card-theme">Gouvernance</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-1" data-theme="developpement" data-img="/pictures/chantiers/chantier-17.webp">
+            <article class="chantier-card reveal-up delay-1" data-theme="developpement" data-img="/pictures/chantiers/chantier-17.webp" data-href="/vingt-chantiers/secteur-prive">
               <div class="card-top"><span class="card-index">17</span><i class="fa-solid fa-briefcase"></i></div>
-              <h3>Secteur privé</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/secteur-prive">Secteur privé</a></h3>
               <p>Prioriser la création de richesse et d’emploi par l’investissement privé local et étranger, des microentreprises aux grandes entreprises.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-18.webp">
+            <article class="chantier-card reveal-up delay-2" data-theme="developpement" data-img="/pictures/chantiers/chantier-18.webp" data-href="/vingt-chantiers/energie">
               <div class="card-top"><span class="card-index">18</span><i class="fa-solid fa-bolt"></i></div>
-              <h3>Énergie</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/energie">Énergie</a></h3>
               <p>Moderniser le plan national du secteur énergétique afin d’améliorer la desserte en électricité au moindre coût pour la population et l’économie.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up" data-theme="developpement" data-img="/pictures/chantiers/chantier-19.webp">
+            <article class="chantier-card reveal-up" data-theme="developpement" data-img="/pictures/chantiers/chantier-19.webp" data-href="/vingt-chantiers/mines">
               <div class="card-top"><span class="card-index">19</span><i class="fa-solid fa-gem"></i></div>
-              <h3>Mines</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/mines">Mines</a></h3>
               <p>Adopter une loi minière avec des procédures claires pour une exploitation moderne, responsable et bénéfique au développement d’Haïti.</p>
               <span class="card-theme">Développement</span>
             </article>
 
-            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-20.webp">
+            <article class="chantier-card reveal-up delay-1" data-theme="gouvernance" data-img="/pictures/chantiers/chantier-20.webp" data-href="/vingt-chantiers/collectivites-territoriales">
               <div class="card-top"><span class="card-index">20</span><i class="fa-solid fa-map-location-dot"></i></div>
-              <h3>Collectivités territoriales</h3>
+              <h3><a class="card-link" href="/vingt-chantiers/collectivites-territoriales">Collectivités territoriales</a></h3>
               <p>Mettre en place une véritable décentralisation politique, fiscale et économique, fondée sur des collectivités territoriales effectives.</p>
               <span class="card-theme">Gouvernance</span>
             </article>
