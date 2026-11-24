@@ -25,6 +25,13 @@
   const srcLabel    = document.getElementById("tq-src");
   const pseudoInput = document.getElementById("tq-pseudo");
   const scoreStatus = document.getElementById("tq-score-status");
+  // Ligne « pseudo + Enregistrer » (masquée pour un membre connecté, enregistré automatiquement).
+  const saveRow = pseudoInput ? pseudoInput.parentElement : null;
+  const saveLabel = document.querySelector('label[for="tq-pseudo"]');
+  const showSaveRow = (visible) => {
+    if (saveRow) saveRow.hidden = !visible;
+    if (saveLabel) saveLabel.hidden = !visible;
+  };
   const rankingList = document.getElementById("tq-ranking-list");
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -319,7 +326,11 @@
     pseudoInput.value = localStorage.getItem("ea-trivia-pseudo") || "";
     scoreStatus.textContent = sessionId ? '' : 'Mode découverte : le score reste sur cet appareil.';
     document.getElementById('tq-save-score').disabled = !sessionId;
-    loadLeaderboard();
+    // Membre connecté : enregistrement automatique sous son pseudo d'adhésion.
+    const memberAuto = Boolean(isMemberMode && sessionId);
+    showSaveRow(!memberAuto);
+    if (memberAuto) submitScore({ auto: true });
+    else loadLeaderboard();
 
     // CTA Membre uniquement en mode public
     if (memberCta) memberCta.hidden = isMemberMode;
@@ -348,11 +359,10 @@
   /* ------------------------------------------------------------------ */
   /* SCORE & LEADERBOARD                                                  */
   /* ------------------------------------------------------------------ */
-  async function submitScore() {
+  async function submitScore({ auto = false } = {}) {
     if (!sessionId) return;
-    const total = questions.length;
     const pseudo = pseudoInput.value.trim();
-    if (pseudo.length < 2) {
+    if (!auto && pseudo.length < 2) {
       scoreStatus.textContent = "Choisissez un pseudonyme d'au moins 2 caractères.";
       pseudoInput.focus();
       return;
@@ -361,27 +371,37 @@
     const button = document.getElementById("tq-save-score");
     button.classList.add("btn-loading");
     try {
+      const headers = { "Content-Type": "application/json" };
+      const token = auto ? getAuthToken() : null;
+      if (token) headers.Authorization = `Bearer ${token}`;
       const response = await fetch("/api/trivia/score", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ session_id: sessionId, pseudo }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Enregistrement impossible.");
-      localStorage.setItem("ea-trivia-pseudo", pseudo);
-      scoreStatus.textContent = "Votre score est enregistré.";
-      await loadLeaderboard();
+      if (!auto) localStorage.setItem("ea-trivia-pseudo", pseudo);
+      scoreStatus.textContent = auto && payload.pseudo
+        ? `Score enregistré au classement sous le pseudo « ${payload.pseudo} ».`
+        : "Votre score est enregistré.";
+      await loadLeaderboard({ fresh: true });
     } catch (error) {
+      // Échec de l'enregistrement automatique : on laisse le membre le faire à la main.
+      if (auto) showSaveRow(true);
       scoreStatus.textContent = error.message;
+      if (auto) loadLeaderboard();
     } finally {
       button.classList.remove("btn-loading");
     }
   }
 
-  async function loadLeaderboard() {
+  async function loadLeaderboard({ fresh = false } = {}) {
     rankingList.innerHTML = "<li>Chargement…</li>";
     try {
-      const response = await fetch("/api/trivia/score", { signal: AbortSignal.timeout(4000) });
+      // Juste après un enregistrement, on contourne le cache (30 s) pour voir son score.
+      const url = fresh ? `/api/trivia/score?t=${Date.now()}` : "/api/trivia/score";
+      const response = await fetch(url, { signal: AbortSignal.timeout(4000) });
       const payload = await response.json();
       if (!response.ok) throw new Error();
       rankingList.innerHTML = "";
@@ -479,7 +499,7 @@
   });
 
   document.getElementById("tq-share").addEventListener("click", share);
-  document.getElementById("tq-save-score").addEventListener("click", submitScore);
+  document.getElementById("tq-save-score").addEventListener("click", () => submitScore());
   document.getElementById("tq-refresh-ranking").addEventListener("click", loadLeaderboard);
   document.getElementById("tq-replay").addEventListener("click", reset);
 })();

@@ -95,6 +95,38 @@ test('Quiz : le parcours utilise les réponses serveur et soumet uniquement la p
   dom.window.close();
 });
 
+test('Quiz membre : score enregistré automatiquement sous le pseudo du compte, sans saisie', async () => {
+  const dom = await page('trivia.html', '/trivia');
+  dom.window.EA_ENV = { SUPABASE_URL: 'https://abcdefgh.supabase.co' };
+  dom.window.localStorage.setItem('sb-abcdefgh-auth-token', JSON.stringify({ access_token: 'jeton-membre' }));
+  const posts = [];
+  dom.window.fetch = async (url, options = {}) => {
+    if (url.includes('generate-session')) return response(200, {
+      session_id: '33333333-3333-4333-8333-333333333333',
+      questions: ['A', 'B', 'C', 'D'].map(q => ({ question: q, options: ['x', 'y'] })),
+    });
+    if (url.includes('answer')) return response(200, { correct_answer: 'x', explication: 'E', score: 1 });
+    if (options.method === 'POST') {
+      posts.push({ body: JSON.parse(options.body), auth: options.headers.Authorization });
+      return response(201, { ok: true, score: 4, total: 4, pseudo: 'TitoTizzy' });
+    }
+    return response(200, { leaderboard: [] });
+  };
+  dom.window.eval(await read('js/trivia.js'));
+  const doc = dom.window.document;
+  doc.getElementById('tq-begin').click(); await settle();
+  for (let i = 0; i < 4; i += 1) {
+    doc.querySelector('.tq-opt').click(); await settle();
+    doc.getElementById('tq-next').click(); await settle();
+  }
+  assert.equal(posts.length, 1, 'un seul enregistrement, sans clic');
+  assert.equal(posts[0].auth, 'Bearer jeton-membre');
+  assert.equal(posts[0].body.session_id, '33333333-3333-4333-8333-333333333333');
+  assert.equal(doc.getElementById('tq-pseudo').parentElement.hidden, true);
+  assert.match(doc.getElementById('tq-score-status').textContent, /TitoTizzy/);
+  dom.window.close();
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));

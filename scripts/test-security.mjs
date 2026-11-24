@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { JSDOM } from 'jsdom';
 import { sanitizeArticleHtml as sanitizeArticle } from '../api/_lib/sanitize.js';
-import { createTriviaSession } from '../api/_lib/trivia-session.js';
+import { createTriviaSession, scorePseudo } from '../api/_lib/trivia-session.js';
 import { processStripeEvent, stripeRecord } from '../api/_lib/stripe-events.js';
 
 test('HTML membre : les charges actives sont supprimées, le format éditorial reste lisible', async () => {
@@ -127,4 +127,11 @@ test('Migration PostgreSQL : quotas, scores et rapprochement Stripe résistent a
   await db.exec('reset role; set role authenticated');
   await db.query('select permissions from profiles');
   await assert.rejects(db.query('select pin_hash from profiles'), /permission denied/);
+});
+
+test('Classement : le pseudo du compte prime sur celui envoyé par le navigateur', () => {
+  assert.equal(scorePseudo('TitoTizzy', 'Usurpateur'), 'TitoTizzy');
+  assert.equal(scorePseudo(null, '  Visiteur  '), 'Visiteur');
+  assert.equal(scorePseudo('', 'A'), null);
+  assert.equal(scorePseudo(null, 'x'.repeat(41)), null);
 });
