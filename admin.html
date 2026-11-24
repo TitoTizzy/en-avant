@@ -1168,6 +1168,33 @@
       <!-- ════════════════════ PARAMÈTRES ══════════════════════════════ -->
       <section class="adm-panel" id="panel-settings" hidden>
 
+        <!-- Maintenance (SuperAdmin) -->
+        <div class="u-card mt-card" id="mt-card" style="margin-bottom:1.3rem;" hidden>
+          <div class="mt-head">
+            <div>
+              <h4 style="margin:0 0 .3rem; color:var(--ink-100);"><i class="fa-solid fa-stethoscope" style="color:var(--ea-orange);"></i> Maintenance et santé du site</h4>
+              <p class="u-note" style="margin:0;">Vérifie que chaque service fonctionne et répare, en un clic, les pannes qui ne demandent pas de toucher au code.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-xs" id="mt-run"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Lancer le bilan</button>
+          </div>
+          <div class="mt-resume" id="mt-resume" hidden></div>
+          <div class="mt-list" id="mt-list"></div>
+          <h5 style="margin:1.4rem 0 .2rem; color:var(--ink-100);">Réparations</h5>
+          <div class="mt-actions">
+            <div class="mt-action"><strong>Reprendre les envois</strong><p>Termine une newsletter ou une invitation au quiz interrompue (page fermée, coupure).</p><button type="button" class="btn btn-ghost btn-xs" data-mt="reprendre_envois">Reprendre</button></div>
+            <div class="mt-action"><strong>Relancer les emails en échec</strong><p>Réessaie les emails qui n’ont pas pu partir ces 7 derniers jours (hors désinscrits).</p><button type="button" class="btn btn-ghost btn-xs" data-mt="relancer_echecs">Relancer</button></div>
+            <div class="mt-action"><strong>Débloquer les visiteurs</strong><p>Remet à zéro la protection anti-abus si quelqu’un voit « trop de demandes, réessayez plus tard ».</p><button type="button" class="btn btn-ghost btn-xs" data-mt="debloquer_compteurs">Débloquer</button></div>
+            <div class="mt-action"><strong>Rafraîchir l’assistant</strong><p>L’assistant relit le Livre blanc et les pages du site (après une mise à jour de texte).</p><button type="button" class="btn btn-ghost btn-xs" data-mt="vider_cache_assistant">Rafraîchir</button></div>
+          </div>
+          <h5 style="margin:1.4rem 0 .5rem; color:var(--ink-100);">Mode maintenance</h5>
+          <form id="mt-maint-form" class="mt-action" novalidate>
+            <label class="ea-checkbox-row" style="margin:0;"><input type="checkbox" id="mt-maint-on"> Afficher la bannière « site en maintenance » aux visiteurs</label>
+            <input type="text" id="mt-maint-msg" class="ea-input-sm" maxlength="200" placeholder="Le site est en cours de maintenance : certaines fonctions peuvent être momentanément indisponibles.">
+            <button type="submit" class="btn btn-ghost btn-xs">Enregistrer</button>
+          </form>
+          <div class="ea-form-status" id="mt-status" role="status" aria-live="polite"></div>
+        </div>
+
         <!-- Modules popup -->
         <div class="u-card" style="max-width:680px; margin-bottom:1.3rem;">
           <h4 style="margin:0 0 .6rem; color:var(--ink-100);">

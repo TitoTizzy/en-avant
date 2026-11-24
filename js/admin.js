@@ -3522,6 +3522,10 @@
     bindStaffPanel();
     bindNewsletter();
     bindLogsPanel();
+    if (isSuperAdmin) {
+      document.getElementById("mt-card")?.removeAttribute("hidden");
+      bindMaintenance();
+    }
 
     // Chargement des données API (optionnel — silencieux si API indisponible)
     try {
@@ -4332,6 +4336,67 @@
     if (list) list.hidden = false;
     if (editor) editor.hidden = true;
     setModuleStatus("user-status", "", "");
+  }
+
+  /* ─── Maintenance (Paramètres, SuperAdmin) ───────────────────────── */
+  function bindMaintenance() {
+    const card = document.getElementById("mt-card");
+    if (!card || card.dataset.bound) return;
+    card.dataset.bound = "1";
+    const status = (type, msg) => setModuleStatus("mt-status", type, msg);
+    const LABEL = { ok: "Fonctionne", attention: "À surveiller", erreur: "En panne" };
+    const run = async () => {
+      const btn = document.getElementById("mt-run");
+      btn.disabled = true;
+      document.getElementById("mt-list").innerHTML = '<p class="adm-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Vérification des services…</p>';
+      try {
+        const r = await api("/api/admin/maintenance");
+        const resume = document.getElementById("mt-resume");
+        resume.hidden = false;
+        resume.className = `mt-resume mt-resume--${r.etat}`;
+        resume.textContent = r.resume;
+        document.getElementById("mt-list").innerHTML = r.checks.map((c) => `
+          <div class="mt-check">
+            <span class="mt-dot mt-dot--${esc(c.etat)}" title="${esc(LABEL[c.etat] || "")}" aria-label="${esc(LABEL[c.etat] || "")}"></span>
+            <div><strong>${esc(c.titre)} — ${esc(LABEL[c.etat] || c.etat)}</strong><p>${esc(c.explication)}</p></div>
+            ${c.reparation ? `<button type="button" class="btn btn-ghost btn-xs" data-mt="${esc(c.reparation)}">Réparer</button>` : "<span></span>"}
+          </div>`).join("");
+        const maint = r.checks.find((c) => c.cle === "maintenance");
+        document.getElementById("mt-maint-on").checked = maint?.etat === "attention";
+      } catch (error) {
+        document.getElementById("mt-list").innerHTML = "";
+        status("error", error.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+    document.getElementById("mt-run").addEventListener("click", run);
+    card.addEventListener("click", async (event) => {
+      const btn = event.target.closest("[data-mt]");
+      if (!btn) return;
+      btn.disabled = true;
+      status("", "Réparation en cours…");
+      try {
+        const r = await api("/api/admin/maintenance", { method: "POST", body: JSON.stringify({ action: btn.dataset.mt }) });
+        status("success", r.message || "Fait.");
+        await run();
+      } catch (error) {
+        status("error", error.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+    document.getElementById("mt-maint-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        const r = await api("/api/admin/maintenance", { method: "POST", body: JSON.stringify({
+          action: "mode_maintenance", actif: document.getElementById("mt-maint-on").checked, message: document.getElementById("mt-maint-msg").value,
+        }) });
+        status("success", r.message);
+      } catch (error) {
+        status("error", error.message);
+      }
+    });
   }
 
   /* ─── Panel Journal d'activité ───────────────────────────────────── */

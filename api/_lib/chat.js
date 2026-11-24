@@ -257,10 +257,24 @@ export function withChantier(index, query, passages, k = 6) {
 }
 
 let cache = null;
+let versionCheck = { at: 0, version: null };
 
-/** Corpus (Livre blanc + pages), mis en cache une heure. */
+/** Version du cache réglée par la maintenance (« Vider le cache de l'assistant »), relue toutes les 5 min. */
+async function cacheVersion(supabase, now) {
+  if (now - versionCheck.at < 300000) return versionCheck.version;
+  try {
+    const { data } = await supabase.from('site_settings').select('value').eq('key', 'chatbot_cache').maybeSingle();
+    versionCheck = { at: now, version: data?.value?.version || null };
+  } catch {
+    versionCheck = { at: now, version: versionCheck.version };
+  }
+  return versionCheck.version;
+}
+
+/** Corpus (Livre blanc + pages), mis en cache une heure (ou jusqu'au vidage par la maintenance). */
 export async function loadIndex(supabase, { now = Date.now() } = {}) {
-  if (cache && now - cache.at < 3600000) return cache.index;
+  const version = cache ? await cacheVersion(supabase, now) : null;
+  if (cache && now - cache.at < 3600000 && cache.version === version) return cache.index;
   const docs = [];
   try {
     const path = process.env.LIVRE_BLANC_TEXT_PATH || 'livre-blanc.txt';
@@ -286,7 +300,7 @@ export async function loadIndex(supabase, { now = Date.now() } = {}) {
       for (const texte of chunk(pageText(html))) docs.push({ texte, titre: page.titre, url: page.url });
     } catch { /* page absente du paquet : ignorée */ }
   }
-  cache = { at: now, index: buildIndex(docs) };
+  cache = { at: now, index: buildIndex(docs), version: await cacheVersion(supabase, now) };
   return cache.index;
 }
 

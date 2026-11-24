@@ -806,3 +806,30 @@ test('Mots de passe : un œil sur chaque champ (pages publiques et administratio
   }
   assert.ok(total >= 14, `tous les champs couverts (${total})`);
 });
+
+test('Mode maintenance : bannière affichée aux visiteurs quand il est activé, jamais dans l’admin', async () => {
+  const run = async (file, path, value) => {
+    const dom = await page(file, path);
+    const { window } = dom;
+    window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+    window.EA_ENV = { SUPABASE_URL: 'https://exemple.supabase.co', SUPABASE_ANON_KEY: 'cle-publique' };
+    let calls = 0;
+    window.fetch = async (url) => {
+      if (String(url).includes('site_settings') && String(url).includes('maintenance')) { calls += 1; return response(200, value ? [{ value }] : []); }
+      return response(200, {});
+    };
+    try { window.eval(await read('js/premium.js')); } catch { /* modules décoratifs */ }
+    window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    await settle();
+    await new Promise((r) => setTimeout(r, 20));
+    const bar = window.document.getElementById('eaMaint');
+    const out = { text: bar?.textContent || null, cls: window.document.body.classList.contains('has-maint'), calls };
+    dom.window.close();
+    return out;
+  };
+  const on = await run('index.html', '/', { actif: true, message: 'Mise à jour <b>en cours</b>' });
+  assert.equal(on.text, 'Mise à jour <b>en cours</b>', 'texte affiché tel quel, jamais interprété comme du HTML');
+  assert.equal(on.cls, true);
+  assert.equal((await run('index.html', '/', { actif: false })).text, null);
+  assert.equal((await run('index.html', '/', null)).text, null);
+});

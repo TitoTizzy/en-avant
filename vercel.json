@@ -38,6 +38,7 @@
     { "source": "/api/admin/users",       "destination": "/api/admin?action=users" },
     { "source": "/api/cron/digest",       "destination": "/api/admin?action=digest" },
     { "source": "/api/cron/quiz",         "destination": "/api/admin?action=quiz-cron" },
+    { "source": "/api/admin/maintenance", "destination": "/api/admin?action=maintenance" },
     { "source": "/api/trivia/answer", "destination": "/api/trivia?action=answer" },
     { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },

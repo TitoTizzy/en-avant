@@ -43,6 +43,7 @@ document.documentElement.classList.add("js-ready");
     initLanguage();
     initChatbot();
     initNudges();
+    initMaintenanceBanner();
     initAuthNav();
   });
 
@@ -990,6 +991,39 @@ document.documentElement.classList.add("js-ready");
       card.hidden = false;
       requestAnimationFrame(() => card.classList.add("is-visible"));
     }, 4000);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* BANNIÈRE « SITE EN MAINTENANCE » (réglée dans Admin › Paramètres)   */
+  /* ------------------------------------------------------------------ */
+  const MAINT_KEY = "ea-maintenance";
+  async function initMaintenanceBanner() {
+    if (/^\/(admin|login|mot-de-passe)/.test(location.pathname) || document.getElementById("eaMaint")) return;
+    let state = null;
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(MAINT_KEY) || "null");
+      if (cached && Date.now() - cached.at < 300000) state = cached.value;
+    } catch { /* ignore */ }
+    if (!state) {
+      const env = window.EA_ENV || {};
+      if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return;
+      try {
+        const res = await fetch(`${env.SUPABASE_URL}/rest/v1/site_settings?select=value&key=eq.maintenance`, {
+          headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+        });
+        const rows = res.ok ? await res.json() : [];
+        state = rows?.[0]?.value || { actif: false };
+        try { sessionStorage.setItem(MAINT_KEY, JSON.stringify({ at: Date.now(), value: state })); } catch { /* ignore */ }
+      } catch { return; }
+    }
+    if (!state?.actif) return;
+    const bar = document.createElement("div");
+    bar.id = "eaMaint";
+    bar.className = "ea-maint";
+    bar.setAttribute("role", "status");
+    bar.innerHTML = `<i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i><span>${chatEscape(state.message || "Le site est en cours de maintenance.")}</span>`;
+    document.body.prepend(bar);
+    document.body.classList.add("has-maint");
   }
 
   function initAuthNav() {
