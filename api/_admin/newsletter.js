@@ -26,6 +26,7 @@ import {
   tokensFor, unsubscribePageUrl,
 } from '../_lib/newsletter.js';
 import { inviteContent, inviteRecipients, inviteOf, startInvite } from '../_lib/quiz-invite.js';
+import { renderQuizInvite } from '../_lib/quiz-email.js';
 
 const IMAGE_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
@@ -242,7 +243,9 @@ export default async function handler(req, res) {
         if (!email) return json(res, 422, { error: 'Votre compte n’a pas d’adresse email.' });
         const token = (await tokensFor(supabase, [email])).get(email);
         const invitation = inviteContent();
-        const { html, text } = renderNewsletter({ newsletter: invitation, nom: user.user_metadata?.nom || '', unsubscribeUrl: unsubscribePageUrl(token) });
+        const { html, text } = renderQuizInvite({
+          invitation, nom: user.user_metadata?.nom || '', unsubscribeUrl: unsubscribePageUrl(token), semaine: await currentWeek(supabase),
+        });
         const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
           from: senderAddress(), to: [email], subject: `[TEST] ${invitation.sujet}`, html, text,
         });

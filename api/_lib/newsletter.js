@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { Resend } from 'resend';
 import { escapeHtml, senderAddress } from './notify.js';
 import { effectiveLocation, matchesGeo, geoFacets } from './geo.js';
+import { renderQuizInvite } from './quiz-email.js';
 
 export const PUBLICS = ['tous', 'adherents', 'abonnes'];
 const PAGE = 1000;
@@ -265,7 +266,9 @@ export async function processQueue(supabase, newsletterId, { deadlineMs = 40000,
     const tokens = await tokensFor(supabase, claimed.map((r) => r.email));
     const messages = claimed.map((r) => {
       const token = tokens.get(r.email);
-      const { html, text } = renderNewsletter({ newsletter, event, nom: r.nom, unsubscribeUrl: unsubscribePageUrl(token) });
+      const { html, text } = newsletter.type === 'quiz'
+        ? renderQuizInvite({ invitation: newsletter, nom: r.nom, unsubscribeUrl: unsubscribePageUrl(token), semaine: newsletter.semaine })
+        : renderNewsletter({ newsletter, event, nom: r.nom, unsubscribeUrl: unsubscribePageUrl(token) });
       return {
         from: senderAddress(), to: [r.email], subject: newsletter.sujet, html, text, replyTo,
         headers: {
