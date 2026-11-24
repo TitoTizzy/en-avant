@@ -41,6 +41,7 @@ document.documentElement.classList.add("js-ready");
     initTeamAvatars();
     initLanguage();
     initChatbot();
+    initNudges();
     initAuthNav();
   });
 
@@ -879,6 +880,90 @@ document.documentElement.classList.add("js-ready");
   }
 
   /* Navigation auth-aware : "Connexion" → prénom du membre si session active */
+  /* ------------------------------------------------------------------ */
+  /* CARTES D'INVITATION (s'engager / faire un don)                      */
+  /* Petite carte en bas à gauche, qui alterne à chaque page visitée.    */
+  /* ------------------------------------------------------------------ */
+  const NUDGE_KEY = "ea-nudge-n";
+  const NUDGE_EXCLUDED = /^\/(admin|login|mot-de-passe)(\.html)?\/?$/;
+  const NUDGE_UI = {
+    fr: {
+      engage: { title: "Haïti a besoin de vous", text: "Rejoignez En Avant et participez à la reconstruction du pays.", cta: "Adhérer" },
+      don: { title: "Soutenez En Avant", text: "Chaque contribution aide à porter le projet des 20 chantiers.", cta: "Faire un don" },
+      close: "Fermer",
+    },
+    en: {
+      engage: { title: "Haiti needs you", text: "Join En Avant and take part in rebuilding the country.", cta: "Join" },
+      don: { title: "Support En Avant", text: "Every contribution helps carry the 20-priority-area project forward.", cta: "Donate" },
+      close: "Close",
+    },
+    ht: {
+      engage: { title: "Ayiti bezwen w", text: "Vin jwenn En Avant epi patisipe nan rebati peyi a.", cta: "Vin manm" },
+      don: { title: "Sipòte En Avant", text: "Chak kontribisyon ede pote pwojè 20 chantye yo.", cta: "Fè yon don" },
+      close: "Fèmen",
+    },
+    es: {
+      engage: { title: "Haití le necesita", text: "Únase a En Avant y participe en la reconstrucción del país.", cta: "Afiliarse" },
+      don: { title: "Apoye a En Avant", text: "Cada contribución ayuda a impulsar el proyecto de los 20 ejes de trabajo.", cta: "Hacer una donación" },
+      close: "Cerrar",
+    },
+  };
+
+  /**
+   * Carte à afficher sur cette page : « engage » et « don » alternent d'une page à
+   * l'autre ; jamais l'invitation à adhérer sur /adherer ni pour un membre connecté,
+   * jamais l'invitation au don sur /don.
+   */
+  function nudgeFor(path, count, member) {
+    const page = path.replace(/\.html$/, "").replace(/\/$/, "") || "/";
+    const allowed = ["engage", "don"].filter((kind) =>
+      !(kind === "engage" && (member || /^\/adherer$/.test(page))) && !(kind === "don" && /^\/don$/.test(page)));
+    if (!allowed.length) return null;
+    const preferred = count % 2 === 0 ? "engage" : "don";
+    return allowed.includes(preferred) ? preferred : allowed[0];
+  }
+
+  function initNudges() {
+    if (NUDGE_EXCLUDED.test(location.pathname) || document.getElementById("eaNudge")) return;
+    let count = 0;
+    try { count = Number.parseInt(sessionStorage.getItem(NUDGE_KEY) || "0", 10) || 0; } catch { /* ignore */ }
+    const kind = nudgeFor(location.pathname, count, Boolean(chatSession()));
+    if (!kind) return;
+    // La carte suivante sera l'autre.
+    try { sessionStorage.setItem(NUDGE_KEY, String(kind === "engage" ? 1 : 2)); } catch { /* ignore */ }
+
+    const card = document.createElement("aside");
+    card.id = "eaNudge";
+    card.className = `ea-nudge ea-nudge--${kind} notranslate`;
+    card.setAttribute("translate", "no");
+    card.setAttribute("role", "complementary");
+    card.hidden = true;
+    const href = kind === "engage" ? "/adherer.html" : "/don.html";
+    const icon = kind === "engage" ? "fa-people-group" : "fa-heart";
+    const render = () => {
+      const tx = NUDGE_UI[siteLanguage()] || NUDGE_UI.fr;
+      card.setAttribute("aria-label", tx[kind].title);
+      card.innerHTML =
+        `<span class="ea-nudge-icon" aria-hidden="true"><i class="fa-solid ${icon}"></i></span>` +
+        `<div class="ea-nudge-body"><strong>${chatEscape(tx[kind].title)}</strong><p>${chatEscape(tx[kind].text)}</p>` +
+        `<a class="ea-nudge-cta" href="${href}" data-nudge="${kind}">${chatEscape(tx[kind].cta)}</a></div>` +
+        `<button type="button" class="ea-nudge-close" aria-label="${chatEscape(tx.close)}">&times;</button>`;
+    };
+    render();
+    card.addEventListener("click", (event) => {
+      if (!event.target.closest(".ea-nudge-close")) return;
+      card.classList.remove("is-visible");
+      setTimeout(() => card.remove(), 300);
+    });
+    document.addEventListener("ea:lang", () => { if (card.isConnected) render(); });
+    document.body.appendChild(card);
+    setTimeout(() => {
+      if (!card.isConnected) return;
+      card.hidden = false;
+      requestAnimationFrame(() => card.classList.add("is-visible"));
+    }, 4000);
+  }
+
   function initAuthNav() {
     try {
       const url = (window.EA_ENV || {}).SUPABASE_URL || "";
