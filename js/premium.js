@@ -629,8 +629,8 @@ document.documentElement.classList.add("js-ready");
     let busy = false;
     let history = [];
     try { history = JSON.parse(sessionStorage.getItem(CHAT_KEY) || "[]").slice(-20); } catch { history = []; }
-    // Langue de la conversation et langue demandée explicitement (maintenue jusqu'à nouvelle demande).
-    let convLang = { conv: null, imposee: null };
+    // Langue de la conversation (sert seulement quand un message n'a pas de langue identifiable : « ok »).
+    let convLang = { conv: null };
     try { convLang = { ...convLang, ...JSON.parse(sessionStorage.getItem(`${CHAT_KEY}-langue`) || "{}") }; } catch { /* ignore */ }
     const save = () => {
       try {
@@ -692,7 +692,7 @@ document.documentElement.classList.add("js-ready");
           method: "POST",
           headers: { "Content-Type": "application/json", ...(session ? { Authorization: `Bearer ${session.token}` } : {}) },
           body: JSON.stringify({
-            question: text, langue: lang, langue_conv: convLang.conv, langue_imposee: convLang.imposee,
+            question: text, langue: lang, langue_conv: convLang.conv,
             history: previous, stream: true,
           }),
         });
@@ -702,7 +702,7 @@ document.documentElement.classList.add("js-ready");
           if (!res.ok) throw new Error(data.error || t().offline);
           typing.remove();
           answer = bubble("bot", chatFormat(data.reponse), data.sources);
-          if (data.langue) convLang = { conv: data.langue, imposee: data.langue_imposee || null };
+          if (data.langue) convLang = { conv: data.langue };
           history.push({ role: "user", content: text }, { role: "assistant", content: data.reponse, sources: data.sources || [] });
           save();
           return;
@@ -740,7 +740,7 @@ document.documentElement.classList.add("js-ready");
           if (!raw.trim()) return;
           let msg;
           try { msg = JSON.parse(raw); } catch { return; }
-          if (msg.type === "meta") convLang = { conv: msg.langue || convLang.conv, imposee: msg.langue_imposee || null };
+          if (msg.type === "meta") convLang = { conv: msg.langue || convLang.conv };
           else if (msg.type === "delta") target += msg.text;
           else if (msg.type === "done") { final = msg; target = msg.reponse; }
           else if (msg.type === "error") failure = msg.error;
@@ -825,7 +825,7 @@ document.documentElement.classList.add("js-ready");
         if (action === "close") toggle(false);
         if (action === "reset") {
           history = [];
-          convLang = { conv: null, imposee: null };
+          convLang = { conv: null };
           save();
           renderAll();
           input.focus();

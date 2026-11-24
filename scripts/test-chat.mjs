@@ -176,9 +176,13 @@ test('Langue : majoritaire dans le message, demande explicite, priorités', () =
   assert.equal(langueDemandee('in English please'), 'en');
   assert.equal(langueDemandee('Peux-tu me répondre en espagnol ?'), 'es');
   assert.equal(langueDemandee('Je vis en France et je parle français'), null);
-  // demandée > imposée plus tôt > majoritaire > conversation > site
-  assert.equal(choisirLangue({ demandee: 'ht', imposee: 'en', dominante: 'fr', conversation: 'fr', site: 'fr' }), 'ht');
-  assert.equal(choisirLangue({ imposee: 'ht', dominante: 'fr', conversation: 'fr', site: 'fr' }), 'ht');
+  // demandée > majoritaire > conversation > site
+  assert.equal(choisirLangue({ demandee: 'ht', dominante: 'fr', conversation: 'fr', site: 'fr' }), 'ht');
+  // Toujours la langue de la question, même après une demande de créole.
+  assert.equal(choisirLangue({ dominante: 'fr', conversation: 'ht', site: 'fr' }), 'fr');
+  // Fil de discussion : français → espagnol → anglais → créole.
+  assert.deepEqual(['PArle moi du chantier securité', 'Diga me menos on la policia', 'but what about the justice system?', 'e pou koze ekonomi?']
+    .map((q) => detectLangue(q)), ['fr', 'es', 'en', 'ht']);
   assert.equal(choisirLangue({ dominante: 'en', conversation: 'fr', site: 'fr' }), 'en', 'passe à l’anglais');
   assert.equal(choisirLangue({ dominante: null, conversation: 'en', site: 'fr' }), 'en', '« ok » garde la langue de la conversation');
   assert.equal(choisirLangue({ site: 'es' }), 'es');
