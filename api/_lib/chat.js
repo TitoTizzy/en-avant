@@ -237,6 +237,21 @@ export function search(index, query, k = 6) {
   return scored.filter((s) => s.score > 0).sort((a, b2) => b2.score - a.score).slice(0, k);
 }
 
+/**
+ * Question qui nomme un chantier (« la diaspora », « la santé ») : les extraits de ce
+ * chantier passent en tête, pour que la référence (chapitre, pages) soit la bonne.
+ */
+export function withChantier(index, query, passages, k = 6) {
+  const q = new Set(tokens(query));
+  const vises = CHANTIERS.map((nom, i) => ({ nom: `Chantier ${i + 1} – ${nom}`, mots: tokens(nom).filter((t) => t.length > 3) }))
+    .filter((c) => c.mots.length && c.mots.some((t) => q.has(t)));
+  if (!vises.length || vises.length > 2) return passages;
+  const noms = new Set(vises.map((c) => c.nom));
+  const du = search({ ...index, items: index.items.filter((it) => noms.has(it.chapitre)) }, query, 3);
+  const pris = new Set(du.map((d) => d.texte));
+  return [...du, ...passages.filter((p) => !pris.has(p.texte))].slice(0, k);
+}
+
 let cache = null;
 
 /** Corpus (Livre blanc + pages), mis en cache une heure. */
@@ -282,7 +297,7 @@ Ton :
 - Varie tes formulations : pas de phrase d’ouverture toute faite (« Excellente question ! », « Bien sûr ! ») ni de conclusion répétée d’une réponse à l’autre.
 
 Forme :
-- Réponses courtes et aérées : paragraphes de 1 à 3 phrases, séparés par une ligne vide. En général 40 à 120 mots ; plus seulement si la personne demande des détails, et alors en courtes sections ou en liste. Jamais un long bloc de texte.
+- Réponses courtes et aérées : paragraphes de 1 à 3 phrases, séparés par une ligne vide. En général 40 à 100 mots, et au plus 4 puces ; plus seulement si la personne demande des détails, et alors en courtes sections ou en liste. Jamais un long bloc de texte.
 - Termine souvent par une question de relance ou une proposition concrète (approfondir un point, un chantier lié, la page à lire), mais pas systématiquement.
 - Mise en forme permise : **gras**, listes à puces avec « - », liens [texte](/chemin). Rien d’autre (pas de titres, pas de tableaux, pas de HTML).
 

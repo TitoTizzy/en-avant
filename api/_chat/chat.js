@@ -15,7 +15,7 @@ import { json, methodGuard, getBody, handleError } from '../_lib/http.js';
 import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
 import {
   SYSTEM, ANALYSE, buildPrompt, cleanHistory, loadIndex, search, sourcesOf, langueOf, message, displayNameOf,
-  detectLangue, langueDemandee, choisirLangue, parseAnalyse, LANGUES,
+  detectLangue, langueDemandee, choisirLangue, parseAnalyse, LANGUES, withChantier,
 } from '../_lib/chat.js';
 
 const MODEL = process.env.CHAT_MODEL || 'claude-haiku-5-5';
@@ -121,14 +121,14 @@ export default async function handler(req, res) {
       supabase.from('events').select('titre, date_cible, lieu')
         .gte('date_cible', new Date().toISOString()).order('date_cible').limit(5),
     ]);
-    const demandee = info.ok ? info.langueDemandee : langueDemandee(question);
+    const demandee = langueDemandee(question) || info.langueDemandee;
     const imposee = demandee || (Object.hasOwn(LANGUES, body.langue_imposee ?? '') ? body.langue_imposee : null);
     langue = choisirLangue({ demandee, imposee, dominante: info.langue, conversation: body.langue_conv, site });
 
     // Recherche : requête reformulée en français + question ; relance courte → question précédente en appui.
     const lastUser = [...history].reverse().find((m) => m.role === 'user')?.content || '';
     const query = `${info.requeteFr} ${question} ${!info.requeteFr && question.length < 60 ? lastUser : ''}`;
-    const passages = search(index, query, 6);
+    const passages = withChantier(index, `${info.requeteFr} ${question}`, search(index, query, 6));
     const events = (eventsResult.data || []).map((e) => ({ titre: e.titre, date: formatDate(e.date_cible), lieu: e.lieu }));
     const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events, langue, visiteur: membre, ton: info.ton }) }];
     const stream = body.stream === true;

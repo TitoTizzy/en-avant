@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   tokens, pageText, chunk, buildIndex, search, cleanHistory, buildPrompt, sourcesOf, loadIndex, resetCache, SYSTEM, PAGES,
   LANGUES, langueOf, message, displayNameOf, parseLivreBlanc, detectLangue, langueDemandee, choisirLangue, parseAnalyse,
-  ANALYSE, CHANTIERS,
+  ANALYSE, CHANTIERS, withChantier,
 } from '../api/_lib/chat.js';
 import { readFileSync } from 'node:fs';
 import chatHandler from '../api/_chat/chat.js';
@@ -187,4 +187,16 @@ test('Langue : majoritaire dans le message, demande explicite, priorités', () =
   assert.deepEqual(parseAnalyse('pas du json'), { langue: null, langueDemandee: null, requeteFr: '', ton: '' });
   assert.match(ANALYSE, /plus de mots/);
   assert.match(buildPrompt({ question: 'yo', passages: [], ton: 'décontracté, tutoie' }), /<ton_du_visiteur>décontracté, tutoie<\/ton_du_visiteur>/);
+});
+
+test('Recherche : une question qui nomme un chantier remonte d’abord ce chantier', () => {
+  const chunks = parseLivreBlanc(readFileSync(new URL('../docs/livre-blanc.txt', import.meta.url), 'utf8'));
+  const index = buildIndex(chunks.map((c) => ({ texte: c.texte, titre: 'Livre blanc', url: '/livre-blanc', chapitre: c.chapitre, ref: c.ref })));
+  const q = 'propositions d’En Avant pour la diaspora et pour la diaspora ? donne-moi la page exacte';
+  const passages = withChantier(index, q, search(index, q, 6));
+  assert.equal(passages.length, 6);
+  assert.match(passages[0].chapitre, /Chantier 5 – Diaspora/);
+  const neutre = search(index, 'bonjour', 6);
+  assert.deepEqual(withChantier(index, 'bonjour', neutre), neutre);
+  assert.equal(langueDemandee('réponds en créole stp'), 'ht');
 });
