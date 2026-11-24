@@ -636,8 +636,8 @@
 
   /* ----- Filtres géographiques des adhérents ----- */
   const memberGeo = () => ({
-    pays: document.getElementById("mg-pays")?.value || "",
-    departement: document.getElementById("mg-dep")?.value || "",
+    pays: document.getElementById("mg-pays")?.value.trim() || "",
+    departement: document.getElementById("mg-dep")?.value.trim() || "",
     ville: document.getElementById("mg-ville")?.value.trim() || "",
   });
   const memberGeoActive = () => Object.values(memberGeo()).some(Boolean);
@@ -652,27 +652,26 @@
     const label = `${esc(m.pays)}${m.departement ? ` · ${esc(m.departement)}` : ""}`;
     return m.geo_deduit ? `${label} <small class="member-geo-deduit" title="Déduit de la ville saisie">(déduit)</small>` : label;
   }
+  let memberFacets = null;
   function renderMemberGeo(geo) {
     if (!geo) return;
-    const fill = (id, rows, first, current) => {
-      const select = document.getElementById(id);
-      const keep = current || select.value;
-      select.innerHTML = `<option value="">${first}</option>` + rows.map((r) =>
-        `<option value="${esc(r.nom)}">${esc(r.nom)} (${r.total})</option>`).join("");
-      if (keep && !rows.some((r) => r.nom === keep)) select.insertAdjacentHTML("beforeend", `<option value="${esc(keep)}">${esc(keep)}</option>`);
-      select.value = keep;
-    };
-    fill("mg-pays", geo.pays, "Tous les pays");
-    fill("mg-dep", geo.departements, "Tous les départements");
-    const pays = document.getElementById("mg-pays").value;
-    const showDep = !pays || window.EA_GEO?.isHaiti(pays);
-    document.getElementById("mg-dep").hidden = !showDep;
-    if (!showDep) document.getElementById("mg-dep").value = "";
-    document.getElementById("mg-villes").innerHTML = geo.communes.map((c) => `<option value="${esc(c.nom)}"></option>`).join("");
+    memberFacets = geo;
+    refreshMemberSuggestions();
     document.getElementById("mg-summary").textContent = memberGeoActive() ? `${geo.total_filtre} fiche(s) pour ce lieu` : "";
     const validate = document.getElementById("mg-validate");
     validate.hidden = !(viewerIsSuperAdmin && geo.a_valider > 0);
     validate.textContent = `Enregistrer ${geo.a_valider} lieu(x) déduit(s)`;
+  }
+  // Suggestions de saisie : valeurs de la base (avec effectifs) + listes de référence,
+  // régions et villes limitées au pays choisi.
+  function refreshMemberSuggestions() {
+    const G = window.EA_GEO;
+    if (!G || !memberFacets) return;
+    const pays = document.getElementById("mg-pays").value.trim();
+    G.fillSuggestions(document.getElementById("mg-pays-list"), memberFacets.pays, G.PAYS);
+    G.fillSuggestions(document.getElementById("mg-dep-list"), memberFacets.regions,
+      !pays ? G.REGIONS : G.isHaiti(pays) ? G.DEPARTEMENTS : [], { pays });
+    G.fillSuggestions(document.getElementById("mg-villes"), memberFacets.communes, [], { pays });
   }
 
   function renderMembers(members) {
@@ -953,8 +952,12 @@
         const reloadFirstPage = () => { page = 1; load(); };
         document.getElementById("mg-pays")?.addEventListener("change", () => {
           document.getElementById("mg-dep").value = "";
+          refreshMemberSuggestions();
           reloadFirstPage();
         });
+        ["mg-pays", "mg-dep"].forEach((id) => document.getElementById(id)?.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") { event.preventDefault(); reloadFirstPage(); }
+        }));
         document.getElementById("mg-dep")?.addEventListener("change", reloadFirstPage);
         document.getElementById("mg-ville")?.addEventListener("change", reloadFirstPage);
         document.getElementById("mg-ville")?.addEventListener("keydown", (event) => {
@@ -964,6 +967,8 @@
           ["mg-pays", "mg-dep", "mg-ville"].forEach((id) => { document.getElementById(id).value = ""; });
           reloadFirstPage();
         });
+        // Liste chargée dès l'ouverture : les suggestions (pays, régions, villes) sont prêtes tout de suite.
+        load();
         document.getElementById("mg-validate")?.addEventListener("click", async (event) => {
           const button = event.currentTarget;
           if (!window.confirm(`${button.textContent} : le pays et le département déduits de la ville seront enregistrés dans ces fiches. Les lieux déjà déclarés ne changent pas. Continuer ?`)) return;
@@ -2504,8 +2509,8 @@
       const pays = paysTxt && paysTxt !== "Non renseigné" ? paysTxt : "";
       const deps = (window.EA_GEO?.DEPARTEMENTS || []).map((d) => `<option${d === depTxt ? " selected" : ""}>${esc(d)}</option>`).join("");
       cell.innerHTML = `<form class="member-geo-form">
-        <input name="pays" list="mg-pays-list" value="${esc(pays)}" placeholder="Pays" aria-label="Pays" required>
-        <datalist id="mg-pays-list">${(window.EA_GEO?.PAYS || []).map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>
+        <input name="pays" list="mg-edit-pays-list" value="${esc(pays)}" placeholder="Pays" aria-label="Pays" required>
+        <datalist id="mg-edit-pays-list">${(window.EA_GEO?.PAYS || []).map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>
         <select name="departement" aria-label="Département"><option value="">Département…</option>${deps}</select>
         <input name="ville" value="${esc(ville)}" placeholder="Ville" aria-label="Ville" required>
         <button class="btn btn-primary btn-xs" data-geo="save" type="button">OK</button>
@@ -3617,45 +3622,49 @@
       }
     }
 
-    function chips(hostId, values, selected, onChange) {
-      const host = $(hostId);
-      host.innerHTML = "";
-      values.forEach((value) => {
-        const label = document.createElement("label");
-        label.className = "nl-chip";
-        label.innerHTML = `<input type="checkbox" value="${esc(value)}"${selected.includes(value) ? " checked" : ""}> <span>${esc(value)}</span>`;
-        label.querySelector("input").addEventListener("change", (event) => onChange(value, event.target.checked));
-        host.appendChild(label);
-      });
-    }
-
-    function toggle(list, value, on) {
-      const i = list.indexOf(value);
-      if (on && i < 0) list.push(value);
-      if (!on && i >= 0) list.splice(i, 1);
-    }
+    const TARGETS = { pays: ["nl-pays-input", "nl-pays"], departements: ["nl-region-input", "nl-departements"], villes: ["nl-ville-input", "nl-villes"] };
 
     function renderTargets() {
       const f = state.filtres;
       const o = state.options;
+      const G = window.EA_GEO;
       document.querySelectorAll('input[name="nl-public"]').forEach((r) => { r.checked = r.value === f.public; });
-      chips("nl-pays", [...new Set([...o.pays, ...f.pays])], f.pays, (v, on) => { toggle(f.pays, v, on); renderTargets(); refreshAudience(); });
-      const showDeps = !f.pays.length || f.pays.some((p) => window.EA_GEO?.isHaiti?.(p) ?? p === "Haïti");
-      $("nl-dep-block").hidden = !showDeps;
-      if (!showDeps) f.departements = [];
-      chips("nl-departements", o.departements, f.departements, (v, on) => { toggle(f.departements, v, on); refreshAudience(); });
-      const villes = $("nl-villes");
-      villes.innerHTML = "";
-      f.villes.forEach((v) => {
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "nl-chip is-on";
-        chip.innerHTML = `${esc(v)} <i class="fa-solid fa-xmark" aria-hidden="true"></i>`;
-        chip.title = "Retirer";
-        chip.addEventListener("click", () => { toggle(f.villes, v, false); renderTargets(); refreshAudience(); });
-        villes.appendChild(chip);
-      });
-      $("nl-villes-list").innerHTML = o.villes.map((v) => `<option value="${esc(v)}"></option>`).join("");
+      for (const [kind, [, hostId]] of Object.entries(TARGETS)) {
+        const host = $(hostId);
+        host.innerHTML = "";
+        f[kind].forEach((value) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "nl-chip is-on";
+          chip.innerHTML = `${esc(value)} <i class="fa-solid fa-xmark" aria-hidden="true"></i>`;
+          chip.title = "Retirer";
+          chip.addEventListener("click", () => {
+            f[kind] = f[kind].filter((v) => v !== value);
+            renderTargets();
+            refreshAudience();
+          });
+          host.appendChild(chip);
+        });
+      }
+      // Suggestions : valeurs présentes dans la base d'abord, puis listes de référence ;
+      // régions et villes limitées au pays si un seul pays est choisi.
+      const pays = f.pays.length === 1 ? f.pays[0] : "";
+      G?.fillSuggestions($("nl-pays-list"), o.pays, o.pays_reference || G.PAYS);
+      G?.fillSuggestions($("nl-region-list"), o.regions,
+        !pays ? (o.regions_reference || G.REGIONS) : G.isHaiti(pays) ? G.DEPARTEMENTS : [], { pays });
+      G?.fillSuggestions($("nl-villes-list"), o.villes, [], { pays });
+    }
+
+    function addTarget(kind) {
+      const input = $(TARGETS[kind][0]);
+      const value = input.value.trim();
+      const list = state.filtres[kind];
+      if (value.length >= 2 && !list.some((v) => v.toLowerCase() === value.toLowerCase())) {
+        list.push(value);
+        renderTargets();
+        refreshAudience();
+      }
+      input.value = "";
     }
 
     let audienceSeq = 0;
@@ -3671,7 +3680,7 @@
         $("nl-aud-split").textContent = `${data.adherents} adhérent(s) · ${data.abonnes} inscrit(s)`;
         const top = (rows, title) => rows.length
           ? `<p class="nl-aud-title">${title}</p><ul>${rows.slice(0, 6).map((r) => `<li>${esc(r.nom)} <b>${r.total}</b></li>`).join("")}</ul>` : "";
-        $("nl-aud-detail").innerHTML = top(data.pays, "Par pays") + top(data.departements, "Par département") + top(data.villes, "Par ville");
+        $("nl-aud-detail").innerHTML = top(data.pays, "Par pays") + top(data.regions, "Par département / région") + top(data.villes, "Par ville");
         updateSendButton();
       } catch (error) {
         if (seq === audienceSeq) $("nl-aud-total").textContent = error.message;
@@ -3688,15 +3697,102 @@
       else $("nl-send").removeAttribute("title");
     }
 
+    // Même éditeur que le blog ; les photos sont envoyées sur le stockage public
+    // (une image intégrée en base64 est bloquée par Gmail et Outlook).
     function ensureQuill() {
       if (state.quill || typeof Quill === "undefined") return;
       try {
         state.quill = new Quill("#nl-content-editor", {
           theme: "snow",
-          placeholder: "Écrivez votre message…",
-          modules: { toolbar: [["bold", "italic", "underline"], [{ header: [2, 3, false] }], [{ list: "ordered" }, { list: "bullet" }], ["link"], ["clean"]] },
+          placeholder: "Rédigez votre newsletter ici…",
+          modules: {
+            toolbar: {
+              container: [
+                [{ font: [] }, { size: ["small", false, "large", "huge"] }],
+                ["bold", "italic", "underline", "strike"],
+                [{ color: [] }, { background: [] }],
+                [{ list: "ordered" }, { list: "bullet" }],
+                [{ align: [] }],
+                ["link", "image"],
+                ["clean"],
+              ],
+              handlers: { image: pickPhotos },
+            },
+          },
+        });
+        // Une image collée ou glissée passe aussi par l'envoi sur le stockage.
+        state.quill.root.addEventListener("drop", (event) => {
+          const files = [...(event.dataTransfer?.files || [])].filter((f) => f.type.startsWith("image/"));
+          if (!files.length) return;
+          event.preventDefault();
+          uploadPhotos(files);
+        });
+        state.quill.root.addEventListener("paste", (event) => {
+          const files = [...(event.clipboardData?.files || [])].filter((f) => f.type.startsWith("image/"));
+          if (!files.length) return;
+          event.preventDefault();
+          uploadPhotos(files);
         });
       } catch (_) { /* éditeur indisponible */ }
+    }
+
+    function pickPhotos() {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/jpeg,image/png,image/webp";
+      input.multiple = true;
+      input.addEventListener("change", () => uploadPhotos([...input.files]));
+      input.click();
+    }
+
+    /** Réduit une photo à 1200 px de large au plus (poids adapté aux emails). */
+    async function preparePhoto(file) {
+      const ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[file.type];
+      if (!ext) throw new Error(`${file.name} : format non accepté (JPG, PNG ou WebP).`);
+      const bitmap = await createImageBitmap(file).catch(() => null);
+      if (bitmap && (bitmap.width > 1200 || file.size > 900 * 1024)) {
+        const scale = Math.min(1, 1200 / bitmap.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const keepPng = ext === "png" && file.size < 1.5 * 1024 * 1024;
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, keepPng ? "image/png" : "image/jpeg", 0.85));
+        if (blob) return { blob, ext: keepPng ? "png" : "jpg" };
+      }
+      if (file.size > 3 * 1024 * 1024) throw new Error(`${file.name} : image trop lourde (3 Mo maximum).`);
+      return { blob: file, ext };
+    }
+
+    async function uploadPhotos(files) {
+      if (!files.length || !state.quill) return;
+      const quill = state.quill;
+      let index = (quill.getSelection(true) || { index: quill.getLength() }).index;
+      let done = 0;
+      for (const file of files.slice(0, 10)) {
+        status("", `Envoi de la photo ${done + 1} sur ${Math.min(files.length, 10)}…`);
+        try {
+          const { blob, ext } = await preparePhoto(file);
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(",")[1]);
+            reader.onerror = () => reject(new Error("Image illisible."));
+            reader.readAsDataURL(blob);
+          });
+          const { url } = await api("/api/admin/newsletter", {
+            method: "POST", body: JSON.stringify({ action: "image", image_base64: base64, image_ext: ext }),
+          });
+          quill.insertEmbed(index, "image", url, "user");
+          quill.insertText(index + 1, "\n", "user");
+          index += 2;
+          done += 1;
+        } catch (error) {
+          status("error", error.message);
+          return;
+        }
+      }
+      quill.setSelection(index, 0);
+      status("success", done > 1 ? `${done} photos ajoutées.` : "Photo ajoutée.");
     }
 
     async function openEditor(newsletter = null, readOnly = false) {
@@ -3711,7 +3807,10 @@
       $("nl-apercu").value = newsletter?.apercu || "";
       $("nl-cta-label").value = newsletter?.cta_label || "";
       $("nl-cta-url").value = newsletter?.cta_url || "";
-      if (state.quill) state.quill.root.innerHTML = newsletter?.contenu || "";
+      if (state.quill) {
+        state.quill.setContents([]);
+        if (newsletter?.contenu) state.quill.clipboard.dangerouslyPasteHTML(window.EA_sanitizeHTML ? window.EA_sanitizeHTML(newsletter.contenu) : newsletter.contenu);
+      }
       const events = state.options.evenements || [];
       $("nl-event").innerHTML = '<option value="">Aucun événement</option>' + events.map((e) =>
         `<option value="${esc(e.id)}">${esc(fmtDate(e.date_cible))} — ${esc(e.titre)}${e.lieu ? ` (${esc(e.lieu)})` : ""}</option>`).join("");
@@ -3817,18 +3916,13 @@
       state.filtres.public = radio.value;
       refreshAudience();
     }));
-    const addCity = () => {
-      const input = $("nl-ville-input");
-      const value = input.value.trim();
-      if (value.length >= 2 && !state.filtres.villes.some((v) => v.toLowerCase() === value.toLowerCase())) {
-        state.filtres.villes.push(value);
-        renderTargets();
-        refreshAudience();
-      }
-      input.value = "";
-    };
-    $("nl-ville-add").addEventListener("click", addCity);
-    $("nl-ville-input").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); addCity(); } });
+    document.querySelectorAll("[data-nl-add]").forEach((button) => button.addEventListener("click", () => addTarget(button.dataset.nlAdd)));
+    for (const [kind, [inputId]] of Object.entries(TARGETS)) {
+      const input = $(inputId);
+      input.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); addTarget(kind); } });
+      // Choix d'une suggestion dans la liste : ajout direct.
+      input.addEventListener("change", () => { if (input.value.trim()) addTarget(kind); });
+    }
 
     $("nl-form").addEventListener("submit", async (event) => {
       event.preventDefault();

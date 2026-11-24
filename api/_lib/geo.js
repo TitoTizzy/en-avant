@@ -92,6 +92,66 @@ const COMMUNE_DE = {
   Montrouis: 'Saint-Marc', 'Pont-Sondé': 'Saint-Marc', 'Île de la Tortue': 'La Tortue',
 };
 
+// Régions de la diaspora (États, provinces, régions) : mots qui les désignent et villes qui s'y trouvent.
+const REGIONS_ETRANGERES = {
+  'États-Unis': {
+    Floride: [['florida', 'floride'], ['Miami', 'North Miami', 'Miami Gardens', 'Fort Lauderdale', 'Orlando', 'Tampa',
+      'Delray Beach', 'Boynton Beach', 'West Palm Beach', 'Pompano Beach', 'Naples', 'St Augustine', 'Saint Augustine', 'Jacksonville']],
+    Massachusetts: [['massachusetts'], ['Boston', 'Brockton', 'Cambridge', 'Somerville', 'Malden', 'Everett', 'Medford', 'Randolph']],
+    'New York': [['new york state', 'etat de new york'], ['New York', 'Brooklyn', 'Queens', 'Bronx', 'Manhattan', 'Spring Valley']],
+    'New Jersey': [['new jersey'], ['Newark', 'Irvington', 'East Orange', 'Elizabeth']],
+    Géorgie: [['georgia', 'georgie'], ['Atlanta']],
+    Illinois: [['illinois'], ['Chicago']],
+    Pennsylvanie: [['pennsylvania', 'pennsylvanie'], ['Philadelphie', 'Philadelphia']],
+    Texas: [['texas'], ['Houston', 'Dallas']],
+    Californie: [['california', 'californie'], ['Los Angeles']],
+    Nevada: [['nevada'], ['Las Vegas']],
+    'Caroline du Nord': [['north carolina', 'caroline du nord'], ['Charlotte']],
+    'Rhode Island': [['rhode island'], ['Providence']],
+    Connecticut: [['connecticut'], ['Stamford']],
+    Nebraska: [['nebraska'], ['Omaha']],
+    Maryland: [['maryland'], []],
+    Virginie: [['virginia', 'virginie'], []],
+    Ohio: [['ohio'], []],
+    Michigan: [['michigan'], []],
+    'District de Columbia': [['district of columbia'], ['Washington']],
+  },
+  Canada: {
+    Québec: [['quebec', 'province de quebec'], ['Montréal', 'Laval', 'Longueuil', 'Québec', 'Gatineau', 'Sherbrooke',
+      'Trois-Rivières', 'Terrebonne', 'Repentigny', 'Brossard']],
+    Ontario: [['ontario'], ['Ottawa', 'Toronto']],
+  },
+  France: {
+    'Île-de-France': [['ile de france'], ['Paris', 'Créteil', 'Montreuil']],
+    'Auvergne-Rhône-Alpes': [['auvergne rhone alpes'], ['Lyon']],
+    'Provence-Alpes-Côte d’Azur': [['provence alpes cote d azur', 'paca'], ['Marseille']],
+    'Nouvelle-Aquitaine': [['nouvelle aquitaine'], ['Bordeaux']],
+    'Hauts-de-France': [['hauts de france'], ['Lille']],
+    Occitanie: [['occitanie'], ['Toulouse']],
+    'Pays de la Loire': [['pays de la loire'], ['Nantes']],
+    'Grand Est': [['grand est'], ['Strasbourg']],
+    Guyane: [['guyane'], ['Cayenne']],
+    Martinique: [['martinique'], ['Fort-de-France']],
+    Guadeloupe: [['guadeloupe'], ['Pointe-à-Pitre']],
+  },
+};
+
+const VILLE_REGION = new Map();
+const REGION_INFO = new Map(); // clé → { region, pays }
+for (const [pays, regions] of Object.entries(REGIONS_ETRANGERES)) {
+  for (const [region, [mots, villes]] of Object.entries(regions)) {
+    REGION_INFO.set(geoKey(region), { region, pays });
+    for (const m of mots) REGION_INFO.set(geoKey(m), { region, pays });
+    for (const v of villes) VILLE_REGION.set(geoKey(v), region);
+  }
+}
+
+/** Toutes les régions connues : départements d'Haïti puis régions de la diaspora. */
+export const REGIONS = [
+  ...['Artibonite', 'Centre', 'Grand’Anse', 'Nippes', 'Nord', 'Nord-Est', 'Nord-Ouest', 'Ouest', 'Sud', 'Sud-Est'],
+  ...Object.values(REGIONS_ETRANGERES).flatMap((r) => Object.keys(r)),
+];
+
 const COMMUNE_INDEX = new Map();
 const COMMUNE_NOM = new Map();
 for (const [dep, list] of Object.entries(COMMUNES)) {
@@ -160,19 +220,37 @@ const hasWord = (text, word) => ` ${text} `.includes(` ${word} `);
 export function inferFromVille(ville) {
   const key = geoKey(ville).replace(/([a-z])(\d)/g, '$1 $2').replace(/(\d)([a-z])/g, '$1 $2');
   if (!key) return {};
+  const foreign = (cityKey) => {
+    const pays = ETRANGER_INDEX.get(cityKey);
+    const region = VILLE_REGION.get(cityKey) || regionWord(key, pays);
+    return { pays, ...(region ? { region } : {}), commune: ETRANGER_NOM.get(cityKey) };
+  };
   const exact = COMMUNE_INDEX.get(key);
-  if (exact) return { pays: HAITI, departement: exact, commune: COMMUNE_NOM.get(key) };
-  if (ETRANGER_INDEX.has(key)) return { pays: ETRANGER_INDEX.get(key), commune: ETRANGER_NOM.get(key) };
+  if (exact) return { pays: HAITI, departement: exact, region: exact, commune: COMMUNE_NOM.get(key) };
+  if (ETRANGER_INDEX.has(key)) return foreign(key);
   const nom = NOMS.find((n) => hasWord(key, n.key));
   if (nom) {
     return nom.departement
-      ? { pays: nom.pays, departement: nom.departement, commune: COMMUNE_NOM.get(nom.key) }
-      : { pays: nom.pays, commune: ETRANGER_NOM.get(nom.key) };
+      ? { pays: nom.pays, departement: nom.departement, region: nom.departement, commune: COMMUNE_NOM.get(nom.key) }
+      : foreign(nom.key);
   }
   const dep = DEP_MOTS.find((d) => hasWord(key, d));
-  if (dep) return { pays: HAITI, departement: DEP_INDEX.get(dep) };
+  if (dep) return { pays: HAITI, departement: DEP_INDEX.get(dep), region: DEP_INDEX.get(dep) };
+  const regionKey = REGION_MOTS.find((m) => hasWord(key, m));
+  if (regionKey) return { ...REGION_INFO.get(regionKey) };
   const pays = PAYS_MOTS.find(([, mots]) => mots.some((m) => hasWord(key, geoKey(m))));
   return pays ? { pays: pays[0] } : {};
+}
+
+const REGION_MOTS = [...REGION_INFO.keys()].sort((a, b) => b.length - a.length);
+function regionWord(key, pays) {
+  const m = REGION_MOTS.find((r) => hasWord(key, r) && REGION_INFO.get(r).pays === pays);
+  return m ? REGION_INFO.get(m).region : null;
+}
+
+/** Région canonique (département d'Haïti ou région de la diaspora), ou null. */
+export function canonicalRegion(value) {
+  return canonicalDepartement(value) || REGION_INFO.get(geoKey(value))?.region || null;
 }
 
 /** Localisation effective : déclarée en priorité, sinon déduite de la ville. */
@@ -184,9 +262,12 @@ export function effectiveLocation({ pays, departement, ville } = {}) {
   const finalDep = finalPays === HAITI
     ? declaredDep || (inferred.pays === HAITI ? inferred.departement : null) || null
     : null;
+  // Région : le département pour Haïti, sinon l'État / la province déduits de la ville.
+  const region = finalDep || (finalPays && inferred.pays === finalPays ? inferred.region : null) || null;
   return {
     pays: finalPays,
     departement: finalDep,
+    region,
     ville: String(ville ?? '').trim() || null,
     // Commune reconnue (« Delmas 40 B, Imp Belot » → « Delmas »), sinon la saisie.
     commune: inferred.commune || String(ville ?? '').trim() || null,
@@ -201,7 +282,11 @@ export function effectiveLocation({ pays, departement, ville } = {}) {
 export function matchesGeo(location, { pays = [], departements = [], villes = [] } = {}) {
   const loc = effectiveLocation(location);
   if (pays.length && !pays.some((p) => geoKey(p) === geoKey(loc.pays))) return false;
-  if (departements.length && !departements.some((d) => canonicalDepartement(d) === loc.departement)) return false;
+  // « departements » accepte aussi les régions de la diaspora (Floride, Québec…).
+  if (departements.length && !departements.some((d) => {
+    const wanted = canonicalRegion(d);
+    return wanted ? wanted === loc.region : geoKey(d) === geoKey(loc.region);
+  })) return false;
   if (villes.length && !villes.some((v) => {
     const wanted = geoKey(v);
     return wanted && (wanted === geoKey(loc.commune) || hasWord(geoKey(loc.ville).replace(/([a-z])(\d)/g, '$1 $2'), wanted));
@@ -222,3 +307,29 @@ export function cleanLocation({ pays, departement, ville } = {}) {
   }
   return { pays: p, departement: null, ville: v };
 }
+
+/**
+ * Valeurs présentes dans la base (pays, régions, communes) avec leur nombre de
+ * fiches, pour les suggestions de saisie. Une nouvelle ville apparaît d'elle-même.
+ */
+export function geoFacets(rows) {
+  const maps = { pays: new Map(), region: new Map(), commune: new Map() };
+  for (const m of rows || []) {
+    const loc = effectiveLocation(m);
+    for (const key of Object.keys(maps)) {
+      const value = loc[key];
+      if (!value) continue;
+      const entry = maps[key].get(value) || { nom: value, total: 0, pays: loc.pays || null, region: loc.region || null };
+      entry.total += 1;
+      maps[key].set(value, entry);
+    }
+  }
+  const sorted = (map) => [...map.values()].sort((a, b) => b.total - a.total || a.nom.localeCompare(b.nom, 'fr'));
+  return {
+    pays: sorted(maps.pays).map(({ nom, total }) => ({ nom, total })),
+    regions: sorted(maps.region).map(({ nom, total, pays }) => ({ nom, total, pays })),
+    communes: sorted(maps.commune).slice(0, 300),
+    a_valider: (rows || []).filter((m) => !m.pays && inferFromVille(m.ville).pays).length,
+  };
+}
+

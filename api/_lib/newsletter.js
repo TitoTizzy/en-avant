@@ -9,7 +9,7 @@
 import { createHash } from 'node:crypto';
 import { Resend } from 'resend';
 import { escapeHtml, senderAddress } from './notify.js';
-import { effectiveLocation, matchesGeo } from './geo.js';
+import { effectiveLocation, matchesGeo, geoFacets } from './geo.js';
 
 export const PUBLICS = ['tous', 'adherents', 'abonnes'];
 const PAGE = 1000;
@@ -49,7 +49,7 @@ export async function loadContacts(supabase) {
   const [members, subscribers, optouts] = await Promise.all([
     fetchAll(() => supabase.from('members').select('email, nom, pays, departement, ville')
       .eq('status', 'approved').order('created_at')),
-    fetchAll(() => supabase.from('newsletter_subscribers').select('email, nom, pays, departement, ville')
+    fetchAll(() => supabase.from('newsletter_subscribers').select('email, nom, pays, departement, ville, source')
       .is('unsubscribed_at', null).order('created_at')),
     fetchAll(() => supabase.from('newsletter_optouts').select('email').order('email')),
   ]);
@@ -63,7 +63,9 @@ export async function loadContacts(supabase) {
     byEmail.set(email, { email, nom: row.nom || '', types: new Set([type]), ...effectiveLocation(row) });
   };
   members.forEach((m) => add(m, 'adherent'));
-  subscribers.forEach((s) => add(s, 'abonne'));
+  // Abonnement créé par l'adhésion : la personne compte comme adhérent, pas comme
+  // « inscrit au formulaire » (filtre « Inscrits au formulaire seulement »).
+  subscribers.forEach((s) => add(s, s.source === 'adhesion' ? 'adherent' : 'abonne'));
   return [...byEmail.values()];
 }
 
@@ -77,23 +79,16 @@ export function applyFiltres(contacts, filtres) {
   });
 }
 
-/** Répartition par pays / département / ville (pour l'aperçu de l'audience). */
+/** Répartition par pays / région / ville (aperçu de l'audience et suggestions). */
 export function breakdown(contacts) {
-  const count = (key) => {
-    const map = new Map();
-    for (const c of contacts) {
-      const value = c[key] || 'Non renseigné';
-      map.set(value, (map.get(value) || 0) + 1);
-    }
-    return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([nom, total]) => ({ nom, total }));
-  };
+  const facets = geoFacets(contacts);
   return {
     total: contacts.length,
     adherents: contacts.filter((c) => c.types.has('adherent')).length,
     abonnes: contacts.filter((c) => c.types.has('abonne')).length,
-    pays: count('pays'),
-    departements: count('departement').filter((d) => d.nom !== 'Non renseigné'),
-    villes: count('commune').slice(0, 60),
+    pays: facets.pays,
+    regions: facets.regions,
+    villes: facets.communes.slice(0, 60).map(({ nom, total, pays, region }) => ({ nom, total, pays, region })),
   };
 }
 
@@ -114,8 +109,41 @@ function formatEventDate(value) {
  * Email d'une newsletter pour un destinataire.
  * `contenu` est du HTML déjà assaini (sanitizeArticleHtml) à l'enregistrement.
  */
+/**
+ * Adapte le HTML de l'éditeur (classes Quill) aux messageries, qui ignorent
+ * les feuilles de style : alignements, tailles, polices et photos en styles en ligne.
+ */
+export function emailifyHtml(html) {
+  const STYLES = {
+    'ql-align-center': 'text-align:center', 'ql-align-right': 'text-align:right', 'ql-align-justify': 'text-align:justify',
+    'ql-size-small': 'font-size:13px', 'ql-size-large': 'font-size:20px', 'ql-size-huge': 'font-size:28px;line-height:1.3',
+    'ql-font-serif': 'font-family:Georgia,serif', 'ql-font-monospace': 'font-family:Menlo,Consolas,monospace',
+  };
+  return String(html || '')
+    .replace(/<img ([^>]*?)\/?>/g, (m, attrs) =>
+      `<img ${attrs.replace(/\s*(width|height)="[^"]*"/g, '')} style="display:block;max-width:100%;height:auto;margin:16px auto;border-radius:12px">`)
+    .replace(/<(\w+)([^>]*?) class="([^"]*)"([^>]*)>/g, (m, tag, before, classes, after) => {
+      const style = classes.split(/\s+/).map((c) => STYLES[c]).filter(Boolean).join(';');
+      return style ? `<${tag}${before} style="${style}"${after}>` : `<${tag}${before}${after}>`;
+    })
+    .replace(/<p>/g, '<p style="margin:0 0 14px">')
+    .replace(/<a /g, '<a style="color:#e0551f" ');
+}
+
+/** Boutons présents dans chaque newsletter. */
+export const BOUTONS_FIXES = [
+  { label: 'Adhérer à En Avant', path: '/adherer', fond: '#e0551f', texte: '#ffffff' },
+  { label: 'Faire un don', path: '/don', fond: '#0e1726', texte: '#ffffff' },
+];
+
 export function renderNewsletter({ newsletter, event = null, nom = '', unsubscribeUrl }) {
   const site = siteUrl();
+  const boutons = `
+  <table role="presentation" width="100%" style="margin:26px 0 6px;border-collapse:collapse"><tr>
+    ${BOUTONS_FIXES.map((b) => `<td align="center" style="padding:6px">
+      <a href="${site}${b.path}" style="display:inline-block;background:${b.fond};color:${b.texte};padding:13px 22px;border-radius:999px;text-decoration:none;font-weight:bold;font-size:15px">${escapeHtml(b.label)}</a>
+    </td>`).join('')}
+  </tr></table>`;
   const hello = prenom(nom) ? `Bonjour ${escapeHtml(prenom(nom))},` : 'Bonjour,';
   const eventBlock = event ? `
   <table role="presentation" width="100%" style="margin:24px 0;border-collapse:separate;border:1px solid #f3c7b0;border-radius:14px;background:#fff7f2">
@@ -142,8 +170,8 @@ export function renderNewsletter({ newsletter, event = null, nom = '', unsubscri
   <tr><td style="padding:28px 28px 8px">
     <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#0e1726">${escapeHtml(newsletter.sujet)}</h1>
     <p style="margin:0 0 14px;font-size:16px">${hello}</p>
-    <div style="font-size:16px;line-height:1.6;color:#1d2a44">${newsletter.contenu || ''}</div>
-    ${eventBlock}${cta}
+    <div style="font-size:16px;line-height:1.6;color:#1d2a44">${emailifyHtml(newsletter.contenu)}</div>
+    ${eventBlock}${cta}${boutons}
   </td></tr>
   <tr><td style="padding:18px 28px 26px;border-top:1px solid #e6e9f0;font-size:12px;line-height:1.5;color:#5b6b82">
     <p style="margin:0 0 6px">Vous recevez cette lettre parce que vous êtes adhérent d’En Avant ou inscrit à sa newsletter.</p>
@@ -157,6 +185,7 @@ export function renderNewsletter({ newsletter, event = null, nom = '', unsubscri
     htmlToText(newsletter.contenu),
     event ? `\nÉvénement : ${event.titre}\n${formatEventDate(event.date_cible)}${event.lieu ? `\n${event.lieu}` : ''}${event.description ? `\n${event.description}` : ''}` : '',
     newsletter.cta_label && newsletter.cta_url ? `\n${newsletter.cta_label} : ${newsletter.cta_url}` : '',
+    `\n${BOUTONS_FIXES.map((b) => `${b.label} : ${site}${b.path}`).join('\n')}`,
     `\n—\nSe désinscrire : ${unsubscribeUrl}`,
   ].join('\n');
   return { html, text };

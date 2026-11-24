@@ -5,7 +5,7 @@ import {
   accountsWithoutFiche, accountsToDelete, sendDueRelances, isRelanceDue, isToDelete, displayName, RELANCE_MAX,
 } from '../_lib/relances.js';
 import { notifyTeam, sendToMember } from '../_lib/notify.js';
-import { effectiveLocation, matchesGeo, cleanLocation, inferFromVille } from '../_lib/geo.js';
+import { effectiveLocation, matchesGeo, cleanLocation, inferFromVille, geoFacets } from '../_lib/geo.js';
 
 const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -69,24 +69,7 @@ export function memberGeoView(all, query = {}) {
   const geo = { pays: list('pays'), departements: list('departement'), villes: list('ville') };
   const rows = all || [];
   const geoFiltered = rows.filter((m) => matchesGeo(m, geo));
-  const facet = (key) => {
-    const map = new Map();
-    for (const m of rows) {
-      const value = effectiveLocation(m)[key];
-      if (value) map.set(value, (map.get(value) || 0) + 1);
-    }
-    return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([nom, total]) => ({ nom, total }));
-  };
-  return {
-    geo,
-    geoFiltered,
-    facets: {
-      pays: facet('pays'),
-      departements: facet('departement'),
-      communes: facet('commune').slice(0, 80),
-      a_valider: rows.filter((m) => !m.pays && inferFromVille(m.ville).pays).length,
-    },
-  };
+  return { geo, geoFiltered, facets: geoFacets(rows) };
 }
 
 export const MEMBER_TABS = ['en_attente', 'non_envoye', 'attente_activation', 'actifs', 'rejetes'];

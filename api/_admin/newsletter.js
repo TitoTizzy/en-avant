@@ -8,17 +8,31 @@
 //   POST { action:'test', id }  → envoi à l'adresse de l'admin connecté
 //   POST { action:'envoyer', id, confirmation, forcer? } → envoi à tous les destinataires filtrés
 //   POST { action:'continuer', id } / { action:'relancer_echecs', id } / { action:'dupliquer', id }
+//   POST { action:'image', image_base64, image_ext } → photo du contenu (stockage public) → { url }
 //   DELETE { id }               → supprime un brouillon
+import { randomUUID } from 'node:crypto';
 import { Resend } from 'resend';
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
 import { json, getBody, handleError, clean } from '../_lib/http.js';
 import { sanitizeArticleHtml } from '../_lib/sanitize.js';
 import { senderAddress } from '../_lib/notify.js';
-import { DEPARTEMENTS, PAYS } from '../_lib/geo.js';
+import { PAYS, REGIONS, geoFacets } from '../_lib/geo.js';
 import {
   cleanFiltres, loadContacts, applyFiltres, breakdown, renderNewsletter, processQueue,
   tokensFor, unsubscribePageUrl,
 } from '../_lib/newsletter.js';
+
+const IMAGE_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+
+/** Vrai si les premiers octets correspondent bien au format annoncé. */
+export function imageMatches(buffer, ext) {
+  if (!buffer || buffer.length < 12) return false;
+  if (ext === 'png') return buffer.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  if (ext === 'jpg' || ext === 'jpeg') return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (ext === 'webp') return buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
+  return false;
+}
 
 const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''));
 const SELECT = 'id, sujet, apercu, contenu, evenement_id, cta_label, cta_url, filtres, statut, semaine, destinataires, envoyes, echecs, forcee, created_at, updated_at, started_at, sent_at';
@@ -87,10 +101,13 @@ export default async function handler(req, res) {
         const { data: events, error } = await supabase.from('events')
           .select('id, titre, date_cible, lieu').gte('date_cible', since).order('date_cible').limit(50);
         if (error) throw error;
+        // Suggestions : d'abord ce qui existe dans la base (avec effectifs), puis les listes de référence.
         return json(res, 200, {
-          pays: [...new Set([...all.pays.map((p) => p.nom).filter((p) => p !== 'Non renseigné'), ...PAYS])],
-          departements: DEPARTEMENTS,
-          villes: all.villes.map((v) => v.nom).filter((v) => v !== 'Non renseigné'),
+          pays: all.pays,
+          regions: all.regions,
+          villes: geoFacets(contacts).communes,
+          pays_reference: PAYS,
+          regions_reference: REGIONS,
           evenements: events || [],
           contacts: { total: all.total, adherents: all.adherents, abonnes: all.abonnes },
         });
@@ -158,6 +175,21 @@ export default async function handler(req, res) {
         const { data, error } = await supabase.from('newsletters').insert({ ...draft, created_by: user.id }).select(SELECT).single();
         if (error) throw error;
         return json(res, 201, { newsletter: data });
+      }
+
+      case 'image': {
+        // Photo insérée dans le contenu : hébergée publiquement pour s'afficher dans les emails.
+        const ext = String(body.image_ext || '').toLowerCase();
+        if (!IMAGE_TYPES[ext] || !body.image_base64) return json(res, 422, { error: 'Image JPG, PNG ou WebP requise.' });
+        const buffer = Buffer.from(String(body.image_base64), 'base64');
+        if (!buffer.length || buffer.length > IMAGE_MAX_BYTES) return json(res, 422, { error: 'Image trop lourde (3 Mo maximum).' });
+        if (!imageMatches(buffer, ext)) return json(res, 422, { error: 'Ce fichier n’est pas une image valide.' });
+        const path = `newsletter/${randomUUID()}.${ext === 'jpeg' ? 'jpg' : ext}`;
+        const { error: uploadError } = await supabase.storage.from('assets')
+          .upload(path, buffer, { contentType: IMAGE_TYPES[ext], upsert: false });
+        if (uploadError) throw uploadError;
+        const { data } = supabase.storage.from('assets').getPublicUrl(path);
+        return json(res, 201, { url: data.publicUrl });
       }
 
       case 'dupliquer': {
