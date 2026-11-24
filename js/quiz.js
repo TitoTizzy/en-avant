@@ -300,7 +300,10 @@
     const min = Number(meta.min ?? 0);
     const max = Number(meta.max ?? 100);
     const step = Number(meta.step || 1);
-    const start = Math.round(((min + max) / 2) / step) * step;
+    // Valeurs du curseur arrondies au pas (évite 0.30000000000000004).
+    const decimals = Math.max(...[step, min].map((n) => (String(n).split(".")[1] || "").length));
+    const snap = (v) => Number((min + Math.round((v - min) / step) * step).toFixed(decimals));
+    const start = snap((min + max) / 2);
     const unite = meta.unite ? ` ${meta.unite}` : "";
     const value = el("output", { class: "qz-number-value", text: `${fmt(start)}${unite}` });
     const range = el("input", {
@@ -310,7 +313,7 @@
     const minus = el("button", { type: "button", class: "qz-step", "aria-label": "Diminuer", onclick: () => nudge(-1) }, el("i", { class: "fa-solid fa-minus", "aria-hidden": "true" }));
     const plus = el("button", { type: "button", class: "qz-step", "aria-label": "Augmenter", onclick: () => nudge(1) }, el("i", { class: "fa-solid fa-plus", "aria-hidden": "true" }));
     function nudge(dir) {
-      const v = Math.min(max, Math.max(min, Number(range.value) + dir * step));
+      const v = Math.min(max, Math.max(min, snap(Number(range.value) + dir * step)));
       range.value = String(v);
       value.textContent = `${fmt(v)}${unite}`;
     }
@@ -318,7 +321,7 @@
       value,
       el("div", { class: "qz-number-row" }, minus, range, plus),
       el("div", { class: "qz-number-bounds" }, el("span", { text: `${fmt(min)}${unite}` }), el("span", { text: `${fmt(max)}${unite}` })),
-      el("button", { type: "button", class: "btn btn-primary qz-validate", onclick: () => submit(String(range.value)) }, "Valider"),
+      el("button", { type: "button", class: "btn btn-primary qz-validate", onclick: () => submit(String(snap(Number(range.value)))) }, "Valider"),
     );
   }
 

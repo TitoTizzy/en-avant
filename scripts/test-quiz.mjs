@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
+import { toQuestionRow, reachable } from '../api/_lib/quiz-generation.js';
 
 const A = '00000000-0000-4000-8000-00000000000a';
 const B = '00000000-0000-4000-8000-00000000000b';
@@ -129,6 +130,74 @@ test('Défi de la semaine : mêmes questions pour tous, une seule tentative, cla
   const board = await call(db, 'quiz_leaderboard', 'semaine', B, 20);
   assert.deepEqual(board.top.map(r => r.pseudo), ['Alpha', 'Bravo']);
   assert.equal(board.moi.rang, 2);
+});
+
+test('Défi (retour Codex) : banque insuffisante → rien n’est enregistré, et un défi vide existant est remplacé', async (t) => {
+  const db = await setup(); t.after(() => db.close());
+  await db.exec(`update trivia_questions set active = false
+    where id not in (select id from trivia_questions order by question limit 3)`);
+  const refus = await call(db, 'quiz_start', A, 'defi', null, 15);
+  assert.match(refus.error, /insuffisante/);
+  assert.equal((await one(db, 'select count(*)::int as n from quiz_challenges')).n, 0, 'aucun défi vide enregistré');
+
+  await db.exec('update trivia_questions set active = true');
+  const ok = await call(db, 'quiz_start', A, 'defi', null, 15);
+  assert.ok(ok.game_id, JSON.stringify(ok));
+  assert.equal(ok.total, 15);
+
+  // Défi vide déjà en base (ancienne version) : il est remplacé au lancement suivant.
+  const db2 = await setup(); t.after(() => db2.close());
+  await db2.exec(`insert into quiz_challenges (week_start, question_ids) values (quiz_week_start(), '{}')`);
+  const repare = await call(db2, 'quiz_start', B, 'defi', null, 15);
+  assert.equal(repare.total, 15, JSON.stringify(repare));
+  assert.equal((await one(db2, 'select cardinality(question_ids) as n from quiz_challenges')).n, 15);
+});
+
+test('Partie en cours (retour Codex) : une modification admin ne change ni l’énoncé affiché ni la correction', async (t) => {
+  const db = await setup(); t.after(() => db.close());
+  const { game_id: g } = await call(db, 'quiz_start', A, 'libre', null, 15);
+  const q0 = await call(db, 'quiz_next', g, A);
+  // L'admin modifie toute la banque pendant que la question 1 est affichée.
+  await db.exec(`update trivia_questions set question = question || ' (modifiée)', correct_answer = 'C'`);
+  const recharge = await call(db, 'quiz_next', g, A);
+  assert.equal(recharge.question, q0.question, 'énoncé figé au rechargement');
+  await wait(db, g, 1);
+  const r0 = await call(db, 'quiz_answer', g, A, 0, 'B');
+  assert.equal(r0.correct, true, 'corrigée selon la version affichée');
+  assert.equal(r0.correct_answer, 'B');
+  // La question suivante, pas encore affichée, utilise la nouvelle version.
+  const q1 = await call(db, 'quiz_next', g, A);
+  assert.match(q1.question, /\(modifiée\)$/);
+  await wait(db, g, 1);
+  assert.equal((await call(db, 'quiz_answer', g, A, 1, 'C')).correct, true);
+  // Question supprimée après affichage : la réponse reste corrigée normalement.
+  await call(db, 'quiz_next', g, A);
+  await db.exec(`delete from trivia_questions where id = (select question_ids[3] from quiz_games where id = '${g}')`);
+  await wait(db, g, 1);
+  assert.equal((await call(db, 'quiz_answer', g, A, 2, 'C')).correct, true);
+});
+
+test('Générateur (retour Codex) : une réponse « chiffre » est toujours atteignable avec le curseur', () => {
+  const chiffre = (correct, meta) => toQuestionRow({
+    format: 'chiffre', question: 'Quel pourcentage du budget ?', correct_answer: correct, meta,
+  });
+  // 1,5 avec un pas de 1 et sans tolérance : pas affiné à 0,5.
+  const fine = chiffre('1,5', { min: 0, max: 10, step: 1, tolerance: 0 });
+  assert.equal(fine.meta.step, 0.5);
+  assert.ok(reachable(1.5, 0, 10, fine.meta.step));
+  // Déjà atteignable : pas conservé.
+  assert.equal(chiffre('30', { min: 0, max: 100, step: 10 }).meta.step, 10);
+  // Atteignable grâce à la tolérance : pas conservé.
+  assert.equal(chiffre('33', { min: 0, max: 100, step: 5, tolerance: 2 }).meta.step, 5);
+  // Min décalé : 7 n'est pas sur la grille 2, 4, 6… → pas affiné à 1.
+  assert.equal(chiffre('7', { min: 2, max: 20, step: 2 }).meta.step, 1);
+  // Impossible sans curseur démesuré : question rejetée.
+  assert.equal(chiffre('1.37', { min: 0, max: 1000000, step: 1000 }), null);
+  // Chaque question acceptée est atteignable.
+  for (const [v, m] of [['2.5', { min: 0, max: 5, step: 2 }], ['0.3', { min: 0, max: 1, step: 0.25 }], ['48', { min: 0, max: 100, step: 7 }]]) {
+    const row = chiffre(v, m);
+    if (row) assert.ok(reachable(Number(row.correct_answer), row.meta.min, row.meta.max, row.meta.step, row.meta.tolerance), `${v} ${JSON.stringify(row.meta)}`);
+  }
 });
 
 test('Duel : même jeu pour l’invité, une partie chacun, résultat côte à côte, expiration à 7 jours', async (t) => {

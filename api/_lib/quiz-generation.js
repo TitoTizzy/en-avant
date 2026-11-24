@@ -84,6 +84,17 @@ const num = (value) => {
   return Number.isFinite(n) ? n : null;
 };
 
+const PAS_FINS = [1, 0.5, 0.25, 0.2, 0.1, 0.05, 0.01];
+const MAX_CRANS = 2000;
+
+/** Vrai si la valeur est atteignable avec un curseur min..max au pas donné. */
+export function reachable(value, min, max, step, tolerance = 0) {
+  if (!(step > 0) || value < min || value > max) return false;
+  const crans = Math.round((value - min) / step);
+  const proche = min + crans * step;
+  return proche <= max + 1e-9 && Math.abs(proche - value) <= tolerance + 1e-9;
+}
+
 function shuffleDifferent(items) {
   const copy = [...items];
   for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -158,6 +169,12 @@ export function toQuestionRow(q, { imageIds = new Set(), generationId = null } =
       if (value === null || min === null || max === null || !(min < max) || value < min || value > max) return null;
       if (!(step > 0) || step > (max - min)) step = (max - min) <= 20 ? 0.5 : 1;
       if (tolerance < 0 || tolerance > (max - min) / 4) tolerance = 0;
+      // La bonne réponse doit pouvoir être choisie avec le curseur (min + k × pas),
+      // à la tolérance près. Sinon on essaie un pas plus fin, ou on rejette.
+      if (!reachable(value, min, max, step, tolerance)) {
+        step = PAS_FINS.find((s) => s < step && (max - min) / s <= MAX_CRANS && reachable(value, min, max, s, tolerance));
+        if (!step) return null;
+      }
       row.options = [];
       row.correct_answer = String(value);
       row.meta = { min, max, step, unite: str(meta.unite, 20), tolerance };
