@@ -518,6 +518,18 @@ test('Assistant : absent de l’administration et de la connexion, ajouté sur l
   }
 });
 
+test('Admin : les onglets du quiz ne sont jamais traités comme des onglets d’adhésions', async () => {
+  const html = await read('admin.html');
+  const js = await read('js/admin.js');
+  const dom = new JSDOM(html);
+  for (const tab of dom.window.document.querySelectorAll('.member-tab[data-tab]')) {
+    assert.ok(tab.querySelector('.member-tab-count'), `compteur manquant : ${tab.dataset.tab}`);
+  }
+  assert.ok(dom.window.document.querySelectorAll('.member-tab[data-quiz-tab]').length > 0);
+  assert.doesNotMatch(js, /querySelectorAll\("\.member-tab"\)/, 'sélecteur trop large');
+  dom.window.close();
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
