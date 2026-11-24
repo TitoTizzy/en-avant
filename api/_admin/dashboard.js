@@ -5,6 +5,7 @@ import {
   accountsWithoutFiche, accountsToDelete, sendDueRelances, isRelanceDue, isToDelete, displayName, RELANCE_MAX,
 } from '../_lib/relances.js';
 import { notifyTeam, sendToMember } from '../_lib/notify.js';
+import { effectiveLocation, matchesGeo, cleanLocation, inferFromVille } from '../_lib/geo.js';
 
 const MEMBER_STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -34,8 +35,14 @@ const accountState = (role) => {
 // user_id n'est jamais renvoyé au navigateur : seulement l'état du compte.
 const maskMembers = (rows, identity, roles = new Map()) => (rows || []).map(({ user_id: userId, ...m }) => {
   const role = userId ? roles.get(userId) : null;
+  const loc = effectiveLocation(m);
   return {
     ...m,
+    // Localisation effective : déclarée, sinon déduite de la ville (geo_deduit = true).
+    pays: loc.pays,
+    departement: loc.departement,
+    commune: loc.commune,
+    geo_deduit: loc.deduit,
     ninu: maskNinu(m.ninu, identity),
     has_account: Boolean(userId),
     account: accountState(role),
@@ -51,6 +58,35 @@ async function rolesFor(supabase, rows) {
   const { data, error } = await supabase.from('profiles').select('id, role').in('id', ids);
   if (error) throw error;
   return new Map((data || []).map((p) => [p.id, p.role]));
+}
+
+/**
+ * Filtres géographiques de la liste des adhérents (listes séparées par « | »)
+ * et répartition par pays / département / commune pour proposer les choix.
+ */
+export function memberGeoView(all, query = {}) {
+  const list = (key) => clean(query?.[key]).split('|').map((v) => v.trim()).filter(Boolean).slice(0, 30);
+  const geo = { pays: list('pays'), departements: list('departement'), villes: list('ville') };
+  const rows = all || [];
+  const geoFiltered = rows.filter((m) => matchesGeo(m, geo));
+  const facet = (key) => {
+    const map = new Map();
+    for (const m of rows) {
+      const value = effectiveLocation(m)[key];
+      if (value) map.set(value, (map.get(value) || 0) + 1);
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([nom, total]) => ({ nom, total }));
+  };
+  return {
+    geo,
+    geoFiltered,
+    facets: {
+      pays: facet('pays'),
+      departements: facet('departement'),
+      communes: facet('commune').slice(0, 80),
+      a_valider: rows.filter((m) => !m.pays && inferFromVille(m.ville).pays).length,
+    },
+  };
 }
 
 export const MEMBER_TABS = ['en_attente', 'non_envoye', 'attente_activation', 'actifs', 'rejetes'];
@@ -153,6 +189,38 @@ export default async function handler(req, res) {
       if (!can(identity, 'voir_membres')) return forbidden(res);
       const body = getBody(req);
       const action = clean(body.action);
+
+      if (action === 'localisation') {
+        // Corrige le pays / département / ville d'une fiche.
+        const memberId = clean(body.member_id);
+        if (!isUuid(memberId)) return json(res, 422, { error: 'Adhésion invalide.' });
+        const location = cleanLocation(body);
+        if (location.error) return json(res, 422, { error: location.error });
+        const { data, error } = await supabase.from('members').update(location).eq('id', memberId)
+          .select('id').maybeSingle();
+        if (error) throw error;
+        if (!data) return json(res, 404, { error: 'Adhésion introuvable.' });
+        return json(res, 200, { ok: true, ...location });
+      }
+
+      if (action === 'valider_localisations') {
+        // Enregistre le pays / département déduits de la ville pour les fiches qui n'en ont pas.
+        // Ne remplace jamais une localisation déclarée. SuperAdmin uniquement.
+        if (!identity.isSuperAdmin) return forbidden(res);
+        const { data: rows, error } = await supabase.from('members').select('id, ville').is('pays', null).limit(5000);
+        if (error) throw error;
+        let updated = 0;
+        for (const row of rows || []) {
+          const inferred = inferFromVille(row.ville);
+          if (!inferred.pays) continue;
+          const { error: upError } = await supabase.from('members')
+            .update({ pays: inferred.pays, departement: inferred.departement || null })
+            .eq('id', row.id).is('pays', null);
+          if (upError) throw upError;
+          updated += 1;
+        }
+        return json(res, 200, { ok: true, mises_a_jour: updated, restantes: (rows || []).length - updated });
+      }
 
       if (action === 'access_link') {
         const memberId = clean(body.member_id);
@@ -327,7 +395,7 @@ export default async function handler(req, res) {
       const configs = {
         members: {
           table: 'members',
-          fields: 'id, nom, ninu, email, ville, status, created_at, user_id',
+          fields: 'id, nom, ninu, email, ville, pays, departement, status, created_at, user_id',
           order: 'created_at',
           filters: ['nom', 'ninu', 'email', 'ville'],
         },
@@ -358,10 +426,12 @@ export default async function handler(req, res) {
         const [{ data: all, error: allError }, signIns] = await Promise.all([membersQuery, activeAccounts(supabase)]);
         if (allError) throw allError;
 
+        const { geo, geoFiltered, facets } = memberGeoView(all, req.query);
+
         const counts = Object.fromEntries(MEMBER_TABS.map((t) => [t, 0]));
         const tab = MEMBER_TABS.includes(clean(req.query?.tab)) ? clean(req.query.tab) : 'en_attente';
         const inTab = [];
-        for (const m of all || []) {
+        for (const m of geoFiltered) {
           const t = memberTab(m, signIns);
           counts[t] += 1;
           if (t === tab) inTab.push(m);
@@ -377,6 +447,7 @@ export default async function handler(req, res) {
           page: exporting ? 1 : page,
           page_size: pageSize,
           truncated: exporting && inTab.length > pageSize,
+          geo: { filtres: geo, total_filtre: geoFiltered.length, ...facets },
         });
       }
 

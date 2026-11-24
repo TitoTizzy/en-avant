@@ -252,3 +252,26 @@ test('Lien mot de passe : pointe directement vers /mot-de-passe avec le jeton ha
   );
   assert.equal(passwordLinkFrom({ action_link: 'https://x/verify' }, 'recovery'), 'https://x/verify', 'repli si pas de jeton haché');
 });
+
+test('Adhérents : filtres pays / département / ville et répartition, fiches anciennes placées d’après la ville', async () => {
+  const { memberGeoView } = await import('../api/_admin/dashboard.js');
+  const all = [
+    { id: 1, ville: 'Delmas 33, Rue Exemple', pays: null, departement: null },
+    { id: 2, ville: 'Cap-Haïtien', pays: 'Haïti', departement: 'Nord' },
+    { id: 3, ville: 'Boston', pays: 'États-Unis', departement: null },
+    { id: 4, ville: 'Miami', pays: null, departement: null },
+    { id: 5, ville: 'Lieu inconnu', pays: null, departement: null },
+  ];
+  const ids = (q) => memberGeoView(all, q).geoFiltered.map((m) => m.id);
+  assert.deepEqual(ids({}), [1, 2, 3, 4, 5]);
+  assert.deepEqual(ids({ pays: 'Haïti' }), [1, 2]);
+  assert.deepEqual(ids({ pays: 'États-Unis' }), [3, 4]);
+  assert.deepEqual(ids({ pays: 'Haïti', departement: 'Ouest' }), [1]);
+  assert.deepEqual(ids({ departement: 'Nord|Ouest' }), [1, 2]);
+  assert.deepEqual(ids({ ville: 'delmas' }), [1]);
+  assert.deepEqual(ids({ pays: 'Canada' }), []);
+  const { facets } = memberGeoView(all, {});
+  assert.deepEqual(facets.pays, [{ nom: 'Haïti', total: 2 }, { nom: 'États-Unis', total: 2 }]);
+  assert.equal(facets.a_valider, 2, 'Delmas et Miami : lieu déduit à enregistrer ; « Lieu inconnu » non');
+  assert.ok(facets.communes.some((c) => c.nom === 'Delmas'));
+});

@@ -4574,3 +4574,17 @@ select option:checked { background-color: #ff6a2a; color: #fff; }
   .nl-audience { position: static; }
   .nl-admin-summary { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Adhérents — filtres géographiques */
+.member-geo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.8rem 0; padding: 0.6rem 0.8rem;
+  border-radius: var(--r-sm); background: var(--glass); border: 1px solid var(--line-1); }
+.member-geo > i { color: var(--orange); }
+.member-geo select, .member-geo input { min-width: 160px; }
+.member-geo select[hidden], .member-geo button[hidden] { display: none; }
+.member-geo-summary { font-size: 0.85rem; color: var(--ink-300); }
+#mg-validate { margin-left: auto; }
+.member-geo-cell { white-space: nowrap; }
+.member-geo-none { color: var(--ink-400); font-style: italic; }
+.member-geo-deduit { color: var(--ink-400); }
+.member-geo-form { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.member-geo-form input, .member-geo-form select { max-width: 140px; }

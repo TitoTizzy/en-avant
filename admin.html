@@ -670,6 +670,17 @@
           <button class="member-tab" data-tab="actifs" role="tab" aria-selected="false" type="button">Actifs <span class="member-tab-count">…</span></button>
           <button class="member-tab" data-tab="rejetes" role="tab" aria-selected="false" type="button">Rejetés <span class="member-tab-count">…</span></button>
         </div>
+        <div class="member-geo" id="member-geo" aria-label="Filtrer par lieu">
+          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+          <select id="mg-pays" aria-label="Pays"><option value="">Tous les pays</option></select>
+          <select id="mg-dep" aria-label="Département" hidden><option value="">Tous les départements</option></select>
+          <input id="mg-ville" list="mg-villes" placeholder="Ville / commune" aria-label="Ville ou commune">
+          <datalist id="mg-villes"></datalist>
+          <button class="btn btn-ghost btn-xs" type="button" id="mg-clear">Effacer</button>
+          <span class="member-geo-summary" id="mg-summary"></span>
+          <button class="btn btn-ghost btn-xs" type="button" id="mg-validate" hidden
+            title="Enregistre dans les fiches le pays et le département déduits de la ville (jamais à la place d'une valeur déclarée)"></button>
+        </div>
         <div class="member-bulk" id="members-bulk" hidden>
           <button class="btn btn-primary btn-xs" id="members-bulk-send" type="button" disabled>
             <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> <span>Envoyer l'accès à la sélection</span>
@@ -679,9 +690,9 @@
         <div class="u-table">
           <table>
             <thead>
-              <tr><th id="members-check-col" hidden><input type="checkbox" id="members-check-all" aria-label="Tout sélectionner"></th><th>Nom</th><th>NINU</th><th>Email</th><th>Ville</th><th>Date</th><th>Statut</th><th>Compte</th><th>Actions</th></tr>
+              <tr><th id="members-check-col" hidden><input type="checkbox" id="members-check-all" aria-label="Tout sélectionner"></th><th>Nom</th><th>NINU</th><th>Email</th><th>Ville</th><th>Pays · Département</th><th>Date</th><th>Statut</th><th>Compte</th><th>Actions</th></tr>
             </thead>
-            <tbody id="tbl-members"><tr><td colspan="9">Chargement…</td></tr></tbody>
+            <tbody id="tbl-members"><tr><td colspan="10">Chargement…</td></tr></tbody>
           </table>
         </div>
 
