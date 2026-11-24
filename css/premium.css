@@ -740,8 +740,8 @@ header.header {
    ASSISTANT EN AVANT — fenêtre de discussion
    ========================================================================== */
 .eac-panel {
-  position: fixed; right: 24px; bottom: 100px; z-index: 1200;
-  width: min(400px, calc(100vw - 32px)); height: min(620px, calc(100vh - 140px));
+  position: fixed; right: 24px; bottom: 100px; z-index: 100000;
+  width: min(400px, calc(100vw - 32px)); height: min(620px, calc(100dvh - 124px));
   display: flex; flex-direction: column; overflow: hidden;
   background: #0b1630; color: #eef3fa; border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 22px; box-shadow: 0 30px 80px rgba(2, 6, 12, 0.6);
