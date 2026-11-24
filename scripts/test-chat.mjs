@@ -15,6 +15,10 @@ test('Texte des pages : menus, pieds de page, formulaires et scripts retirés', 
   assert.match(text, /Les chantiers/);
   assert.match(text, /La sécurité d’abord\./);
   assert.doesNotMatch(text, /Accueil Blog|alert|Mot de passe|© 2026/);
+  // Textes par défaut des boutons et blocs masqués (remplacés au chargement) ignorés.
+  const don = pageText('<main><p>Soutenez le parti.</p><button disabled>Dons en ligne bientôt disponibles</button><div class="x" hidden>Erreur</div></main>');
+  assert.match(don, /Soutenez le parti/);
+  assert.doesNotMatch(don, /bientôt|Erreur/);
 });
 
 test('Recherche : le passage le plus pertinent arrive en premier, accents et pluriels ignorés', () => {
@@ -64,6 +68,7 @@ test('Consignes : sources uniquement, langue du visiteur, neutralité, pas de do
   assert.match(prompt, /<extrait n="1" source="Livre blanc" page="\/livre-blanc">/);
   assert.match(prompt, /Meeting — samedi 5 décembre — Cap-Haïtien/);
   assert.match(prompt, /contact@enavant\.org/);
+  assert.match(prompt, /carte bancaire sont OUVERTS/);
   const lb = { titre: 'Livre blanc', url: '/livre-blanc' };
   // Pages citées dans la réponse, sans doublon ; liens inconnus ignorés.
   assert.deepEqual(sourcesOf([lb], 'Voir [Adhérer](/adherer), [encore](/adherer) et [ailleurs](/inconnu).'), [{ titre: 'Adhérer', url: '/adherer' }]);

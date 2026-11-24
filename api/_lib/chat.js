@@ -43,7 +43,10 @@ export function tokens(text) {
 /** Texte lisible d'une page HTML (sans menus, pieds de page, scripts ni styles). */
 export function pageText(html) {
   return String(html || '')
-    .replace(/<(script|style|noscript|svg|header|footer|nav|form)[\s\S]*?<\/\1>/gi, ' ')
+    // Boutons et éléments masqués exclus : leur texte par défaut (« bientôt disponible »…)
+    // est remplacé au chargement de la page et ne décrit pas la réalité.
+    .replace(/<(script|style|noscript|svg|header|footer|nav|form|button|select|template)[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<(\w+)\b[^>]*\shidden\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|h[1-6]|li|div|section|article)>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
@@ -150,7 +153,7 @@ Règles absolues :
 9. Mise en forme permise : **gras**, listes à puces avec « - », liens [texte](/chemin). Rien d’autre (pas de titres, pas de tableaux, pas de HTML).`;
 
 export const INFOS_PRATIQUES = `- Adhérer : formulaire sur /adherer (nom, pseudo, NINU, email, téléphone, pays, ville). La candidature est examinée par le comité d’éthique ; un email confirme l’accès à l’espace membre.
-- Faire un don : /don (carte bancaire sécurisée ; Zelle au 786 783-8538 ; PayPal, MonCash et NatCash bientôt disponibles).
+- Faire un don : /don. Les dons en ligne par carte bancaire sont OUVERTS (paiement sécurisé) ; aussi Zelle au 786 783-8538. PayPal, MonCash et NatCash : bientôt disponibles.
 - Newsletter : inscription sur /newsletter, une lettre par semaine au maximum, désinscription en un clic.
 - Quiz du Livre blanc : /trivia (8 questions, pour tous) ; les membres ont un quiz complet avec défis et classements sur /quiz.
 - Lire le programme : /livre-blanc et /vingt-chantiers.
