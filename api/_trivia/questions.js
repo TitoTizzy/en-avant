@@ -16,6 +16,9 @@ export default async function handler(req, res) {
     const { data, error } = await supabase
       .from('trivia_questions')
       .select('id, question, options, correct_answer, explication, source_livre_blanc')
+      // Quiz visiteur : questions à choix (le chrono, les curseurs et l'ordre sont réservés aux membres).
+      .eq('active', true)
+      .in('format', ['qcm', 'vrai_faux', 'citation'])
       .order('created_at', { ascending: false })
       .limit(60);
 

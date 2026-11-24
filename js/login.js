@@ -81,8 +81,13 @@
       const role  = payload.role || "readonly";
 
       if (role === "member" || role === "readonly" || role === "editor") {
-        // Pas de PIN — redirection directe vers l'espace membre
-        window.location.href = "/membre.html";
+        // Pas de PIN — retour à la page d'origine (ex. lien de duel du quiz), sinon espace membre.
+        let retour = null;
+        try {
+          retour = sessionStorage.getItem("ea-retour");
+          sessionStorage.removeItem("ea-retour");
+        } catch { /* stockage indisponible */ }
+        window.location.href = retour && /^\/(?!\/)[\w\-./?=&%]*$/.test(retour) ? retour : "/membre.html";
         return;
       }
 

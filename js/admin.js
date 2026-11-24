@@ -1802,99 +1802,340 @@
     });
   }
 
-  async function loadTriviaBank() {
-    const host = document.getElementById("trivia-admin");
-    const scoresHost = document.getElementById("trivia-scores-admin");
-    if (!host) return;
-    try {
-      const { questions, scores } = await api("/api/admin/trivia");
-      host.innerHTML = "";
-      if (!questions.length) {
-        host.innerHTML = '<div class="adm-empty">Aucune question dans la banque.</div>';
-        return;
-      }
-      questions.forEach((item) => {
-        const row = document.createElement("div");
-        row.className = "adm-question-row";
-        row.dataset.id = item.id;
-        row.innerHTML = `
-          <div>
-            <strong>${esc(item.question)}</strong>
-            <small>Réponse : ${esc(item.correct_answer)} · ${fmtDate(item.created_at)}</small>
-          </div>
-          <button class="btn btn-ghost btn-xs trivia-delete" type="button" title="Supprimer">
-            <i class="fa-solid fa-trash" aria-hidden="true"></i>
-          </button>`;
-        host.appendChild(row);
-      });
+  /* ═══════════════════════ MODULE QUIZ (administration) ═══════════════════════ */
+  const QUIZ_FORMATS = {
+    qcm: "QCM", vrai_faux: "Vrai ou faux", chiffre: "Chiffre", citation: "Citation", image: "Image", ordre: "Ordre",
+  };
+  const quizState = { tab: "generation", page: 0, loaded: {}, chantiers: {} };
 
-      if (scoresHost) {
-        scoresHost.innerHTML = "";
-        if (!scores.length) {
-          scoresHost.innerHTML = '<div class="adm-empty">Aucun score enregistré.</div>';
-        } else {
-          scores.forEach((item) => {
-            const row = document.createElement("div");
-            row.className = "adm-question-row";
-            row.dataset.id = item.id;
-            row.innerHTML = `
-              <div>
-                <strong>${esc(item.pseudo || "Anonyme")}</strong>
-                <small>${item.score}/${item.total} · ${fmtDate(item.completed_at)}</small>
-              </div>
-              <button class="btn btn-ghost btn-xs trivia-score-delete" type="button" title="Supprimer">
-                <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              </button>`;
-            scoresHost.appendChild(row);
-          });
-        }
-      }
+  function quizAnswerText(item) {
+    if (item.format === "ordre") {
+      try { return JSON.parse(item.correct_answer).join(" → "); } catch { return item.correct_answer; }
+    }
+    if (item.format === "chiffre") return `${item.correct_answer}${item.meta?.unite ? ` ${item.meta.unite}` : ""}`;
+    return item.correct_answer;
+  }
+
+  function showQuizTab(tab) {
+    quizState.tab = tab;
+    document.querySelectorAll("[data-quiz-tab]").forEach((button) => {
+      const active = button.dataset.quizTab === tab;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", String(active));
+    });
+    document.querySelectorAll("[data-quiz-pane]").forEach((pane) => {
+      pane.hidden = pane.dataset.quizPane !== tab;
+    });
+    loadQuizTab(tab);
+  }
+
+  async function loadQuizTab(tab) {
+    try {
+      if (tab === "generation" || tab === "stats") await loadQuizResume();
+      if (tab === "banque") await loadQuizBank();
+      if (tab === "defi") await loadQuizDefi();
+      if (tab === "joueurs") await loadQuizPlayers();
+      if (tab === "images") await loadQuizImages();
+      if (tab === "scores") await loadQuizScores();
     } catch (error) {
-      host.innerHTML = `<div class="adm-empty">${esc(error.message)}</div>`;
-      if (scoresHost) scoresHost.innerHTML = `<div class="adm-empty">${esc(error.message)}</div>`;
+      console.error(error);
+      const pane = document.querySelector(`[data-quiz-pane="${tab}"] .adm-record-list, [data-quiz-pane="${tab}"] tbody`);
+      if (pane) pane.innerHTML = `<div class="adm-empty">${esc(error.message)}</div>`;
     }
   }
 
-  function bindTriviaBank() {
+  // Appelée au chargement du tableau de bord et après une génération.
+  async function loadTriviaBank() {
+    await loadQuizTab(quizState.tab);
+  }
+
+  async function loadQuizResume() {
+    const data = await api("/api/admin/trivia?view=resume");
+    const gens = document.getElementById("quiz-generations");
+    gens.innerHTML = data.generations.length ? "" : '<div class="adm-empty">Aucune génération pour l\'instant.</div>';
+    data.generations.forEach((g) => {
+      const row = document.createElement("div");
+      row.className = "adm-question-row";
+      const statut = g.statut === "echec" ? "Échec" : g.statut === "en_cours" ? "En cours" : "Terminée";
+      row.innerHTML = `<div><strong>${fmtDate(g.created_at)} — ${g.inserees} questions ajoutées</strong>
+        <small>${statut} · ${g.doublons} doublon(s) écarté(s) · ${g.rejetees} invalide(s) · ${esc(g.modele || "")}${g.erreur ? ` · ${esc(g.erreur)}` : ""}</small></div>`;
+      gens.appendChild(row);
+    });
+
+    const formats = Object.entries(data.questions.par_format)
+      .map(([f, n]) => `${esc(QUIZ_FORMATS[f] || f)} : ${n}`).join(" · ") || "—";
+    document.getElementById("quiz-kpis").innerHTML = `
+      <div class="u-card quiz-kpi"><span>Questions</span><strong>${data.questions.total}</strong><small>${data.questions.actives} actives · ${formats}</small></div>
+      <div class="u-card quiz-kpi"><span>Jamais jouées</span><strong>${data.questions.jamais_jouees}</strong><small>Réserve de nouveauté pour les joueurs</small></div>
+      <div class="u-card quiz-kpi"><span>Parties terminées</span><strong>${data.parties.total}</strong><small>${data.parties.sept_jours} ces 7 derniers jours</small></div>
+      <div class="u-card quiz-kpi"><span>Joueurs actifs</span><strong>${data.joueurs.sept_jours}</strong><small>sur 7 jours · ${data.joueurs.trente_jours} sur 30 jours</small></div>`;
+    const hardest = document.getElementById("quiz-hardest");
+    hardest.innerHTML = data.plus_ratees.length ? "" : '<div class="adm-empty">Pas encore assez de réponses.</div>';
+    data.plus_ratees.forEach((q) => {
+      const row = document.createElement("div");
+      row.className = "adm-question-row";
+      row.innerHTML = `<div><strong>${esc(q.question)}</strong>
+        <small>${esc(QUIZ_FORMATS[q.format] || q.format)} · ${q.taux_reussite} % de réussite sur ${q.vues} réponses${q.active ? "" : " · désactivée"}</small></div>`;
+      hardest.appendChild(row);
+    });
+  }
+
+  function quizBankRow(item) {
+    const row = document.createElement("div");
+    row.className = `adm-question-row quiz-bank-row${item.active ? "" : " is-inactive"}`;
+    row.dataset.id = item.id;
+    const chantier = item.chantier ? ` · Chantier ${item.chantier}` : "";
+    const perf = item.vues ? ` · ${item.taux_reussite} % de réussite (${item.vues})` : " · jamais jouée";
+    const editable = ["qcm", "citation", "image", "vrai_faux"].includes(item.format);
+    row.innerHTML = `
+      <div class="quiz-bank-main">
+        <strong>${esc(item.question)}</strong>
+        <small>${esc(QUIZ_FORMATS[item.format] || item.format)} · ${esc(item.difficulte || "moyen")}${chantier} · Réponse : ${esc(quizAnswerText(item))}${perf}${item.active ? "" : " · <b>désactivée</b>"}</small>
+        <details class="quiz-bank-edit">
+          <summary>Modifier</summary>
+          <form data-edit>
+            <label>Question<textarea name="question" rows="2">${esc(item.question)}</textarea></label>
+            ${editable ? `<label>Options (une par ligne)<textarea name="options" rows="4">${esc((item.options || []).join("\n"))}</textarea></label>
+            <label>Bonne réponse<input name="correct_answer" value="${esc(item.correct_answer)}"></label>` : ""}
+            <label>Explication<textarea name="explication" rows="2">${esc(item.explication || "")}</textarea></label>
+            <button class="btn btn-primary btn-xs" type="submit">Enregistrer</button>
+          </form>
+        </details>
+      </div>
+      <div class="quiz-bank-actions">
+        <button class="btn btn-ghost btn-xs" type="button" data-toggle title="${item.active ? "Désactiver" : "Réactiver"}">
+          <i class="fa-solid ${item.active ? "fa-eye-slash" : "fa-eye"}" aria-hidden="true"></i> ${item.active ? "Désactiver" : "Réactiver"}</button>
+        <button class="btn btn-ghost btn-xs" type="button" data-delete title="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+      </div>`;
+    row._item = item;
+    return row;
+  }
+
+  async function loadQuizBank() {
+    const form = document.getElementById("quiz-bank-filters");
+    const params = new URLSearchParams({ view: "banque", page: String(quizState.page) });
+    new FormData(form).forEach((value, key) => { if (value) params.set(key, value); });
     const host = document.getElementById("trivia-admin");
-    const scoresHost = document.getElementById("trivia-scores-admin");
-    const refresh = document.getElementById("trivia-refresh");
-    if (!host || !refresh) return;
-    refresh.addEventListener("click", loadTriviaBank);
-    host.addEventListener("click", async (event) => {
-      const button = event.target.closest(".trivia-delete");
-      if (!button) return;
-      const row = button.closest(".adm-question-row");
-      if (!window.confirm("Supprimer cette question du quiz ?")) return;
+    host.innerHTML = '<p class="adm-loading">Chargement…</p>';
+    const data = await api(`/api/admin/trivia?${params}`);
+    host.innerHTML = data.questions.length ? "" : '<div class="adm-empty">Aucune question pour ces filtres.</div>';
+    data.questions.forEach((item) => host.appendChild(quizBankRow(item)));
+    document.getElementById("quiz-bank-count").textContent = `${data.total} question(s)`;
+    const pages = Math.ceil(data.total / data.par_page);
+    const pager = document.getElementById("quiz-bank-pager");
+    pager.innerHTML = pages > 1 ? `
+      <button class="btn btn-ghost btn-xs" type="button" data-page="${data.page - 1}" ${data.page <= 0 ? "disabled" : ""}>Précédent</button>
+      <span>Page ${data.page + 1} / ${pages}</span>
+      <button class="btn btn-ghost btn-xs" type="button" data-page="${data.page + 1}" ${data.page + 1 >= pages ? "disabled" : ""}>Suivant</button>` : "";
+  }
+
+  function defiList(hostId, defi, semaine) {
+    const host = document.getElementById(hostId);
+    if (!defi) {
+      host.innerHTML = `<div class="adm-empty">${semaine === "suivante" ? "Pas encore préparé : cliquez sur « Préparer »." : "Créé automatiquement à la première partie de la semaine."}</div>`;
+      return;
+    }
+    host.innerHTML = "";
+    defi.questions.forEach((q) => {
+      const row = document.createElement("div");
+      row.className = "adm-question-row";
+      row.innerHTML = `<div><strong>${q.index + 1}. ${esc(q.question)}</strong>
+        <small>${esc(QUIZ_FORMATS[q.format] || q.format || "")}${q.chantier ? ` · Chantier ${q.chantier}` : ""}${q.active === false ? " · désactivée" : ""}</small></div>
+        <button class="btn btn-ghost btn-xs" type="button" data-replace="${q.index}" data-semaine="${semaine}">Remplacer</button>`;
+      host.appendChild(row);
+    });
+  }
+
+  async function loadQuizDefi() {
+    const data = await api("/api/admin/trivia?view=defi");
+    document.getElementById("quiz-defi-courante-info").textContent = data.courante
+      ? `Semaine du ${fmtDate(data.semaines.courante)} · ${data.courante.joueurs} joueur(s). Modifiable tant que personne ne l'a joué.`
+      : `Semaine du ${fmtDate(data.semaines.courante)}.`;
+    defiList("quiz-defi-courante", data.courante, "courante");
+    defiList("quiz-defi-suivante", data.suivante, "suivante");
+    const ranking = document.getElementById("quiz-defi-classement");
+    ranking.innerHTML = data.classement.length
+      ? data.classement.map((r) => `<li><strong>${esc(r.pseudo)}</strong> — ${r.points} pts</li>`).join("")
+      : "<li>Personne n'a encore joué le défi cette semaine.</li>";
+  }
+
+  async function loadQuizPlayers(query = "") {
+    const data = await api(`/api/admin/trivia?view=joueurs&q=${encodeURIComponent(query)}`);
+    const body = document.getElementById("quiz-players");
+    body.innerHTML = data.joueurs.length ? "" : '<tr><td colspan="6">Aucun joueur.</td></tr>';
+    data.joueurs.forEach((p) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td><strong>${esc(p.pseudo)}</strong></td><td>${esc(p.titre)}</td><td>${p.cumul}</td>
+        <td>${p.parties}</td><td>${fmtDate(p.dernier)}</td>
+        <td><button class="btn btn-ghost btn-xs" type="button" data-reset="${esc(p.user_id)}" data-pseudo="${esc(p.pseudo)}">Remettre à zéro</button></td>`;
+      body.appendChild(tr);
+    });
+  }
+
+  async function loadQuizImages() {
+    const data = await api("/api/admin/trivia?view=images");
+    const host = document.getElementById("quiz-images");
+    host.innerHTML = data.images.length ? "" : '<div class="adm-empty">Aucune image dans pictures/quiz.</div>';
+    data.images.forEach((img) => {
+      const card = document.createElement("figure");
+      card.className = "quiz-admin-image";
+      card.innerHTML = `<img src="${esc(img.src)}" alt="" loading="lazy" width="400" height="225">
+        <figcaption><strong>${esc(img.titre)}</strong><small>${img.questions} question(s) · ${esc(img.categorie)}</small></figcaption>`;
+      host.appendChild(card);
+    });
+  }
+
+  async function loadQuizScores() {
+    const { scores } = await api("/api/admin/trivia");
+    const host = document.getElementById("trivia-scores-admin");
+    host.innerHTML = scores.length ? "" : '<div class="adm-empty">Aucun score enregistré.</div>';
+    scores.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "adm-question-row";
+      row.dataset.id = item.id;
+      row.innerHTML = `<div><strong>${esc(item.pseudo || "Anonyme")}</strong>
+        <small>${item.score}/${item.total} · ${fmtDate(item.completed_at)}</small></div>
+        <button class="btn btn-ghost btn-xs trivia-score-delete" type="button" title="Supprimer"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>`;
+      host.appendChild(row);
+    });
+  }
+
+  function bindTriviaBank() {
+    document.querySelectorAll("[data-quiz-tab]").forEach((button) =>
+      button.addEventListener("click", () => showQuizTab(button.dataset.quizTab)));
+
+    const chantierSelect = document.getElementById("quiz-bank-chantier");
+    for (let n = 1; n <= 20; n += 1) chantierSelect?.insertAdjacentHTML("beforeend", `<option value="${n}">Chantier ${n}</option>`);
+
+    document.getElementById("quiz-bank-filters")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      quizState.page = 0;
+      loadQuizBank().catch((error) => setModuleStatus("tv-status", "error", error.message));
+    });
+    document.getElementById("quiz-bank-pager")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-page]");
+      if (!button || button.disabled) return;
+      quizState.page = Number(button.dataset.page);
+      loadQuizBank();
+    });
+
+    const bank = document.getElementById("trivia-admin");
+    bank?.addEventListener("click", async (event) => {
+      const row = event.target.closest(".quiz-bank-row");
+      if (!row) return;
       try {
-        await api("/api/admin/trivia", {
-          method: "DELETE",
-          body: JSON.stringify({ id: row.dataset.id }),
-        });
-        row.remove();
-        document.getElementById("st-trivia").textContent =
-          String(Math.max(0, Number(document.getElementById("st-trivia").textContent) - 1));
+        if (event.target.closest("[data-toggle]")) {
+          await api("/api/admin/trivia", { method: "PATCH", body: JSON.stringify({ id: row.dataset.id, active: !row._item.active }) });
+          row.replaceWith(quizBankRow({ ...row._item, active: !row._item.active }));
+        } else if (event.target.closest("[data-delete]")) {
+          if (!window.confirm("Supprimer définitivement cette question ? (Préférez « Désactiver » pour garder ses statistiques.)")) return;
+          await api("/api/admin/trivia", { method: "DELETE", body: JSON.stringify({ id: row.dataset.id }) });
+          row.remove();
+        }
       } catch (error) {
-        setModuleStatus("tv-status", "error", error.message);
+        window.alert(error.message);
+      }
+    });
+    bank?.addEventListener("submit", async (event) => {
+      const form = event.target.closest("form[data-edit]");
+      if (!form) return;
+      event.preventDefault();
+      const row = form.closest(".quiz-bank-row");
+      const values = Object.fromEntries(new FormData(form));
+      const payload = { id: row.dataset.id, question: values.question, explication: values.explication };
+      if (values.options !== undefined) {
+        payload.options = values.options.split("\n").map((o) => o.trim()).filter(Boolean);
+        payload.correct_answer = values.correct_answer;
+      }
+      try {
+        await api("/api/admin/trivia", { method: "PATCH", body: JSON.stringify(payload) });
+        const item = { ...row._item, question: values.question, explication: values.explication };
+        if (payload.options) Object.assign(item, { options: payload.options, correct_answer: payload.correct_answer });
+        row.replaceWith(quizBankRow(item));
+      } catch (error) {
+        window.alert(error.message);
       }
     });
 
-    scoresHost?.addEventListener("click", async (event) => {
+    document.querySelector('[data-quiz-pane="defi"]')?.addEventListener("click", async (event) => {
+      const replace = event.target.closest("[data-replace]");
+      const prepare = event.target.closest("#quiz-defi-prepare");
+      if (!replace && !prepare) return;
+      try {
+        await api("/api/admin/trivia", { method: "POST", body: JSON.stringify(replace
+          ? { action: "remplacer_defi", semaine: replace.dataset.semaine, index: Number(replace.dataset.replace) }
+          : { action: "remplacer_defi", semaine: "suivante", index: 0 }) });
+        setModuleStatus("quiz-defi-status", "success", replace ? "Question remplacée par une question tirée au hasard." : "Défi de la semaine suivante préparé.");
+        await loadQuizDefi();
+      } catch (error) {
+        setModuleStatus("quiz-defi-status", "error", error.message);
+      }
+    });
+
+    document.getElementById("quiz-players-filter")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      loadQuizPlayers(new FormData(event.target).get("q") || "");
+    });
+    document.getElementById("quiz-players")?.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-reset]");
+      if (!button) return;
+      if (!window.confirm(`Remettre à zéro le score de ${button.dataset.pseudo} ? Toutes ses parties seront supprimées.`)) return;
+      try {
+        const result = await api("/api/admin/trivia", { method: "POST", body: JSON.stringify({ action: "reset_joueur", user_id: button.dataset.reset }) });
+        setModuleStatus("quiz-players-status", "success", `${result.parties_supprimees} partie(s) supprimée(s).`);
+        await loadQuizPlayers();
+      } catch (error) {
+        setModuleStatus("quiz-players-status", "error", error.message);
+      }
+    });
+
+    document.getElementById("trivia-scores-admin")?.addEventListener("click", async (event) => {
       const button = event.target.closest(".trivia-score-delete");
       if (!button) return;
       const row = button.closest(".adm-question-row");
       if (!window.confirm("Supprimer ce score du classement ?")) return;
       try {
-        await api("/api/admin/trivia", {
-          method: "DELETE",
-          body: JSON.stringify({ id: row.dataset.id, kind: "score" }),
-        });
+        await api("/api/admin/trivia", { method: "DELETE", body: JSON.stringify({ id: row.dataset.id, kind: "score" }) });
         row.remove();
       } catch (error) {
-        setModuleStatus("tv-status", "error", error.message);
+        window.alert(error.message);
       }
     });
   }
+
+  function bindTrivia() {
+    const button = document.getElementById("tv-generate");
+    const list = document.getElementById("tv-result");
+    button?.addEventListener("click", async () => {
+      list.innerHTML = "";
+      button.disabled = true;
+      button.classList.add("btn-loading");
+      button.textContent = "Génération en cours… (environ 1 minute)";
+      setModuleStatus("tv-status", "", "");
+      try {
+        const payload = await api("/api/trivia/generate", { method: "POST", body: "{}" });
+        const formats = Object.entries(payload.par_format).map(([f, n]) => `${QUIZ_FORMATS[f] || f} : ${n}`).join(", ");
+        setModuleStatus("tv-status", "success",
+          `${payload.inserees} nouvelles questions ajoutées (${formats}). ${payload.doublons} doublon(s) écarté(s), ${payload.rejetees} invalide(s).`);
+        payload.questions.forEach((question) => {
+          const item = document.createElement("li");
+          item.textContent = `[${QUIZ_FORMATS[question.format] || question.format}] ${question.question}`;
+          list.appendChild(item);
+        });
+        const stat = document.getElementById("st-trivia");
+        if (stat) stat.textContent = String((Number(stat.textContent) || 0) + payload.inserees);
+        await loadQuizResume();
+      } catch (error) {
+        console.error(error);
+        setModuleStatus("tv-status", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.classList.remove("btn-loading");
+        button.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Générer 50 questions';
+      }
+    });
+  }
+
 
   let galleryCache = [];
 
@@ -2269,47 +2510,6 @@
     }
   });
 
-  function bindTrivia() {
-    const button = document.getElementById("tv-generate");
-    const status = document.getElementById("tv-status");
-    const list = document.getElementById("tv-result");
-
-    button.addEventListener("click", async () => {
-      status.className = "ea-form-status";
-      list.innerHTML = "";
-      button.classList.add("btn-loading");
-      button.textContent = "Génération en cours… (jusqu'à 60 s)";
-
-      try {
-        const payload = await api("/api/trivia/generate", {
-          method: "POST",
-          body: JSON.stringify({
-            count: parseInt(document.getElementById("tv-count").value, 10) || 8,
-            source_text: document.getElementById("tv-source").value.trim() || undefined,
-          }),
-        });
-
-        status.className = "ea-form-status success";
-        status.textContent = `${payload.inserees} questions insérées dans Supabase.`;
-        payload.questions.forEach((question) => {
-          const item = document.createElement("li");
-          item.textContent = question.question;
-          list.appendChild(item);
-        });
-        document.getElementById("st-trivia").textContent =
-          String(Number(document.getElementById("st-trivia").textContent) + payload.inserees);
-        await loadTriviaBank();
-      } catch (error) {
-        console.error(error);
-        status.className = "ea-form-status error";
-        status.textContent = error.message;
-      } finally {
-        button.classList.remove("btn-loading");
-        button.innerHTML =
-          '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Générer les questions';
-      }
-    });
-  }
 
   function bindPinChange() {
     const form = document.getElementById("pin-change-form");

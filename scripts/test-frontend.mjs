@@ -101,7 +101,8 @@ test('Quiz membre : score enregistré automatiquement sous le pseudo du compte, 
   dom.window.localStorage.setItem('sb-abcdefgh-auth-token', JSON.stringify({ access_token: 'jeton-membre' }));
   const posts = [];
   dom.window.fetch = async (url, options = {}) => {
-    if (url.includes('generate-session')) return response(200, {
+    assert.doesNotMatch(url, /generate-session/);
+    if (url.includes('questions')) return response(200, {
       session_id: '33333333-3333-4333-8333-333333333333',
       questions: ['A', 'B', 'C', 'D'].map(q => ({ question: q, options: ['x', 'y'] })),
     });
@@ -124,6 +125,153 @@ test('Quiz membre : score enregistré automatiquement sous le pseudo du compte, 
   assert.equal(posts[0].body.session_id, '33333333-3333-4333-8333-333333333333');
   assert.equal(doc.getElementById('tq-pseudo').parentElement.hidden, true);
   assert.match(doc.getElementById('tq-score-status').textContent, /TitoTizzy/);
+  assert.equal(doc.getElementById('tq-mode-badge').hidden, false, 'lien vers le quiz des membres');
+  assert.equal(doc.getElementById('tq-mode-badge').getAttribute('href'), '/quiz');
+  assert.equal(doc.querySelector('[data-cta="membre"]').hidden, false);
+  assert.equal(doc.querySelector('[data-cta="visiteur"]').hidden, true);
+  dom.window.close();
+});
+
+test('Quiz visiteur : 8 questions au plus, puis invitation à adhérer et à donner', async () => {
+  const dom = await page('trivia.html', '/trivia');
+  dom.window.fetch = async (url, options = {}) => {
+    if (url.includes('questions')) return response(200, {
+      session_id: '44444444-4444-4444-8444-444444444444',
+      questions: Array.from({ length: 10 }, (_, i) => ({ question: `Q${i}`, options: ['x', 'y'] })),
+    });
+    if (url.includes('answer')) return response(200, { correct_answer: 'x', explication: 'E', score: 1 });
+    if (options.method === 'POST') return response(201, { ok: true });
+    return response(200, { leaderboard: [] });
+  };
+  dom.window.eval(await read('js/trivia.js'));
+  const doc = dom.window.document;
+  assert.equal(doc.getElementById('tq-mode-badge').hidden, true);
+  doc.getElementById('tq-begin').click(); await settle();
+  let played = 0;
+  while (!doc.getElementById('tq-game').hidden && played < 12) {
+    doc.querySelector('.tq-opt').click(); await settle();
+    doc.getElementById('tq-next').click(); await settle();
+    played += 1;
+  }
+  assert.equal(played, 8);
+  const cta = doc.querySelector('[data-cta="visiteur"]');
+  assert.equal(doc.getElementById('tq-member-cta').hidden, false);
+  assert.equal(cta.hidden, false);
+  assert.match(cta.textContent, /adhérez/i);
+  assert.ok(cta.querySelector('a[href="/adherer.html"]'));
+  assert.ok(cta.querySelector('a[href="/don.html"]'));
+  dom.window.close();
+});
+
+function quizPage(dom, handler) {
+  const { window } = dom;
+  window.requestAnimationFrame = () => 1;
+  window.cancelAnimationFrame = () => {};
+  const ctx = new Proxy({}, { get: (target, key) => (key in target ? target[key] : () => ({ addColorStop() {} })), set: (target, key, value) => { target[key] = value; return true; } });
+  ctx.measureText = () => ({ width: 10 });
+  window.HTMLCanvasElement.prototype.getContext = () => ctx;
+  window.EA_ENV = { SUPABASE_URL: 'https://abcdefgh.supabase.co', SUPABASE_ANON_KEY: 'anon' };
+  window.supabase = { createClient: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: 'jeton' } } }) } }) };
+  const calls = [];
+  window.fetch = async (url, options = {}) => {
+    const body = options.body ? JSON.parse(options.body) : null;
+    calls.push({ url, body, auth: options.headers?.Authorization });
+    return handler(url, body);
+  };
+  return calls;
+}
+
+test('Quiz membres : partie libre, correction serveur, série et écran de fin', async () => {
+  const dom = await page('quiz.html', '/quiz');
+  const game = '55555555-5555-4555-8555-555555555555';
+  let index = 0;
+  const calls = quizPage(dom, (url, body) => {
+    if (url.includes('op=profil')) return response(200, { pseudo: 'Tito', titre: 'Sympathisant', cumul: 120, parties: 1, meilleure_serie: 3, badges: [], defi: { joue: false } });
+    if (url.includes('op=classement')) return response(200, { type: 'general', top: [{ rang: 1, pseudo: 'Tito', points: 120, cumul: 120, moi: true, titre: 'Sympathisant' }], moi: { rang: 1, points: 120 } });
+    if (body?.op === 'start') return response(201, { game_id: game, mode: 'libre', total: 2, index: 0, points: 0 });
+    if (body?.op === 'next') {
+      if (index >= 2) return response(200, { finished: true, points: 25 });
+      return response(200, { index, total: 2, points: index * 15, streak: index, question: `Q${index}`, format: index ? 'vrai_faux' : 'qcm', options: index ? ['Vrai', 'Faux'] : ['A', 'B', 'C', 'D'], chantier: 3, meta: {}, elapsed_ms: 0 });
+    }
+    if (body?.op === 'answer') {
+      const ok = index === 0;
+      index += 1;
+      return response(200, { correct: ok, timed_out: false, fast: ok, points_gagnes: ok ? 15 : 0, streak: ok ? 1 : 0, points: 15, correct_answer: ok ? 'B' : 'Vrai', explication: 'Parce que.', source: 'Chantier 3', finished: index === 2, bonnes: 1, total: 2, meilleure_serie: 1 });
+    }
+    return response(404, { error: 'inconnu' });
+  });
+  dom.window.eval(await read('js/quiz.js'));
+  await settle(); await settle();
+  const doc = dom.window.document;
+  assert.equal(doc.getElementById('qz-home').hidden, false);
+  assert.equal(doc.getElementById('qz-pseudo').textContent, 'Tito');
+  assert.match(doc.getElementById('qz-board').textContent, /Tito/);
+  assert.equal(doc.querySelectorAll('.qz-badge').length, 9, '8 badges + expert');
+
+  doc.querySelector('[data-mode="libre"]').click(); await settle(); await settle();
+  assert.equal(doc.getElementById('qz-game').hidden, false);
+  assert.equal(doc.querySelectorAll('.qz-option').length, 4);
+  doc.querySelectorAll('.qz-option')[1].click(); await settle(); await settle();
+  assert.equal(calls.find(c => c.body?.op === 'answer').body.answer, 'B');
+  assert.ok(calls.every(c => c.auth === 'Bearer jeton'));
+  assert.match(doc.getElementById('qz-gain').textContent, /\+15 pts/);
+  assert.ok(doc.querySelectorAll('.qz-option')[1].classList.contains('is-correct'));
+
+  doc.getElementById('qz-next').click(); await settle(); await settle();
+  doc.querySelector('.qz-option').click(); await settle(); await settle();
+  assert.match(doc.getElementById('qz-feedback').textContent, /aucune pénalité/);
+  assert.match(doc.getElementById('qz-correct').textContent, /Vrai/);
+  assert.equal(doc.getElementById('qz-next').textContent, 'Voir mon résultat');
+
+  doc.getElementById('qz-next').click(); await settle(); await settle(); await settle();
+  assert.equal(doc.getElementById('qz-end').hidden, false);
+  assert.equal(doc.getElementById('qz-end-bonnes').textContent, '1/2');
+  assert.match(doc.getElementById('qz-share-wa').href, /enavant\.org%2Ftrivia/);
+  dom.window.close();
+});
+
+test('Quiz membres : formats chiffre et ordre envoient la bonne forme de réponse', async () => {
+  const dom = await page('quiz.html', '/quiz');
+  const game = '66666666-6666-4666-8666-666666666666';
+  let index = 0;
+  const answers = [];
+  quizPage(dom, (url, body) => {
+    if (url.includes('op=profil')) return response(200, { pseudo: 'Tito', titre: 'Sympathisant', cumul: 0, parties: 0, meilleure_serie: 0, badges: [], defi: { joue: false } });
+    if (url.includes('op=classement')) return response(200, { top: [], moi: null });
+    if (body?.op === 'start') return response(201, { game_id: game, mode: 'libre', total: 2, index: 0, points: 0 });
+    if (body?.op === 'next') {
+      if (index === 0) return response(200, { index: 0, total: 2, points: 0, streak: 0, question: 'Combien ?', format: 'chiffre', options: [], meta: { min: 0, max: 100, step: 10, unite: '%' }, elapsed_ms: 0 });
+      return response(200, { index: 1, total: 2, points: 0, streak: 0, question: 'Ordre ?', format: 'ordre', options: ['B', 'A', 'C'], meta: {}, elapsed_ms: 0 });
+    }
+    if (body?.op === 'answer') {
+      answers.push(body.answer);
+      index += 1;
+      return response(200, { correct: false, timed_out: false, fast: false, points_gagnes: 0, streak: 0, points: 0, correct_answer: index === 1 ? '30' : '["A","B","C"]', explication: '', source: '', finished: index === 2, bonnes: 0, total: 2, meilleure_serie: 0 });
+    }
+    return response(404, {});
+  });
+  dom.window.eval(await read('js/quiz.js'));
+  await settle(); await settle();
+  const doc = dom.window.document;
+  doc.querySelector('[data-mode="libre"]').click(); await settle(); await settle();
+  doc.querySelector('.qz-answers--chiffre [aria-label="Augmenter"]').click();
+  doc.querySelector('.qz-validate').click(); await settle(); await settle();
+  assert.equal(answers[0], '60');
+  assert.match(doc.getElementById('qz-correct').textContent, /30 %/);
+  doc.getElementById('qz-next').click(); await settle(); await settle();
+  doc.querySelectorAll('.qz-order-item')[1].querySelector('[aria-label="Monter"]').click();
+  doc.querySelector('.qz-validate').click(); await settle(); await settle();
+  assert.deepEqual(JSON.parse(answers[1]), ['A', 'B', 'C']);
+  assert.match(doc.getElementById('qz-correct').textContent, /1\. A/);
+  dom.window.close();
+});
+
+test('Quiz membres : sans session, retour mémorisé puis redirection vers la connexion', async () => {
+  const dom = await page('quiz.html', '/quiz?duel=77777777-7777-4777-8777-777777777777');
+  quizPage(dom, () => response(500, {}));
+  dom.window.supabase = { createClient: () => ({ auth: { getSession: async () => ({ data: { session: null } }) } }) };
+  try { dom.window.eval(await read('js/quiz.js')); await settle(); await settle(); } catch { /* navigation jsdom */ }
+  assert.equal(dom.window.sessionStorage.getItem('ea-retour'), '/quiz?duel=77777777-7777-4777-8777-777777777777');
   dom.window.close();
 });
 

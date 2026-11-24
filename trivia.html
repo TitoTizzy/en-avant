@@ -37,7 +37,7 @@
   <meta name="theme-color" content="#071229">
 
   <style>
-    /* Badge mode IA — visible uniquement pour les membres connectés */
+    /* Lien vers le quiz des membres — visible uniquement pour les membres connectés */
     .tq-mode-badge {
       display: inline-flex;
       align-items: center;
@@ -50,9 +50,12 @@
       font-size: .83rem;
       font-weight: 600;
       margin: 0 auto 1.5rem;
+      text-decoration: none;
     }
+    .tq-mode-badge:hover { border-color: #a78bfa; color: #c4b5fd; }
+    .tq-mode-badge[hidden], .tq-member-cta [hidden] { display: none !important; }
 
-    /* CTA déblocage mode IA — affiché après une partie en mode public */
+    /* Invitation après la partie (adhérer / quiz des membres) */
     .tq-member-cta {
       margin: 2rem 0 0;
       padding: 2rem 1.5rem;
@@ -134,11 +137,12 @@
       <section class="tq-stage reveal-up" id="tq-start" aria-label="Démarrer le quiz">
         <div class="tq-coach" aria-hidden="true"></div>
 
-        <!-- Badge mode IA — affiché uniquement pour les membres connectés -->
-        <div class="tq-mode-badge" id="tq-mode-badge" hidden>
-          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-          <span>Mode Membre — Questions générées par l'IA</span>
-        </div>
+        <!-- Lien vers le quiz des membres — affiché uniquement pour les membres connectés -->
+        <a class="tq-mode-badge" id="tq-mode-badge" href="/quiz" hidden>
+          <i class="fa-solid fa-trophy" aria-hidden="true"></i>
+          <span>Vous êtes membre : accédez au quiz complet (15 questions, défis, duels, badges)</span>
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
 
         <ul class="tq-rules">
           <li>
@@ -233,17 +237,27 @@
         </div>
       </section>
 
-      <!-- CTA Trivia IA — visible uniquement après une partie en mode public -->
+      <!-- Après la partie : invitation à adhérer (visiteurs) ou à passer au quiz des membres -->
       <div class="tq-member-cta" id="tq-member-cta" hidden>
-        <i class="fa-solid fa-wand-magic-sparkles tq-cta-spark" aria-hidden="true"></i>
-        <h3>Débloquez le Trivia IA</h3>
-        <p>
-          Les membres accèdent à un quiz généré à la volée par intelligence artificielle —
-          des questions inédites à chaque partie, directement depuis le Livre blanc.
-        </p>
-        <div class="tq-share-row">
-          <a href="/adherer.html" class="btn btn-primary">Devenir membre</a>
-          <a href="/login.html" class="btn btn-ghost">J'ai déjà un compte</a>
+        <i class="fa-solid fa-trophy tq-cta-spark" aria-hidden="true"></i>
+        <div data-cta="visiteur">
+          <h3>Pour découvrir et jouer plus, adhérez !</h3>
+          <p>
+            Les membres d’En Avant jouent sans limite : parties de 15 questions chronométrées,
+            défi de la semaine, duels entre amis, badges, titres et classements.
+          </p>
+          <div class="tq-share-row">
+            <a href="/adherer.html" class="btn btn-primary">Adhérer</a>
+            <a href="/don.html" class="btn btn-ghost">Faire un don</a>
+            <a href="/login.html" class="btn btn-ghost" data-login-retour>J'ai déjà un compte</a>
+          </div>
+        </div>
+        <div data-cta="membre" hidden>
+          <h3>Envie d’aller plus loin ?</h3>
+          <p>Le quiz des membres vous attend : séries, défi de la semaine, duels, badges et classements.</p>
+          <div class="tq-share-row">
+            <a href="/quiz" class="btn btn-primary">Jouer au quiz des membres</a>
+          </div>
         </div>
       </div>
     </div>

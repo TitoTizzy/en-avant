@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/pictures/logo/logo.png">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NJEJ3FDKXY"></script>
+  <script src="/js/gtag.js"></script>
+  <title>Quiz des membres | En Avant</title>
+  <meta name="description" content="Testez vos connaissances sur le projet d’En Avant pour Haïti avec le quiz du Livre blanc, et défiez vos amis.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://enavant.org/quiz">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="En Avant">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="Le Quiz du Livre blanc | En Avant">
+  <meta property="og:description" content="Testez vos connaissances sur le projet d’En Avant pour Haïti avec le quiz du Livre blanc, et défiez vos amis.">
+  <meta property="og:url" content="https://enavant.org/trivia">
+  <meta property="og:image" content="https://enavant.org/pictures/og-banner.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="En Avant — Pour changer Haïti ensemble">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Le Quiz du Livre blanc | En Avant">
+  <meta name="twitter:description" content="Testez vos connaissances sur le projet d’En Avant pour Haïti avec le quiz du Livre blanc, et défiez vos amis.">
+  <meta name="twitter:image" content="https://enavant.org/pictures/og-banner.jpg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/ultra.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <script src="/js/popups.js"></script>
+  <meta name="theme-color" content="#071229">
+
+  <link rel="stylesheet" href="/css/quiz.css">
+</head>
+
+
+<body>
+  <!-- Navbar pilule flottante -->
+  <header class="u-nav" id="main-header">
+    <div class="u-nav-shell">
+      <a href="/index.html" class="brand" aria-label="En Avant — Accueil">
+        <img src="/pictures/logo/logo.png" alt="Logo En Avant">
+      </a>
+
+      <nav class="u-links" id="main-nav" aria-label="Menu principal">
+        <a href="/index.html">Accueil</a>
+        <a href="/Apropos.html">À propos</a>
+        <a href="/historique.html">Historique</a>
+        <a href="/organisation.html">Organisation</a>
+        <a href="/vingt-chantiers.html">Vingt chantiers</a>
+        <a href="/blog.html">Blog</a>
+        <a href="/livre-blanc.html">Livre blanc</a>
+
+        <div class="u-links-cta">
+          <a href="/login.html" class="u-login"><i class="fa-solid fa-circle-user"></i> Connexion</a>
+          <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+        </div>
+      </nav>
+
+      <div class="u-nav-actions">
+        <a href="/login.html" class="u-login">
+          <i class="fa-solid fa-circle-user"></i>
+          <span>Connexion</span>
+        </a>
+        <a href="/adherer.html" class="btn btn-ghost">Adhérer</a>
+
+        <button id="btn-mobile-menu" class="menu-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="qz-wrap" id="qz-app">
+
+      <!-- Chargement -->
+      <section class="qz-screen" id="qz-loading" aria-live="polite">
+        <div class="qz-spinner" aria-hidden="true"></div>
+        <p>Chargement de votre espace quiz…</p>
+      </section>
+
+      <!-- Erreur bloquante -->
+      <section class="qz-screen" id="qz-error" hidden>
+        <div class="qz-card qz-center">
+          <i class="fa-solid fa-triangle-exclamation qz-big-icon" aria-hidden="true"></i>
+          <h2 id="qz-error-title">Quiz indisponible</h2>
+          <p id="qz-error-text">Réessayez dans un instant.</p>
+          <div class="qz-actions">
+            <a class="btn btn-primary" href="/quiz">Réessayer</a>
+            <a class="btn btn-ghost" href="/membre.html">Espace membre</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Accueil -->
+      <section class="qz-screen" id="qz-home" hidden>
+        <div class="qz-head">
+          <span class="eyebrow">Quiz des membres</span>
+          <h1 class="section-title">Apprenez le programme, <span class="u-grad">montez au classement</span></h1>
+        </div>
+
+        <div class="qz-card qz-profile">
+          <div class="qz-profile-id">
+            <div class="qz-avatar" id="qz-avatar" aria-hidden="true">?</div>
+            <div>
+              <p class="qz-pseudo" id="qz-pseudo">—</p>
+              <p class="qz-title-chip" id="qz-titre">Sympathisant</p>
+            </div>
+          </div>
+          <div class="qz-profile-stats">
+            <div><strong id="qz-cumul">0</strong><span>points cumulés</span></div>
+            <div><strong id="qz-rang">—</strong><span>rang général</span></div>
+            <div><strong id="qz-parties">0</strong><span>parties</span></div>
+            <div><strong id="qz-best">0</strong><span>meilleure série</span></div>
+          </div>
+          <div class="qz-level">
+            <div class="qz-level-bar"><span id="qz-level-fill"></span></div>
+            <p id="qz-level-text"></p>
+          </div>
+        </div>
+
+        <div class="qz-modes">
+          <button type="button" class="qz-mode" data-mode="libre">
+            <i class="fa-solid fa-play" aria-hidden="true"></i>
+            <strong>Partie libre</strong>
+            <span>15 questions au hasard. Jouez autant que vous voulez : chaque partie s’ajoute à votre score.</span>
+          </button>
+          <button type="button" class="qz-mode qz-mode--defi" data-mode="defi" id="qz-defi-btn">
+            <i class="fa-solid fa-calendar-week" aria-hidden="true"></i>
+            <strong>Défi de la semaine</strong>
+            <span id="qz-defi-status">Mêmes questions pour tous, une seule tentative.</span>
+          </button>
+          <button type="button" class="qz-mode qz-mode--duel" data-mode="duel">
+            <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+            <strong>Défier un ami</strong>
+            <span>Jouez 15 questions, puis envoyez le lien : il a 7 jours pour battre votre score.</span>
+          </button>
+        </div>
+
+        <div class="qz-rules">
+          <span><i class="fa-solid fa-stopwatch" aria-hidden="true"></i> 15 s par question</span>
+          <span><i class="fa-solid fa-check" aria-hidden="true"></i> Bonne réponse : 10 pts</span>
+          <span><i class="fa-solid fa-bolt" aria-hidden="true"></i> En moins de 5 s : +5</span>
+          <span><i class="fa-solid fa-fire" aria-hidden="true"></i> Série dès la 3e : +2, +4, +6…</span>
+          <span><i class="fa-solid fa-heart" aria-hidden="true"></i> Aucune pénalité en cas d’erreur</span>
+        </div>
+
+        <div class="qz-card">
+          <h2 class="qz-h2"><i class="fa-solid fa-medal" aria-hidden="true"></i> Badges</h2>
+          <ul class="qz-badges" id="qz-badges"></ul>
+        </div>
+
+        <div class="qz-card">
+          <h2 class="qz-h2"><i class="fa-solid fa-ranking-star" aria-hidden="true"></i> Classements</h2>
+          <div class="qz-tabs" role="tablist">
+            <button type="button" role="tab" class="qz-tab is-active" data-board="general" aria-selected="true">Général</button>
+            <button type="button" role="tab" class="qz-tab" data-board="mois" aria-selected="false">Ce mois</button>
+            <button type="button" role="tab" class="qz-tab" data-board="semaine" aria-selected="false">Défi de la semaine</button>
+          </div>
+          <ol class="qz-board" id="qz-board"></ol>
+          <p class="qz-board-me" id="qz-board-me" hidden></p>
+        </div>
+      </section>
+
+      <!-- Invitation à un duel -->
+      <section class="qz-screen" id="qz-duel-intro" hidden>
+        <div class="qz-card qz-center">
+          <i class="fa-solid fa-user-group qz-big-icon" aria-hidden="true"></i>
+          <h2 id="qz-duel-title">Vous êtes défié !</h2>
+          <p id="qz-duel-text"></p>
+          <div class="qz-duel-table" id="qz-duel-table"></div>
+          <div class="qz-actions">
+            <button type="button" class="btn btn-primary" id="qz-duel-accept">Relever le défi</button>
+            <button type="button" class="btn btn-ghost" data-go-home>Retour au quiz</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Partie -->
+      <section class="qz-screen" id="qz-game" hidden>
+        <div class="qz-game-top">
+          <span class="qz-counter" id="qz-counter">1 / 15</span>
+          <span class="qz-streak" id="qz-streak" hidden><i class="fa-solid fa-fire" aria-hidden="true"></i> <b id="qz-streak-n">0</b></span>
+          <span class="qz-points" id="qz-points">0 pts</span>
+        </div>
+        <div class="qz-timer" id="qz-timer" role="timer" aria-label="Temps restant">
+          <div class="qz-timer-fill" id="qz-timer-fill"></div>
+          <span class="qz-timer-num" id="qz-timer-num">15</span>
+        </div>
+        <div class="qz-banner" id="qz-banner" aria-live="polite"></div>
+
+        <div class="qz-card qz-question-card" id="qz-question-card">
+          <p class="qz-meta" id="qz-qmeta"></p>
+          <figure class="qz-figure" id="qz-figure" hidden>
+            <picture>
+              <source id="qz-img-mobile" media="(max-width: 640px)">
+              <img id="qz-img" alt="">
+            </picture>
+          </figure>
+          <h2 class="qz-question" id="qz-question"></h2>
+          <div class="qz-answers" id="qz-answers"></div>
+        </div>
+
+        <div class="qz-card qz-feedback" id="qz-feedback" hidden aria-live="polite">
+          <p class="qz-verdict" id="qz-verdict"></p>
+          <p class="qz-gain" id="qz-gain"></p>
+          <p class="qz-correct" id="qz-correct"></p>
+          <p class="qz-explain" id="qz-explain"></p>
+          <p class="qz-source" id="qz-source"></p>
+          <button type="button" class="btn btn-primary" id="qz-next">Question suivante</button>
+        </div>
+      </section>
+
+      <!-- Fin de partie -->
+      <section class="qz-screen" id="qz-end" hidden>
+        <div class="qz-card qz-center qz-end-card">
+          <p class="eyebrow" id="qz-end-mode">Partie terminée</p>
+          <p class="qz-end-score"><span id="qz-end-points">0</span> pts</p>
+          <div class="qz-end-stats">
+            <div><strong id="qz-end-bonnes">0/15</strong><span>bonnes réponses</span></div>
+            <div><strong id="qz-end-serie">0</strong><span>meilleure série</span></div>
+            <div><strong id="qz-end-cumul">0</strong><span>score cumulé</span></div>
+          </div>
+          <p class="qz-end-title" id="qz-end-title"></p>
+          <div class="qz-new-badges" id="qz-new-badges" hidden></div>
+
+          <div class="qz-duel-share" id="qz-duel-share" hidden>
+            <h3>Envoyez votre défi</h3>
+            <p>Votre ami a 7 jours pour battre <b id="qz-duel-score">0</b> points.</p>
+            <div class="qz-actions">
+              <a class="btn btn-primary" id="qz-duel-wa" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+              <button type="button" class="btn btn-ghost" id="qz-duel-copy"><i class="fa-solid fa-link" aria-hidden="true"></i> Copier le lien</button>
+            </div>
+          </div>
+          <div class="qz-duel-table" id="qz-end-duel" hidden></div>
+
+          <div class="qz-share">
+            <canvas id="qz-share-canvas" width="1080" height="1080" aria-label="Carte de score à partager"></canvas>
+            <div class="qz-actions">
+              <button type="button" class="btn btn-primary" id="qz-share-native" hidden><i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Partager</button>
+              <a class="btn btn-ghost" id="qz-share-wa" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+              <a class="btn btn-ghost" id="qz-share-fb" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-facebook-f" aria-hidden="true"></i> Facebook</a>
+              <button type="button" class="btn btn-ghost" id="qz-share-copy"><i class="fa-solid fa-link" aria-hidden="true"></i> Copier le lien</button>
+              <button type="button" class="btn btn-ghost" id="qz-share-dl"><i class="fa-solid fa-download" aria-hidden="true"></i> Image</button>
+            </div>
+          </div>
+
+          <div class="qz-actions">
+            <button type="button" class="btn btn-primary" id="qz-replay">Rejouer</button>
+            <button type="button" class="btn btn-ghost" data-go-home>Accueil du quiz</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="qz-toast" id="qz-toast" role="status" hidden></div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="u-footer">
+    <div class="u-shell u-footer-grid">
+      <div class="u-footer-brand">
+        <img src="/pictures/logo/logo.png" alt="En Avant" class="footer-logo">
+        <p>
+          Un nouveau leadership politique, moderne et avant-gardiste pour conduire Haïti
+          sur la voie du progrès.
+        </p>
+        <ul class="u-socials" aria-label="Réseaux sociaux">
+          <li><a href="https://www.instagram.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a></li>
+          <li><a href="https://x.com/EnAvantHT" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a></li>
+          <li><a href="https://www.facebook.com/enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a></li>
+          <li><a href="https://www.youtube.com/@mouvementenavant9694" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a></li>
+          <li><a href="https://www.tiktok.com/@enavant.ht" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><i class="fa-brands fa-tiktok" aria-hidden="true"></i></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Découvrir</h4>
+        <ul>
+          <li><a href="/Apropos.html">Qui sommes-nous ?</a></li>
+          <li><a href="/historique.html">Historique</a></li>
+          <li><a href="/organisation.html">Organisation</a></li>
+          <li><a href="/vingt-chantiers.html">Les 20 chantiers</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Agir</h4>
+        <ul>
+          <li><a href="/adherer.html">Rejoindre le parti</a></li>
+          <li><a href="/don.html">Faire un don</a></li>
+          <li><a href="/livre-blanc.html">Lire le Livre blanc</a></li>
+          <li><a href="/trivia.html">Jouer au quiz</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Contact</h4>
+        <address>
+          <p><i class="fa-solid fa-location-dot"></i> 44, Impasse Lescot, Laboule 12, Pétionville, Haïti</p>
+          <p><i class="fa-solid fa-phone"></i> +509 4621-2121</p>
+          <p><i class="fa-solid fa-envelope"></i> contact@enavant.org</p>
+        </address>
+      </div>
+    </div>
+
+    <div class="u-footer-bottom">
+      <div class="u-shell u-footer-bottom-row">
+        <p>© 2026 Parti Politique En Avant. Tous droits réservés.</p>
+        <ul class="legal-links">
+          <li><a href="/mentions-legales#mentions">Mentions légales</a></li>
+          <li><a href="/mentions-legales#confidentialite">Politique de confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="u-footer-watermark" aria-hidden="true">EN AVANT</div>
+  </footer>
+
+  <!-- Chatbot -->
+  <button class="chatbot-fab" id="chatbotFab" aria-label="Ouvrir le chat">
+    <span class="chatbot-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5.5C4 4.12 5.12 3 6.5 3h11C18.88 3 20 4.12 20 5.5v7c0 1.38-1.12 2.5-2.5 2.5H11l-4.2 3.4c-.33.27-.8.03-.8-.4V15.8C4.84 15.57 4 14.62 4 13.5v-8z" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="chatbot-dot"></span>
+  </button>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/env.js"></script>
+  <script src="/js/premium.js"></script>
+  <script src="/js/quiz.js"></script>
+</body>
+</html>

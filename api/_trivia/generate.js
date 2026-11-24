@@ -1,129 +1,136 @@
-// POST /api/trivia/generate — Génération du quiz via l'API Anthropic (DAT Corr. 3)
-// Flux : SuperAdmin (token Supabase vérifié) → texte du Livre Blanc (bucket
-// privé `documents`) → Claude génère via tool use (JSON strict garanti)
-// → INSERT `trivia_questions`. Le frontend lira ensuite via la clé anon (RLS).
+// POST /api/trivia/generate — Génère 50 nouvelles questions pour la banque du quiz.
+// Seul point d'appel à l'IA : lancé depuis l'administration (permission « Gérer le Trivia »).
+// Flux : Livre blanc (bucket privé `documents`) + fiches des visuels + liste des questions
+// existantes → 5 appels Claude en parallèle (10 questions, tous formats) → contrôle,
+// anti-doublon → insertion directe (questions jouables tout de suite).
 import Anthropic from '@anthropic-ai/sdk';
-import { getServiceClient, requireRole } from '../_lib/supabase.js';
-import { json, methodGuard, getBody, handleError } from '../_lib/http.js';
+import { getServiceClient, requirePermission } from '../_lib/supabase.js';
+import { json, methodGuard, handleError } from '../_lib/http.js';
+import {
+  APPELS, QUOTA_PAR_APPEL, QUESTION_TOOL, SYSTEM_PROMPT, buildUserPrompt, chantierNames,
+  duplicateIndex, loadImageManifest, sourceWindow, toQuestionRow,
+} from '../_lib/quiz-generation.js';
 
-// Schéma du tool use : garantit un JSON structuré valide (pas de parsing fragile).
-const SAVE_QUESTIONS_TOOL = {
-  name: 'save_quiz_questions',
-  description: 'Enregistre les questions de quiz générées dans la base de données.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      questions: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            question:            { type: 'string' },
-            options:             { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
-            correct_answer:      { type: 'string' },
-            explication:         { type: 'string' },
-            source_livre_blanc:  { type: 'string' },
-          },
-          required: ['question', 'options', 'correct_answer', 'explication', 'source_livre_blanc'],
-          additionalProperties: false,
-        },
-      },
-    },
-    required: ['questions'],
-    additionalProperties: false,
-  },
-};
+const MODEL = process.env.TRIVIA_MODEL || 'claude-haiku-5-5';
+const FALLBACK_MODEL = 'claude-haiku-4-5-20251001';
+
+async function ask(anthropic, model, prompt) {
+  return anthropic.messages.create({
+    model,
+    max_tokens: 8000,
+    system: SYSTEM_PROMPT,
+    tools: [QUESTION_TOOL],
+    tool_choice: { type: 'tool', name: QUESTION_TOOL.name },
+    messages: [{ role: 'user', content: prompt }],
+  });
+}
+
+async function askWithFallback(anthropic, prompt) {
+  try {
+    return { response: await ask(anthropic, MODEL, prompt), model: MODEL };
+  } catch (error) {
+    if (error?.status === 404 && MODEL !== FALLBACK_MODEL) {
+      return { response: await ask(anthropic, FALLBACK_MODEL, prompt), model: FALLBACK_MODEL };
+    }
+    throw error;
+  }
+}
+
+function pickImages(manifest, count) {
+  const pool = [...manifest];
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
 
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
   if (!methodGuard(req, res, 'POST')) return;
-
+  let generationId = null;
+  let supabase = null;
   try {
-    await requireRole(req, ['superadmin']);
+    supabase = getServiceClient();
+    const { user } = await requirePermission(req, 'gerer_trivia');
+    if (!process.env.ANTHROPIC_API_KEY) return json(res, 503, { error: 'ANTHROPIC_API_KEY non configurée.' });
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return json(res, 503, { error: 'ANTHROPIC_API_KEY non configurée.' });
-    }
+    const path = process.env.LIVRE_BLANC_TEXT_PATH || 'livre-blanc.txt';
+    const { data: file, error: fileError } = await supabase.storage.from('documents').download(path);
+    const source = !fileError && file ? (await file.text()).trim() : '';
+    if (!source) return json(res, 422, { error: 'Livre blanc introuvable dans le bucket « documents ».' });
 
-    const body = getBody(req);
-    const count = Math.min(Math.max(parseInt(body.count, 10) || 8, 1), 12);
+    const { data: existingRows, error: existingError } = await supabase
+      .from('trivia_questions').select('question, created_at')
+      .order('created_at', { ascending: false }).limit(5000);
+    if (existingError) throw existingError;
+    const existing = (existingRows || []).map((r) => r.question);
 
-    // Source : texte fourni dans la requête, sinon le Livre Blanc du Storage.
-    let source = typeof body.source_text === 'string' ? body.source_text.trim() : '';
-    const supabase = getServiceClient();
+    const { data: generation, error: genError } = await supabase.from('quiz_generations')
+      .insert({ created_by: user.id, demandees: APPELS * Object.values(QUOTA_PAR_APPEL).reduce((a, b) => a + b, 0), modele: MODEL })
+      .select('id').single();
+    if (genError) throw genError;
+    generationId = generation.id;
 
-    if (!source) {
-      const path = process.env.LIVRE_BLANC_TEXT_PATH || 'livre-blanc.txt';
-      const { data: file, error } = await supabase.storage.from('documents').download(path);
-      if (!error && file) {
-        source = (await file.text()).trim();
+    const manifest = await loadImageManifest();
+    const chantiers = chantierNames(manifest);
+    const imageIds = new Set(manifest.map((i) => i.id));
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    // Les questions existantes les plus récentes sont citées à l'IA ; toutes sont vérifiées ensuite.
+    const cited = existing.slice(0, 250);
+
+    const results = await Promise.allSettled(Array.from({ length: APPELS }, (_, i) => askWithFallback(anthropic,
+      buildUserPrompt({
+        source: sourceWindow(source, i, APPELS),
+        chantiers,
+        images: pickImages(manifest, 3),
+        existing: cited,
+        quota: QUOTA_PAR_APPEL,
+      }))));
+
+    const dupes = duplicateIndex(existing);
+    const rows = [];
+    let duplicates = 0;
+    let rejected = 0;
+    let modelUsed = MODEL;
+    const failures = [];
+    for (const result of results) {
+      if (result.status !== 'fulfilled') { failures.push(result.reason?.message || 'Appel IA échoué'); continue; }
+      modelUsed = result.value.model;
+      const tool = result.value.response.content.find((b) => b.type === 'tool_use');
+      for (const candidate of tool?.input?.questions || []) {
+        const row = toQuestionRow(candidate, { imageIds, generationId });
+        if (!row) { rejected += 1; continue; }
+        if (dupes.has(row.question)) { duplicates += 1; continue; }
+        dupes.add(row.question);
+        rows.push(row);
       }
     }
 
-    if (!source) {
-      return json(res, 422, {
-        error:
-          'Aucune source disponible : uploadez `livre-blanc.txt` dans le bucket ' +
-          '`documents` ou passez `source_text` dans le corps de la requête.',
-      });
+    if (rows.length) {
+      const { error: insertError } = await supabase.from('trivia_questions').insert(rows);
+      if (insertError) throw insertError;
     }
 
-    source = source.slice(0, 60000); // garde-fou contexte/coût
+    const failed = !rows.length;
+    await supabase.from('quiz_generations').update({
+      inserees: rows.length, doublons: duplicates, rejetees: rejected, modele: modelUsed,
+      statut: failed ? 'echec' : 'termine', erreur: failures.length ? failures.join(' | ').slice(0, 1000) : null,
+    }).eq('id', generationId);
 
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-    const response = await anthropic.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 8000,
-      tools: [SAVE_QUESTIONS_TOOL],
-      tool_choice: { type: 'tool', name: 'save_quiz_questions' },
-      system:
-        'Tu génères des questions de quiz factuelles, en français, STRICTEMENT ' +
-        'fondées sur le document fourni (le Livre Blanc du parti En Avant). ' +
-        'N\'invente aucun fait absent du document. Style accessible, ton neutre.',
-      messages: [
-        {
-          role: 'user',
-          content:
-            `Génère exactement ${count} questions à choix multiples sur ce document. ` +
-            'Chaque question doit avoir exactement 4 options, dont une seule correcte ' +
-            '(`correct_answer` doit être la copie exacte d\'une des 4 options), ' +
-            'une courte `explication`, et `source_livre_blanc` citant la section ' +
-            'ou le thème du document d\'où vient la réponse.\n\n' +
-            `<document>\n${source}\n</document>`,
-        },
-      ],
+    if (failed) return json(res, 502, { error: 'Aucune question valide générée. Réessayez.', doublons: duplicates, rejetees: rejected });
+    const parFormat = rows.reduce((acc, r) => ({ ...acc, [r.format]: (acc[r.format] || 0) + 1 }), {});
+    return json(res, 201, {
+      ok: true, generation_id: generationId, inserees: rows.length, doublons: duplicates,
+      rejetees: rejected, appels_echoues: failures.length, par_format: parFormat,
+      questions: rows.map(({ question, format, chantier }) => ({ question, format, chantier })),
     });
-
-    const toolUse = response.content.find((block) => block.type === 'tool_use');
-    if (!toolUse?.input?.questions) {
-      return json(res, 502, { error: 'Génération invalide, veuillez réessayer.' });
-    }
-
-    // Garde-fou : on n'insère que les questions structurellement valides.
-    const rows = toolUse.input.questions
-      .filter(
-        (q) =>
-          Array.isArray(q.options) &&
-          q.options.length === 4 &&
-          q.options.includes(q.correct_answer)
-      )
-      .map((q) => ({
-        question:           q.question,
-        options:            q.options,
-        correct_answer:     q.correct_answer,
-        explication:        q.explication,
-        source_livre_blanc: q.source_livre_blanc,
-      }));
-
-    if (rows.length === 0) {
-      return json(res, 502, { error: 'Génération invalide, veuillez réessayer.' });
-    }
-
-    const { error: insertError } = await supabase.from('trivia_questions').insert(rows);
-    if (insertError) throw insertError;
-
-    return json(res, 201, { ok: true, inserees: rows.length, questions: rows });
   } catch (error) {
+    if (generationId && supabase) {
+      await supabase.from('quiz_generations')
+        .update({ statut: 'echec', erreur: String(error?.message || error).slice(0, 1000) })
+        .eq('id', generationId);
+    }
     return handleError(res, error, 'Échec de la génération du quiz.');
   }
 }
