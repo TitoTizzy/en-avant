@@ -481,7 +481,11 @@ header.header {
 }
 
 .ea-field select { cursor: pointer; }
-.ea-field select option { color: var(--ea-ink); }
+/* Options du menu déroulant : texte clair sur fond sombre (contraste AA). */
+.ea-field select option,
+.ea-field select optgroup { background-color: #0b1730; color: #f5f7fb; }
+.ea-field select option:disabled { color: #8b97ad; }
+.ea-field select option:checked { background-color: #ff6a2a; color: #fff; }
 
 .ea-field input::placeholder { color: rgba(255, 255, 255, 0.28); }
 
