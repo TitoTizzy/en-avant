@@ -13,7 +13,7 @@ export const PAGES = [
   { file: 'historique.html', titre: 'Historique', url: '/historique' },
   { file: 'organisation.html', titre: 'Organisation', url: '/organisation' },
   { file: 'vingt-chantiers.html', titre: 'Les 20 chantiers', url: '/vingt-chantiers' },
-  { file: 'livre-blanc.html', titre: 'Livre blanc (page)', url: '/livre-blanc' },
+  { file: 'livre-blanc.html', titre: 'Livre blanc', url: '/livre-blanc' },
   { file: 'adherer.html', titre: 'Adhérer', url: '/adherer' },
   { file: 'don.html', titre: 'Faire un don', url: '/don' },
   { file: 'newsletter.html', titre: 'Newsletter', url: '/newsletter' },
