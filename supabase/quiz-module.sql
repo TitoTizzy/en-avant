@@ -139,6 +139,26 @@ returns uuid[] language sql volatile set search_path = public as $$
   ) t;
 $$;
 
+-- Tirage du défi d'une semaine : jamais une question du défi de la semaine
+-- précédente ni de la suivante (déjà préparée). Si la banque ne suffit pas,
+-- on complète avec les autres questions actives plutôt que de bloquer le défi.
+create or replace function public.quiz_pick_defi(p_count integer, p_week date)
+returns uuid[] language sql volatile set search_path = public as $$
+  with voisines as (
+    select unnest(question_ids) as id from public.quiz_challenges
+     where week_start in (p_week - 7, p_week + 7)
+  ), libres as (
+    select q.id from public.trivia_questions q
+     where q.active and not exists (select 1 from voisines v where v.id = q.id)
+     order by random() limit p_count
+  ), complement as (
+    select q.id from public.trivia_questions q
+     where q.active and not exists (select 1 from libres l where l.id = q.id)
+     order by random() limit greatest(0, p_count - (select count(*) from libres))
+  )
+  select coalesce(array_agg(id), '{}') from (select id from libres union all select id from complement) t;
+$$;
+
 -- Vérifie une réponse selon le format. Ne lève jamais d'exception.
 create or replace function public.quiz_is_correct(p_format text, p_correct text, p_meta jsonb, p_answer text)
 returns boolean language plpgsql immutable set search_path = public as $$
@@ -194,7 +214,7 @@ begin
     -- Tirage vérifié AVANT l'enregistrement : un défi vide ou trop court
     -- (banque insuffisante au premier lancement) est retiré dès que possible.
     if ids is null or cardinality(ids) < 5 then
-      ids := public.quiz_pick(n);
+      ids := public.quiz_pick_defi(n, ws);
       if cardinality(ids) < 5 then
         return jsonb_build_object('error', 'Banque de questions insuffisante.');
       end if;
@@ -468,12 +488,12 @@ returns jsonb language sql stable security definer set search_path = public as $
   from public.quiz_duels d where d.id = p_duel;
 $$;
 
-revoke all on function public.quiz_week_start(timestamptz), public.quiz_pick(integer),
+revoke all on function public.quiz_week_start(timestamptz), public.quiz_pick(integer), public.quiz_pick_defi(integer, date),
   public.quiz_is_correct(text, text, jsonb, text), public.quiz_start(uuid, text, uuid, integer),
   public.quiz_next(uuid, uuid), public.quiz_answer(uuid, uuid, integer, text),
   public.quiz_leaderboard(text, uuid, integer), public.quiz_profile(uuid), public.quiz_duel_result(uuid)
   from public, anon, authenticated;
-grant execute on function public.quiz_week_start(timestamptz), public.quiz_pick(integer),
+grant execute on function public.quiz_week_start(timestamptz), public.quiz_pick(integer), public.quiz_pick_defi(integer, date),
   public.quiz_is_correct(text, text, jsonb, text), public.quiz_start(uuid, text, uuid, integer),
   public.quiz_next(uuid, uuid), public.quiz_answer(uuid, uuid, integer, text),
   public.quiz_leaderboard(text, uuid, integer), public.quiz_profile(uuid), public.quiz_duel_result(uuid)

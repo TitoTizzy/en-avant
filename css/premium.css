@@ -1196,3 +1196,9 @@ body.eac-open .ea-nudge, body:has(.u-links.open, .u-links.is-open, .u-links.menu
 .pw-toggle[aria-pressed="true"] { color: #ff8a4c; }
 /* Masque l'œil natif d'Edge pour n'en garder qu'un. */
 .pw-wrap > input::-ms-reveal, .pw-wrap > input::-ms-clear { display: none; }
+
+/* Admin : invitation au quiz de la semaine */
+.quiz-invite { margin-bottom: 1.2rem; }
+.quiz-invite-info { margin: 0.4rem 0 0.9rem; }
+.quiz-invite-confirm { display: grid; gap: 0.55rem; max-width: 420px; margin-top: 1rem; padding: 1rem; border-radius: 14px; border: 1px solid rgba(255, 138, 76, 0.35); background: rgba(255, 106, 42, 0.06); }
+.quiz-invite-confirm input { padding: 0.55rem 0.75rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.05); color: #fff; font: inherit; }

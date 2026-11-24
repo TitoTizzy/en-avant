@@ -10,6 +10,10 @@
 //   POST { action:'continuer', id } / { action:'relancer_echecs', id } / { action:'dupliquer', id }
 //   POST { action:'image', image_base64, image_ext } → photo du contenu (stockage public) → { url }
 //   DELETE { id }               → supprime un brouillon
+//   Invitation au quiz de la semaine (envoyée aussi automatiquement le mardi à minuit) :
+//   GET ?view=quiz              → semaine, invitation éventuelle, destinataires, déjà joué
+//   POST { action:'quiz_test' } → invitation envoyée à l'admin connecté
+//   POST { action:'quiz_envoyer', confirmation } → invitation à tous les adhérents qui n'ont pas joué
 import { randomUUID } from 'node:crypto';
 import { Resend } from 'resend';
 import { getServiceClient, requirePermission } from '../_lib/supabase.js';
@@ -21,6 +25,7 @@ import {
   cleanFiltres, loadContacts, applyFiltres, breakdown, renderNewsletter, processQueue,
   tokensFor, unsubscribePageUrl,
 } from '../_lib/newsletter.js';
+import { inviteContent, inviteRecipients, inviteOf, startInvite } from '../_lib/quiz-invite.js';
 
 const IMAGE_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
@@ -45,7 +50,7 @@ async function currentWeek(supabase) {
 
 async function sentThisWeek(supabase, week) {
   const { data, error } = await supabase.from('newsletters').select('id, sujet, statut, sent_at, started_at')
-    .eq('semaine', week).neq('statut', 'brouillon').order('started_at', { ascending: false });
+    .eq('type', 'newsletter').eq('semaine', week).neq('statut', 'brouillon').order('started_at', { ascending: false });
   if (error) throw error;
   return data || [];
 }
@@ -139,9 +144,20 @@ export default async function handler(req, res) {
         return json(res, 200, { html });
       }
 
+      if (view === 'quiz') {
+        const week = await currentWeek(supabase);
+        const [invitation, { recipients, dejaJoue }] = await Promise.all([inviteOf(supabase, week), inviteRecipients(supabase, week)]);
+        let progression = null;
+        if (invitation) {
+          const { data } = await supabase.rpc('newsletter_progress', { p_newsletter: invitation.id });
+          progression = data || null;
+        }
+        return json(res, 200, { semaine: week, invitation, progression, destinataires: recipients.length, deja_joue: dejaJoue });
+      }
+
       const week = await currentWeek(supabase);
       const { data, error } = await supabase.from('newsletters').select(SELECT)
-        .order('created_at', { ascending: false }).limit(50);
+        .eq('type', 'newsletter').order('created_at', { ascending: false }).limit(50);
       if (error) throw error;
       return json(res, 200, { newsletters: data || [], semaine: week, envois_semaine: await sentThisWeek(supabase, week) });
     }
@@ -218,6 +234,33 @@ export default async function handler(req, res) {
         });
         if (error) throw Object.assign(new Error(error.message || 'Envoi du test impossible.'), { status: 502 });
         return json(res, 200, { ok: true, email });
+      }
+
+      case 'quiz_test': {
+        if (!process.env.RESEND_API_KEY) return json(res, 503, { error: 'Envoi d’emails non configuré.' });
+        const email = String(user.email || '').toLowerCase();
+        if (!email) return json(res, 422, { error: 'Votre compte n’a pas d’adresse email.' });
+        const token = (await tokensFor(supabase, [email])).get(email);
+        const invitation = inviteContent();
+        const { html, text } = renderNewsletter({ newsletter: invitation, nom: user.user_metadata?.nom || '', unsubscribeUrl: unsubscribePageUrl(token) });
+        const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
+          from: senderAddress(), to: [email], subject: `[TEST] ${invitation.sujet}`, html, text,
+        });
+        if (error) throw Object.assign(new Error(error.message || 'Envoi du test impossible.'), { status: 502 });
+        return json(res, 200, { ok: true, email });
+      }
+
+      case 'quiz_envoyer': {
+        if (!Number.isInteger(Number(body.confirmation)) || Number(body.confirmation) < 1) {
+          return json(res, 422, { error: 'Retapez le nombre de destinataires pour confirmer.' });
+        }
+        try {
+          const result = await startInvite(supabase, { week: await currentWeek(supabase), userId: user.id, expected: Number(body.confirmation) });
+          return json(res, 200, { ok: true, ...result });
+        } catch (error) {
+          if (error.code && error.status) return json(res, error.status, { error: error.message, code: error.code, destinataires: error.destinataires });
+          throw error;
+        }
       }
 
       case 'envoyer': {

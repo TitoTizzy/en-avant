@@ -847,6 +847,29 @@
         <!-- Défi de la semaine -->
         <div class="quiz-pane" data-quiz-pane="defi" hidden>
           <div class="ea-form-status" id="quiz-defi-status" role="status" aria-live="polite"></div>
+          <div class="u-card quiz-invite" id="quiz-invite">
+            <div class="adm-record-head"><div><h4>Inviter les adhérents au quiz de la semaine</h4>
+              <p>Email aux adhérents qui n’ont pas encore joué le défi. Sans envoi le lundi, l’invitation part automatiquement le mardi à minuit (heure d’Haïti).</p></div></div>
+            <p class="quiz-invite-info" id="quiz-invite-info">Chargement…</p>
+            <div class="adm-editor-actions" id="quiz-invite-actions">
+              <button type="button" class="btn btn-ghost btn-xs" id="quiz-invite-test">M’envoyer un test</button>
+              <button type="button" class="btn btn-primary btn-xs" id="quiz-invite-open">Inviter les adhérents</button>
+            </div>
+            <form class="quiz-invite-confirm" id="quiz-invite-confirm" hidden>
+              <p id="quiz-invite-confirm-text"></p>
+              <label for="quiz-invite-count">Retapez le nombre de destinataires pour confirmer</label>
+              <input type="number" id="quiz-invite-count" min="1" inputmode="numeric" autocomplete="off" required>
+              <div class="adm-editor-actions">
+                <button type="button" class="btn btn-ghost btn-xs" id="quiz-invite-cancel">Annuler</button>
+                <button type="submit" class="btn btn-primary btn-xs" id="quiz-invite-send">Envoyer l’invitation</button>
+              </div>
+            </form>
+            <div class="nl-progress" id="quiz-invite-progress" hidden>
+              <div class="nl-progress-bar"><span id="quiz-invite-progress-fill"></span></div>
+              <p id="quiz-invite-progress-text"></p>
+            </div>
+            <div class="ea-form-status" id="quiz-invite-status" role="status" aria-live="polite"></div>
+          </div>
           <div class="quiz-admin-grid">
             <div class="u-card"><div class="adm-record-head"><div><h4>Semaine en cours</h4>
               <p id="quiz-defi-courante-info">Renouvelé chaque lundi à minuit (heure d'Haïti).</p></div></div>
