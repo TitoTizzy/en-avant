@@ -409,6 +409,45 @@ test('Assistant : ouverture, question, réponse mise en forme sans lien dangereu
   dom.window.close();
 });
 
+test('Assistant : suit la langue choisie sur le site (créole puis espagnol) et n’est pas retraduit automatiquement', async () => {
+  const dom = await page('index.html', '/');
+  const { window } = dom;
+  window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+  window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  window.localStorage.setItem('__GT_TRANSLATE_LANGS', JSON.stringify({ srcLang: 'fr', tgtLang: 'ht' }));
+  const sent = [];
+  window.fetch = async (url, options = {}) => {
+    if (url === '/api/chat') { sent.push(JSON.parse(options.body)); return response(200, { reponse: 'Repons.', sources: [] }); }
+    return response(200, {});
+  };
+  try { window.eval(await read('js/premium.js')); } catch { /* idem */ }
+  window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+  await settle();
+  const doc = window.document;
+  const fab = doc.getElementById('chatbotFab');
+  assert.equal(fab.getAttribute('aria-label'), 'Louvri asistan En Avant');
+  fab.click();
+  const panel = doc.getElementById('eaChatPanel');
+  assert.ok(panel.classList.contains('notranslate'));
+  assert.equal(panel.getAttribute('translate'), 'no');
+  assert.equal(panel.querySelector('[data-t="title"]').textContent, 'Asistan En Avant');
+  assert.equal(panel.querySelector('textarea').placeholder, 'Poze kesyon ou…');
+  assert.match(panel.querySelector('.eac-msg--bot').textContent, /Bonjou/);
+  panel.querySelector('.eac-suggest button').click(); await settle(); await settle();
+  assert.equal(sent[0].langue, 'ht');
+  // Changement de langue sur le site.
+  doc.dispatchEvent(new window.CustomEvent('ea:lang', { detail: 'es' }));
+  assert.equal(panel.querySelector('[data-t="title"]').textContent, 'Asistente de En Avant');
+  assert.equal(panel.querySelector('textarea').placeholder, 'Escriba su pregunta…');
+  assert.match(panel.querySelector('.eac-msg--bot').textContent, /Hola/);
+  const input = panel.querySelector('textarea');
+  input.value = '¿Y la salud?';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settle(); await settle();
+  assert.equal(sent[1].langue, 'es');
+  dom.window.close();
+});
+
 test('Assistant : absent de l’administration et de la connexion, ajouté sur les pages publiques sans bouton', async () => {
   for (const [file, path, expected] of [['login.html', '/login', false], ['don.html', '/don', true]]) {
     const dom = await page(file, path);

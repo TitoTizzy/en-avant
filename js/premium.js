@@ -420,6 +420,8 @@ document.documentElement.classList.add("js-ready");
     };
 
     const refreshUi = (code) => {
+      // Signale la langue choisie (l'assistant répond et s'affiche dans cette langue).
+      document.dispatchEvent(new CustomEvent("ea:lang", { detail: code }));
       document.querySelectorAll(".ea-lang").forEach((ui) => {
         const label = ui.querySelector(".ea-lang-code");
         if (label) label.textContent = code.toUpperCase();
@@ -493,12 +495,55 @@ document.documentElement.classList.add("js-ready");
   /* ------------------------------------------------------------------ */
   const CHAT_KEY = "ea-chat";
   const CHAT_EXCLUDED = /^\/(admin|login|mot-de-passe)(\.html)?$/;
-  const CHAT_SUGGESTIONS = [
-    "Que sont les 20 chantiers ?",
-    "Que propose En Avant pour la sécurité ?",
-    "Comment adhérer au parti ?",
-    "Kijan pou m fè yon don ?",
-  ];
+  // Textes de l'assistant dans les 4 langues du site (la fenêtre n'est pas passée au traducteur automatique).
+  const CHAT_UI = {
+    fr: {
+      open: "Ouvrir l’assistant En Avant", title: "Assistant En Avant", subtitle: "Réponses tirées du Livre blanc et du site",
+      welcome: "Bonjour ! Je suis l’assistant d’En Avant. Posez-moi vos questions sur le parti, le Livre blanc et ses 20 chantiers, ou sur la façon de vous engager.",
+      suggestions: ["Que sont les 20 chantiers ?", "Que propose En Avant pour la sécurité ?", "Comment adhérer au parti ?", "Comment faire un don ?"],
+      placeholder: "Posez votre question…", send: "Envoyer", reset: "Nouvelle conversation", close: "Fermer l’assistant",
+      note: "Réponses générées par une IA à partir des documents d’En Avant : elles peuvent contenir des erreurs. Ne partagez aucune donnée personnelle.",
+      sources: "Sources", typing: "L’assistant écrit…", tooLong: "Votre question est trop longue (800 caractères au maximum).",
+      offline: "Connexion impossible. Réessayez.",
+    },
+    en: {
+      open: "Open the En Avant assistant", title: "En Avant Assistant", subtitle: "Answers from the White Paper and the website",
+      welcome: "Hello! I am the En Avant assistant. Ask me about the party, its White Paper and its 20 priority areas, or how to get involved.",
+      suggestions: ["What are the 20 priority areas?", "What does En Avant propose for security?", "How do I join the party?", "How can I donate?"],
+      placeholder: "Ask your question…", send: "Send", reset: "New conversation", close: "Close the assistant",
+      note: "AI-generated answers based on En Avant’s documents: they may contain mistakes. Do not share any personal data.",
+      sources: "Sources", typing: "The assistant is typing…", tooLong: "Your question is too long (800 characters maximum).",
+      offline: "Connection failed. Please try again.",
+    },
+    ht: {
+      open: "Louvri asistan En Avant", title: "Asistan En Avant", subtitle: "Repons ki soti nan Liv blan an ak sit la",
+      welcome: "Bonjou ! Mwen se asistan En Avant. Poze m kesyon sou pati a, Liv blan an ak 20 chantye li yo, oswa sou kijan pou w angaje w.",
+      suggestions: ["Ki sa 20 chantye yo ye ?", "Ki sa En Avant pwopoze pou sekirite ?", "Kijan pou m vin manm pati a ?", "Kijan pou m fè yon don ?"],
+      placeholder: "Poze kesyon ou…", send: "Voye", reset: "Nouvo konvèsasyon", close: "Fèmen asistan an",
+      note: "Repons sa yo soti nan yon IA ki baze sou dokiman En Avant : yo ka gen erè. Pa pataje okenn done pèsonèl.",
+      sources: "Sous", typing: "Asistan an ap ekri…", tooLong: "Kesyon ou twò long (800 karaktè maksimòm).",
+      offline: "Pa ka konekte. Eseye ankò.",
+    },
+    es: {
+      open: "Abrir el asistente de En Avant", title: "Asistente de En Avant", subtitle: "Respuestas basadas en el Libro blanco y el sitio",
+      welcome: "¡Hola! Soy el asistente de En Avant. Pregúnteme sobre el partido, su Libro blanco y sus 20 ejes de trabajo, o sobre cómo participar.",
+      suggestions: ["¿Cuáles son los 20 ejes de trabajo?", "¿Qué propone En Avant para la seguridad?", "¿Cómo afiliarse al partido?", "¿Cómo hacer una donación?"],
+      placeholder: "Escriba su pregunta…", send: "Enviar", reset: "Nueva conversación", close: "Cerrar el asistente",
+      note: "Respuestas generadas por una IA a partir de los documentos de En Avant: pueden contener errores. No comparta datos personales.",
+      sources: "Fuentes", typing: "El asistente está escribiendo…", tooLong: "Su pregunta es demasiado larga (800 caracteres como máximo).",
+      offline: "No se pudo conectar. Inténtelo de nuevo.",
+    },
+  };
+
+  /** Langue choisie sur le site (sélecteur de langue), français par défaut. */
+  function siteLanguage() {
+    try {
+      const code = JSON.parse(localStorage.getItem("__GT_TRANSLATE_LANGS") || "null")?.tgtLang;
+      return Object.hasOwn(CHAT_UI, code) ? code : "fr";
+    } catch {
+      return "fr";
+    }
+  }
 
   function chatEscape(text) {
     return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -553,8 +598,12 @@ document.documentElement.classList.add("js-ready");
     if (fab.dataset.eaBound) return;
     fab.dataset.eaBound = "1";
     fab.type = "button";
-    fab.setAttribute("aria-label", "Ouvrir l’assistant En Avant");
+    fab.classList.add("notranslate");
+    fab.setAttribute("translate", "no");
     fab.setAttribute("aria-expanded", "false");
+    let lang = siteLanguage();
+    const t = () => CHAT_UI[lang];
+    fab.setAttribute("aria-label", t().open);
 
     let panel = null;
     let busy = false;
@@ -570,7 +619,7 @@ document.documentElement.classList.add("js-ready");
       if (sources?.length) {
         const s = document.createElement("p");
         s.className = "eac-sources";
-        s.innerHTML = "Sources : " + sources.map((src) => {
+        s.innerHTML = `${t().sources} : ` + sources.map((src) => {
           const url = chatSafeUrl(src.url);
           return url ? `<a href="${chatEscape(url)}">${chatEscape(src.titre)}</a>` : chatEscape(src.titre);
         }).join(" · ");
@@ -584,7 +633,7 @@ document.documentElement.classList.add("js-ready");
     function renderAll() {
       const log = panel.querySelector(".eac-log");
       log.innerHTML = "";
-      bubble("bot", chatFormat("Bonjour ! Je suis l’assistant d’En Avant. Posez-moi vos questions sur le parti, le Livre blanc et ses 20 chantiers, ou sur la façon de vous engager.\nBonjou ! Ou ka poze m kesyon an kreyòl tou."));
+      bubble("bot", chatFormat(t().welcome));
       history.forEach((m) => bubble(m.role === "user" ? "user" : "bot",
         m.role === "user" ? `<p>${chatEscape(m.content)}</p>` : chatFormat(m.content), m.sources));
       panel.querySelector(".eac-suggest").hidden = history.length > 0;
@@ -594,7 +643,7 @@ document.documentElement.classList.add("js-ready");
       const text = String(question || "").trim();
       if (!text || busy) return;
       if (text.length > 800) {
-        bubble("bot", "<p>Votre question est trop longue (800 caractères au maximum).</p>");
+        bubble("bot", `<p>${chatEscape(t().tooLong)}</p>`);
         return;
       }
       busy = true;
@@ -604,23 +653,23 @@ document.documentElement.classList.add("js-ready");
       panel.querySelector(".eac-suggest").hidden = true;
       bubble("user", `<p>${chatEscape(text)}</p>`);
       const typing = bubble("bot eac-typing", '<span></span><span></span><span></span>');
-      typing.setAttribute("aria-label", "L’assistant écrit…");
+      typing.setAttribute("aria-label", t().typing);
       const previous = history.map(({ role, content }) => ({ role, content }));
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: text, history: previous }),
+          body: JSON.stringify({ question: text, langue: lang, history: previous }),
         });
         const data = await res.json().catch(() => ({}));
         typing.remove();
-        if (!res.ok) throw new Error(data.error || "L’assistant est momentanément indisponible.");
+        if (!res.ok) throw new Error(data.error || t().offline);
         history.push({ role: "user", content: text }, { role: "assistant", content: data.reponse, sources: data.sources || [] });
         save();
         bubble("bot", chatFormat(data.reponse), data.sources);
       } catch (error) {
         typing.remove();
-        bubble("bot eac-error", `<p>${chatEscape(error.message || "Connexion impossible. Réessayez.")}</p>`);
+        bubble("bot eac-error", `<p>${chatEscape(error.message || t().offline)}</p>`);
       } finally {
         busy = false;
         input.focus();
@@ -634,20 +683,23 @@ document.documentElement.classList.add("js-ready");
       panel.setAttribute("role", "dialog");
       panel.setAttribute("aria-label", "Assistant En Avant");
       panel.hidden = true;
+      panel.classList.add("notranslate");
+      panel.setAttribute("translate", "no");
       panel.innerHTML = `
         <header class="eac-head">
           <img src="/pictures/logo/logo.png" alt="" width="34" height="34">
-          <div class="eac-title"><strong>Assistant En Avant</strong><span>Réponses tirées du Livre blanc et du site</span></div>
-          <button type="button" class="eac-icon" data-chat="reset" title="Nouvelle conversation" aria-label="Nouvelle conversation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" fill="currentColor"/></svg></button>
-          <button type="button" class="eac-icon" data-chat="close" title="Fermer" aria-label="Fermer l’assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z" fill="currentColor"/></svg></button>
+          <div class="eac-title"><strong data-t="title"></strong><span data-t="subtitle"></span></div>
+          <button type="button" class="eac-icon" data-chat="reset" data-t-label="reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" fill="currentColor"/></svg></button>
+          <button type="button" class="eac-icon" data-chat="close" data-t-label="close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z" fill="currentColor"/></svg></button>
         </header>
         <div class="eac-log" role="log" aria-live="polite"></div>
-        <div class="eac-suggest">${CHAT_SUGGESTIONS.map((q) => `<button type="button" data-chat-q="${chatEscape(q)}">${chatEscape(q)}</button>`).join("")}</div>
+        <div class="eac-suggest"></div>
         <form class="eac-form">
-          <textarea rows="1" maxlength="800" placeholder="Posez votre question…" aria-label="Votre question"></textarea>
-          <button type="submit" aria-label="Envoyer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z" fill="currentColor"/></svg></button>
+          <textarea rows="1" maxlength="800"></textarea>
+          <button type="submit" data-t-label="send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z" fill="currentColor"/></svg></button>
         </form>
-        <p class="eac-note">Réponses générées par une IA à partir des documents d’En Avant : elles peuvent contenir des erreurs. Ne partagez aucune donnée personnelle.</p>`;
+        <p class="eac-note" data-t="note"></p>`;
+      renderTexts();
       document.body.appendChild(panel);
 
       const input = panel.querySelector("textarea");
@@ -674,6 +726,35 @@ document.documentElement.classList.add("js-ready");
       panel.addEventListener("keydown", (event) => { if (event.key === "Escape") toggle(false); });
       renderAll();
     }
+
+    /** Textes fixes de la fenêtre dans la langue du site. */
+    function renderTexts() {
+      if (!panel) return;
+      const tx = t();
+      panel.setAttribute("aria-label", tx.title);
+      panel.setAttribute("lang", lang);
+      panel.querySelectorAll("[data-t]").forEach((el) => { el.textContent = tx[el.dataset.t]; });
+      panel.querySelectorAll("[data-t-label]").forEach((el) => {
+        el.setAttribute("aria-label", tx[el.dataset.tLabel]);
+        el.title = tx[el.dataset.tLabel];
+      });
+      const input = panel.querySelector("textarea");
+      input.placeholder = tx.placeholder;
+      input.setAttribute("aria-label", tx.placeholder);
+      panel.querySelector(".eac-suggest").innerHTML = tx.suggestions
+        .map((q) => `<button type="button" data-chat-q="${chatEscape(q)}">${chatEscape(q)}</button>`).join("");
+    }
+
+    // Changement de langue sur le site : la fenêtre suit, les réponses suivantes aussi.
+    document.addEventListener("ea:lang", (event) => {
+      if (!Object.hasOwn(CHAT_UI, event.detail) || event.detail === lang) return;
+      lang = event.detail;
+      fab.setAttribute("aria-label", t().open);
+      if (panel) {
+        renderTexts();
+        renderAll();
+      }
+    });
 
     function toggle(open) {
       if (!panel) build();

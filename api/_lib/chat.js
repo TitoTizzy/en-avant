@@ -140,7 +140,7 @@ Ta mission : répondre aux questions des visiteurs sur le parti, son programme (
 
 Règles absolues :
 1. Appuie-toi UNIQUEMENT sur les extraits fournis dans <sources> et sur les <infos_pratiques>. N’invente aucun chiffre, nom, date, promesse ni position. Si l’information n’y est pas, dis-le simplement et propose d’écrire à contact@enavant.org.
-2. Réponds dans la langue de la question (français, créole haïtien ou anglais). Ton chaleureux, clair, respectueux, sans jargon.
+2. Réponds TOUJOURS dans la langue indiquée par <langue_de_reponse> : c'est la langue que le visiteur a choisie sur le site (français, anglais, créole haïtien ou espagnol), même si sa question est écrite autrement. Traduis fidèlement les informations des sources, qui sont en français. Ton chaleureux, clair, respectueux, sans jargon.
 3. Réponses courtes : 2 à 6 phrases ou une courte liste. Termine, si c’est utile, par UN lien vers la page du site concernée (format [texte](/chemin)).
 4. Tu présentes les propositions d’En Avant telles qu’écrites dans ses documents. Tu ne dénigres aucune personne, aucun autre parti ni aucun candidat, et tu ne donnes pas d’opinion personnelle.
 5. Ne demande jamais de données personnelles (NINU, téléphone, adresse, mot de passe, carte bancaire). Si quelqu’un en donne, ne les répète pas et rappelle de ne pas les partager ici.
@@ -157,15 +157,52 @@ export const INFOS_PRATIQUES = `- Adhérer : formulaire sur /adherer (nom, pseud
 - Contact : contact@enavant.org · +509 4621-2121 · 44, Impasse Lescot, Laboule 12, Pétionville, Haïti.
 - Réseaux sociaux : Instagram et TikTok @enavant.ht, X @EnAvantHT, Facebook enavant.ht, YouTube @mouvementenavant9694.`;
 
+/** Langues du site (sélecteur de langue) et nom donné au modèle. */
+export const LANGUES = {
+  fr: 'français',
+  en: 'anglais (English)',
+  ht: 'créole haïtien (Kreyòl ayisyen)',
+  es: 'espagnol (español)',
+};
+export const langueOf = (value) => (Object.hasOwn(LANGUES, value) ? value : 'fr');
+
+/** Messages d'erreur de l'assistant, dans la langue du visiteur. */
+export const MESSAGES = {
+  vide: { fr: 'Posez votre question.', en: 'Please ask your question.', ht: 'Poze kesyon ou.', es: 'Haga su pregunta.' },
+  long: {
+    fr: 'Question trop longue (800 caractères au maximum).', en: 'Question too long (800 characters maximum).',
+    ht: 'Kesyon an twò long (800 karaktè maksimòm).', es: 'Pregunta demasiado larga (800 caracteres como máximo).',
+  },
+  quota: {
+    fr: 'Vous avez atteint la limite de questions pour aujourd’hui. Écrivez-nous à contact@enavant.org, nous vous répondrons.',
+    en: 'You have reached today’s question limit. Write to us at contact@enavant.org and we will answer you.',
+    ht: 'Ou rive nan limit kesyon pou jodi a. Ekri nou nan contact@enavant.org, n ap reponn ou.',
+    es: 'Ha alcanzado el límite de preguntas de hoy. Escríbanos a contact@enavant.org y le responderemos.',
+  },
+  occupe: {
+    fr: 'L’assistant est très sollicité. Réessayez dans un instant.', en: 'The assistant is very busy. Please try again shortly.',
+    ht: 'Asistan an chaje anpil. Eseye ankò nan yon ti moman.', es: 'El asistente está muy solicitado. Inténtelo de nuevo en un momento.',
+  },
+  indispo: {
+    fr: 'L’assistant est momentanément indisponible.', en: 'The assistant is temporarily unavailable.',
+    ht: 'Asistan an pa disponib pou kounye a.', es: 'El asistente no está disponible por el momento.',
+  },
+  vide_reponse: {
+    fr: 'Pas de réponse pour le moment. Réessayez.', en: 'No answer for now. Please try again.',
+    ht: 'Pa gen repons pou kounye a. Eseye ankò.', es: 'Sin respuesta por ahora. Inténtelo de nuevo.',
+  },
+};
+export const message = (key, langue) => MESSAGES[key][langueOf(langue)];
+
 /** Message utilisateur envoyé à Claude. */
-export function buildPrompt({ question, passages, events = [] }) {
+export function buildPrompt({ question, passages, events = [], langue = 'fr' }) {
   const sources = passages.length
     ? passages.map((p, i) => `<extrait n="${i + 1}" source="${p.titre}" page="${p.url}">\n${p.texte}\n</extrait>`).join('\n')
     : '(aucun extrait pertinent trouvé)';
   const agenda = events.length
     ? events.map((e) => `- ${e.titre} — ${e.date}${e.lieu ? ` — ${e.lieu}` : ''}`).join('\n')
     : '(aucun événement annoncé)';
-  return `<infos_pratiques>\n${INFOS_PRATIQUES}\n</infos_pratiques>\n\n<evenements_a_venir>\n${agenda}\n</evenements_a_venir>\n\n<sources>\n${sources}\n</sources>\n\nQuestion du visiteur :\n<question>\n${question}\n</question>`;
+  return `<langue_de_reponse>${LANGUES[langueOf(langue)]}</langue_de_reponse>\n\n<infos_pratiques>\n${INFOS_PRATIQUES}\n</infos_pratiques>\n\n<evenements_a_venir>\n${agenda}\n</evenements_a_venir>\n\n<sources>\n${sources}\n</sources>\n\nQuestion du visiteur :\n<question>\n${question}\n</question>`;
 }
 
 /** Historique nettoyé : 6 derniers échanges, rôles valides, textes bornés. */

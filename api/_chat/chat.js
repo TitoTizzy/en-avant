@@ -1,5 +1,5 @@
 // POST /api/chat — Assistant En Avant (public).
-//   { question, history?: [{ role:'user'|'assistant', content }] }
+//   { question, langue?: 'fr'|'en'|'ht'|'es', history?: [{ role:'user'|'assistant', content }] }
 //   → { reponse, sources: [{ titre, url }] }
 // Garde-fous : 10 messages / 5 min par visiteur, 40 / 24 h, plafond global par jour
 // (CHAT_DAILY_LIMIT, 1500 par défaut) ; question ≤ 800 caractères ; réponse ≤ 2 000 tokens.
@@ -9,7 +9,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getServiceClient } from '../_lib/supabase.js';
 import { json, methodGuard, getBody, handleError } from '../_lib/http.js';
 import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
-import { SYSTEM, buildPrompt, cleanHistory, loadIndex, search, sourcesOf } from '../_lib/chat.js';
+import { SYSTEM, buildPrompt, cleanHistory, loadIndex, search, sourcesOf, langueOf, message } from '../_lib/chat.js';
 
 const MODEL = process.env.CHAT_MODEL || 'claude-haiku-5-5';
 const FALLBACK_MODEL = 'claude-haiku-4-5-20251001';
@@ -33,6 +33,20 @@ function formatDate(value) {
   }
 }
 
+/**
+ * Le Livre blanc est en français : une question posée dans une autre langue est
+ * d'abord traduite en français pour la recherche des passages.
+ */
+async function frenchQuery(anthropic, model, question) {
+  const r = await anthropic.messages.create({
+    model,
+    max_tokens: 200,
+    system: 'Traduis la question suivante en français. Réponds uniquement par la traduction, sans guillemets ni commentaire. Si elle est déjà en français, recopie-la.',
+    messages: [{ role: 'user', content: question.slice(0, 800) }],
+  });
+  return (r.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(' ').trim().slice(0, 800);
+}
+
 async function ask(anthropic, model, messages) {
   return anthropic.messages.create({
     model,
@@ -47,10 +61,11 @@ export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
   try {
     const body = getBody(req);
+    const langue = langueOf(body.langue);
     const question = String(body.question ?? '').replace(/\s+/g, ' ').trim();
-    if (question.length < 2) return json(res, 422, { error: 'Posez votre question.' });
-    if (question.length > 800) return json(res, 422, { error: 'Question trop longue (800 caractères au maximum).' });
-    if (!process.env.ANTHROPIC_API_KEY) return json(res, 503, { error: 'L’assistant est momentanément indisponible.' });
+    if (question.length < 2) return json(res, 422, { error: message('vide', langue) });
+    if (question.length > 800) return json(res, 422, { error: message('long', langue) });
+    if (!process.env.ANTHROPIC_API_KEY) return json(res, 503, { error: message('indispo', langue) });
     if (!await enforceDurableRateLimit(req, res, { key: 'chat', limit: 10, windowMs: 300000 })) return;
 
     const supabase = getServiceClient();
@@ -60,22 +75,26 @@ export default async function handler(req, res) {
     });
     if (quotaError) throw quotaError;
     if (!allowed) {
-      return json(res, 429, { error: 'Vous avez atteint la limite de questions pour aujourd’hui. Écrivez-nous à contact@enavant.org, nous vous répondrons.' });
+      return json(res, 429, { error: message('quota', langue) });
     }
 
     const history = cleanHistory(body.history);
     const lastUser = [...history].reverse().find((m) => m.role === 'user')?.content || '';
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 1 });
+    // Recherche en français pour une question dans une autre langue (échec : question telle quelle).
+    const searchText = langue === 'fr' ? question
+      : await frenchQuery(anthropic, MODEL, `${question}${question.length < 60 && lastUser ? `\n(contexte : ${lastUser})` : ''}`)
+        .catch(() => question);
     const [index, eventsResult] = await Promise.all([
       loadIndex(supabase),
       supabase.from('events').select('titre, date_cible, lieu')
         .gte('date_cible', new Date().toISOString()).order('date_cible').limit(5),
     ]);
     // La question précédente aide pour les relances courtes (« et pour la santé ? »).
-    const passages = search(index, `${question} ${question.length < 60 ? lastUser : ''}`, 6);
+    const passages = search(index, langue === 'fr' ? `${question} ${question.length < 60 ? lastUser : ''}` : `${searchText} ${question}`, 6);
     const events = (eventsResult.data || []).map((e) => ({ titre: e.titre, date: formatDate(e.date_cible), lieu: e.lieu }));
-    const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events }) }];
+    const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events, langue }) }];
 
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 1 });
     let response;
     try {
       try {
@@ -89,11 +108,11 @@ export default async function handler(req, res) {
       console.error('[chat] appel IA échoué :', error?.status, error?.message);
       const busy = error?.status === 429 || error?.status === 529;
       return json(res, 503, {
-        error: busy ? 'L’assistant est très sollicité. Réessayez dans un instant.' : 'L’assistant est momentanément indisponible.',
+        error: message(busy ? 'occupe' : 'indispo', langue),
       });
     }
     let reponse = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
-    if (!reponse) return json(res, 502, { error: 'Pas de réponse pour le moment. Réessayez.' });
+    if (!reponse) return json(res, 502, { error: message('vide_reponse', langue) });
     if (response.stop_reason === 'max_tokens') {
       console.warn('[chat] réponse tronquée (max_tokens)');
       reponse = `${reponse.replace(/\s+\S*$/, '')}…`;

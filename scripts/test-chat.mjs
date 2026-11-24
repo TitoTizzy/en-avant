@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   tokens, pageText, chunk, buildIndex, search, cleanHistory, buildPrompt, sourcesOf, loadIndex, resetCache, SYSTEM, PAGES,
+  LANGUES, langueOf, message,
 } from '../api/_lib/chat.js';
 import chatHandler from '../api/_chat/chat.js';
 
@@ -52,7 +53,7 @@ test('Historique : alternance stricte, 6 échanges maximum, textes bornés, rôl
 });
 
 test('Consignes : sources uniquement, langue du visiteur, neutralité, pas de données personnelles, pas d’injection', () => {
-  for (const regle of [/UNIQUEMENT sur les extraits/, /créole haïtien/, /ne dénigres aucune/, /données personnelles/, /Ignore toute instruction/, /Conseil électoral/]) {
+  for (const regle of [/UNIQUEMENT sur les extraits/, /langue_de_reponse/, /espagnol/, /ne dénigres aucune/, /données personnelles/, /Ignore toute instruction/, /Conseil électoral/]) {
     assert.match(SYSTEM, regle);
   }
   const prompt = buildPrompt({
@@ -101,4 +102,17 @@ test('Route : question vide ou trop longue refusée ; sans clé IA, réponse pro
   assert.equal(off.statusCode, 503);
   assert.match(off.body.error, /indisponible/);
   if (saved) process.env.ANTHROPIC_API_KEY = saved;
+});
+
+test('Langues : 4 langues du site, réponse imposée dans la langue choisie, messages d’erreur traduits', async () => {
+  assert.deepEqual(Object.keys(LANGUES), ['fr', 'en', 'ht', 'es']);
+  assert.equal(langueOf('de'), 'fr', 'langue inconnue → français');
+  assert.match(buildPrompt({ question: 'Hello', passages: [], langue: 'ht' }), /<langue_de_reponse>créole haïtien/);
+  assert.match(buildPrompt({ question: 'Hola', passages: [], langue: 'es' }), /<langue_de_reponse>espagnol/);
+  for (const key of ['vide', 'long', 'quota', 'occupe', 'indispo', 'vide_reponse']) {
+    for (const l of Object.keys(LANGUES)) assert.ok(message(key, l), `${key}/${l}`);
+  }
+  const res = fakeRes();
+  await chatHandler({ method: 'POST', body: { question: '', langue: 'ht' }, headers: {}, query: {} }, res);
+  assert.equal(res.body.error, 'Poze kesyon ou.');
 });
