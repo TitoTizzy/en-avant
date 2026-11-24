@@ -32,6 +32,9 @@
     card.prepend(overlay);
     card.prepend(bgDiv);
 
+    // Chaque carte mène à la page de son chantier (lien .card-link) ; la fenêtre reste en repli.
+    if (card.dataset.href) return;
+
     // Clic → modal
     card.addEventListener("click", () => {
       const num   = card.querySelector(".card-index").textContent;

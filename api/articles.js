@@ -2,6 +2,7 @@
 // Lecture seule des articles publiés, avec cache CDN court.
 import { getServiceClient } from './_lib/supabase.js';
 import { json, methodGuard, handleError, clean } from './_lib/http.js';
+import { SUBPAGES } from './_lib/site-pages.js';
 
 // Pages publiques du site, avec priorité et fréquence indicatives pour Google.
 const STATIC_PAGES = [
@@ -17,7 +18,10 @@ const STATIC_PAGES = [
   ['/trivia', '0.5', 'monthly'],
   ['/newsletter', '0.5', 'yearly'],
   ['/mentions-legales', '0.2', 'yearly'],
+  // Sous-pages des rubriques (À propos, Historique, Organisation, 20 chantiers).
+  ...SUBPAGES.map((p) => [p.href, p.rubrique.key === 'chantiers' ? '0.8' : '0.6', 'monthly']),
 ];
+export { STATIC_PAGES };
 
 const xmlEscape = (v) => String(v).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 

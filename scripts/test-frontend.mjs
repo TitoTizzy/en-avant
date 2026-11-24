@@ -657,3 +657,72 @@ test('Cartes d’invitation : alternance s’engager / don, exceptions, membre c
   assert.equal((await run('login.html', '/login.html')).kind, null, 'aucune carte sur la connexion');
   assert.equal((await run('index.html', '/', { lang: 'ht' })).title, 'Ayiti bezwen w');
 });
+
+test('Sous-pages : menu à sous-menus partout, fil d’Ariane, contenu du Livre blanc, liens des rubriques', async () => {
+  const { RUBRIQUES, SUBPAGES, CHANTIER_PAGES } = await import('../api/_lib/site-pages.js');
+  const { readdir } = await import('node:fs/promises');
+  const counts = { apropos: 5, historique: 3, organisation: 3, chantiers: 20 };
+  for (const r of RUBRIQUES) assert.equal(r.pages.length, counts[r.key], r.key);
+  const roots = (await readdir(new URL('../', import.meta.url))).filter((f) => f.endsWith('.html'));
+  for (const file of [...roots, ...SUBPAGES.map((p) => p.file)]) {
+    const html = await read(file);
+    if (!html.includes('id="main-nav"')) continue;
+    const doc = new JSDOM(html).window.document;
+    const nav = doc.getElementById('main-nav');
+    assert.equal(nav.querySelectorAll('[data-dd]').length, 4, `${file} : 4 rubriques à sous-menu`);
+    for (const p of SUBPAGES) assert.ok(nav.querySelector(`.u-dd-menu a[href="${p.href}"]`), `${file} : lien ${p.href}`);
+    assert.ok(nav.querySelector('.u-links-cta a.btn-don'), `${file} : bouton don conservé dans le menu`);
+  }
+  for (const p of SUBPAGES) {
+    const html = await read(p.file);
+    const doc = new JSDOM(html).window.document;
+    assert.equal(doc.querySelector('link[rel="canonical"]').href, `https://enavant.org${p.href}`, p.file);
+    assert.match(doc.title, / \| En Avant$/);
+    const crumbs = [...doc.querySelectorAll('.sp-crumbs li')].map((li) => li.textContent.trim());
+    assert.deepEqual(crumbs, ['Accueil', p.rubrique.label, p.titre], `${p.file} : fil d’Ariane`);
+    assert.ok(doc.querySelector(`#main-nav .u-dd.is-current .u-dd-menu a[href="${p.href}"][aria-current="page"]`), `${p.file} : rubrique active`);
+    assert.ok(doc.querySelector('.u-footer a[href="/organisation/candidats"]'), `${p.file} : pied de page`);
+    assert.ok(!/=== Page|PAGE \||­/.test(doc.querySelector('main').textContent), `${p.file} : texte du Livre blanc nettoyé`);
+  }
+  for (const c of CHANTIER_PAGES) {
+    const doc = new JSDOM(await read(c.file)).window.document;
+    const text = doc.querySelector('.sp-article').textContent;
+    assert.ok(text.length > 3000, `${c.file} : contenu du Livre blanc (${text.length})`);
+    assert.match(doc.querySelector('.sp-aside-pdf').getAttribute('href'), /^\/docs\/livre-blanc\.pdf#page=\d+$/);
+    assert.equal(doc.querySelectorAll('.sp-pager a').length, c.n === 1 || c.n === 20 ? 2 : 3);
+  }
+  const candidats = new JSDOM(await read('organisation/candidats.html')).window.document;
+  assert.match(candidats.querySelector('main').textContent, /Page en construction/);
+  assert.match(candidats.querySelector('main').textContent, /En Avant pour Haïti — n° 85/);
+  const diaspora = new JSDOM(await read('organisation/diaspora.html')).window.document;
+  assert.deepEqual([...diaspora.querySelectorAll('.orga-section')].map((s) => s.dataset.section), ['branches-exterieures']);
+  assert.equal(diaspora.getElementById('structure').dataset.teamOnly, 'branches-exterieures');
+  for (const r of RUBRIQUES.filter((x) => x.key !== 'chantiers')) {
+    const doc = new JSDOM(await read(r.file)).window.document;
+    for (const p of r.pages) assert.ok(doc.querySelector(`main .sp-cards a[href="${p.href}"]`), `${r.file} → ${p.href}`);
+  }
+  const vc = new JSDOM(await read('vingt-chantiers.html')).window.document;
+  assert.deepEqual([...vc.querySelectorAll('.chantier-card .card-link')].map((a) => a.getAttribute('href')), CHANTIER_PAGES.map((c) => c.href));
+  const { STATIC_PAGES } = await import('../api/articles.js');
+  for (const p of SUBPAGES) assert.ok(STATIC_PAGES.some(([path]) => path === p.href), `sitemap : ${p.href}`);
+});
+
+test('Sous-menu : la flèche ouvre et referme, Échap ferme', async () => {
+  const dom = await page('historique/origines.html', '/historique/origines');
+  const { window } = dom;
+  window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  window.fetch = async () => response(200, {});
+  try { window.eval(await read('js/premium.js')); } catch { /* modules décoratifs */ }
+  window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+  await settle();
+  const dd = [...window.document.querySelectorAll('[data-dd]')][2];
+  const toggle = dd.querySelector('.u-dd-toggle');
+  toggle.click();
+  assert.ok(dd.classList.contains('is-open'));
+  assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  [...window.document.querySelectorAll('[data-dd]')][0].querySelector('.u-dd-toggle').click();
+  assert.ok(!dd.classList.contains('is-open'), 'un seul sous-menu ouvert');
+  window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  assert.equal(window.document.querySelectorAll('[data-dd].is-open').length, 0);
+  dom.window.close();
+});

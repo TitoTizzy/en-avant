@@ -7,6 +7,8 @@
 // - Aucune donnée personnelle n'est demandée ni conservée.
 import { readFile } from 'node:fs/promises';
 
+import { SUBPAGES, CHANTIER_PAGES } from './site-pages.js';
+
 export const PAGES = [
   { file: 'index.html', titre: 'Accueil', url: '/' },
   { file: 'Apropos.html', titre: 'À propos', url: '/Apropos' },
@@ -18,6 +20,8 @@ export const PAGES = [
   { file: 'don.html', titre: 'Faire un don', url: '/don' },
   { file: 'newsletter.html', titre: 'Newsletter', url: '/newsletter' },
   { file: 'trivia.html', titre: 'Quiz', url: '/trivia' },
+  // Sous-pages des rubriques (les pages des 20 chantiers reprennent le Livre blanc, déjà indexé).
+  ...SUBPAGES.filter((p) => p.rubrique.key !== 'chantiers').map((p) => ({ file: p.file, titre: p.titre, url: p.href })),
 ];
 
 export const LIVRE_BLANC = { titre: 'Livre blanc', url: '/livre-blanc' };
@@ -327,7 +331,8 @@ export const INFOS_PRATIQUES = `- Adhérer : formulaire sur /adherer (nom, pseud
 - Faire un don : /don. Les dons en ligne par carte bancaire sont OUVERTS (paiement sécurisé) ; aussi Zelle au 786 783-8538. PayPal, MonCash et NatCash : bientôt disponibles.
 - Newsletter : inscription sur /newsletter, une lettre par semaine au maximum, désinscription en un clic.
 - Quiz du Livre blanc : /trivia (8 questions, pour tous) ; les membres ont un quiz complet avec défis et classements sur /quiz.
-- Lire le programme : /livre-blanc et /vingt-chantiers.
+- Lire le programme : /livre-blanc et /vingt-chantiers ; chaque chantier a sa page : ${CHANTIER_PAGES.map((c) => `${c.n} ${c.href}`).join(', ')}.
+- Candidats d’En Avant aux élections (bannière En Avant pour Haïti, n° 85) : /organisation/candidats — liste pas encore publiée. Diaspora et branches extérieures : /organisation/diaspora.
 - Contact : contact@enavant.org · +509 4621-2121 · 44, Impasse Lescot, Laboule 12, Pétionville, Haïti.
 - Réseaux sociaux : Instagram et TikTok @enavant.ht, X @EnAvantHT, Facebook enavant.ht, YouTube @mouvementenavant9694.`;
 
@@ -501,6 +506,7 @@ const pdfTitre = (page) => (page ? `Livre blanc, p. ${page}` : 'Livre blanc (PDF
 export function sourcesOf(passages, reponse = '') {
   const known = new Map([[LIVRE_BLANC.url, LIVRE_BLANC.titre], ...PAGES.map((p) => [p.url, p.titre])]);
   known.set('/quiz', 'Quiz des membres');
+  for (const c of CHANTIER_PAGES) known.set(c.href, `Chantier ${c.n} : ${c.titre}`);
   const seen = new Map();
   for (const [, url, page] of String(reponse).matchAll(/\]\((\/[\w\-./]*)(?:#page=(\d{1,3}))?[^)]*\)/g)) {
     if (url === LIVRE_BLANC_PDF) {
