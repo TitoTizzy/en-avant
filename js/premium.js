@@ -504,7 +504,7 @@ document.documentElement.classList.add("js-ready");
       suggestions: ["Que sont les 20 chantiers ?", "Que propose En Avant pour la sécurité ?", "Comment adhérer au parti ?", "Comment faire un don ?"],
       placeholder: "Posez votre question…", send: "Envoyer", reset: "Nouvelle conversation", close: "Fermer l’assistant",
       note: "Réponses générées par une IA à partir des documents d’En Avant : elles peuvent contenir des erreurs. Ne partagez aucune donnée personnelle.",
-      sources: "Sources", typing: "L’assistant écrit…", tooLong: "Votre question est trop longue (800 caractères au maximum).",
+      sources: "Sources", thinking: "Réflexion en cours", typing: "L’assistant écrit…", tooLong: "Votre question est trop longue (800 caractères au maximum).",
       offline: "Connexion impossible. Réessayez.",
     },
     en: {
@@ -514,7 +514,7 @@ document.documentElement.classList.add("js-ready");
       suggestions: ["What are the 20 priority areas?", "What does En Avant propose for security?", "How do I join the party?", "How can I donate?"],
       placeholder: "Ask your question…", send: "Send", reset: "New conversation", close: "Close the assistant",
       note: "AI-generated answers based on En Avant’s documents: they may contain mistakes. Do not share any personal data.",
-      sources: "Sources", typing: "The assistant is typing…", tooLong: "Your question is too long (800 characters maximum).",
+      sources: "Sources", thinking: "Thinking", typing: "The assistant is typing…", tooLong: "Your question is too long (800 characters maximum).",
       offline: "Connection failed. Please try again.",
     },
     ht: {
@@ -524,7 +524,7 @@ document.documentElement.classList.add("js-ready");
       suggestions: ["Ki sa 20 chantye yo ye ?", "Ki sa En Avant pwopoze pou sekirite ?", "Kijan pou m vin manm pati a ?", "Kijan pou m fè yon don ?"],
       placeholder: "Poze kesyon ou…", send: "Voye", reset: "Nouvo konvèsasyon", close: "Fèmen asistan an",
       note: "Repons sa yo soti nan yon IA ki baze sou dokiman En Avant : yo ka gen erè. Pa pataje okenn done pèsonèl.",
-      sources: "Sous", typing: "Asistan an ap ekri…", tooLong: "Kesyon ou twò long (800 karaktè maksimòm).",
+      sources: "Sous", thinking: "M ap reflechi", typing: "Asistan an ap ekri…", tooLong: "Kesyon ou twò long (800 karaktè maksimòm).",
       offline: "Pa ka konekte. Eseye ankò.",
     },
     es: {
@@ -534,7 +534,7 @@ document.documentElement.classList.add("js-ready");
       suggestions: ["¿Cuáles son los 20 ejes de trabajo?", "¿Qué propone En Avant para la seguridad?", "¿Cómo afiliarse al partido?", "¿Cómo hacer una donación?"],
       placeholder: "Escriba su pregunta…", send: "Enviar", reset: "Nueva conversación", close: "Cerrar el asistente",
       note: "Respuestas generadas por una IA a partir de los documentos de En Avant: pueden contener errores. No comparta datos personales.",
-      sources: "Fuentes", typing: "El asistente está escribiendo…", tooLong: "Su pregunta es demasiado larga (800 caracteres como máximo).",
+      sources: "Fuentes", thinking: "Pensando", typing: "El asistente está escribiendo…", tooLong: "Su pregunta es demasiado larga (800 caracteres como máximo).",
       offline: "No se pudo conectar. Inténtelo de nuevo.",
     },
   };
@@ -629,7 +629,15 @@ document.documentElement.classList.add("js-ready");
     let busy = false;
     let history = [];
     try { history = JSON.parse(sessionStorage.getItem(CHAT_KEY) || "[]").slice(-20); } catch { history = []; }
-    const save = () => { try { sessionStorage.setItem(CHAT_KEY, JSON.stringify(history.slice(-20))); } catch { /* ignore */ } };
+    // Langue de la conversation et langue demandée explicitement (maintenue jusqu'à nouvelle demande).
+    let convLang = { conv: null, imposee: null };
+    try { convLang = { ...convLang, ...JSON.parse(sessionStorage.getItem(`${CHAT_KEY}-langue`) || "{}") }; } catch { /* ignore */ }
+    const save = () => {
+      try {
+        sessionStorage.setItem(CHAT_KEY, JSON.stringify(history.slice(-20)));
+        sessionStorage.setItem(`${CHAT_KEY}-langue`, JSON.stringify(convLang));
+      } catch { /* ignore */ }
+    };
 
     function bubble(role, html, sources) {
       const log = panel.querySelector(".eac-log");
@@ -673,24 +681,101 @@ document.documentElement.classList.add("js-ready");
       input.style.height = "";
       panel.querySelector(".eac-suggest").hidden = true;
       bubble("user", `<p>${chatEscape(text)}</p>`);
-      const typing = bubble("bot eac-typing", '<span></span><span></span><span></span>');
+      const typing = bubble("bot eac-typing",
+        `<span class="eac-thinking">${chatEscape(t().thinking)}</span><span></span><span></span><span></span>`);
       typing.setAttribute("aria-label", t().typing);
       const previous = history.map(({ role, content }) => ({ role, content }));
+      let answer = null;
       try {
         const session = chatSession();
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(session ? { Authorization: `Bearer ${session.token}` } : {}) },
-          body: JSON.stringify({ question: text, langue: lang, history: previous }),
+          body: JSON.stringify({
+            question: text, langue: lang, langue_conv: convLang.conv, langue_imposee: convLang.imposee,
+            history: previous, stream: true,
+          }),
         });
-        const data = await res.json().catch(() => ({}));
+        const type = String(res.headers?.get?.("Content-Type") || "");
+        if (!res.ok || !type.includes("ndjson") || !res.body?.getReader) {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || t().offline);
+          typing.remove();
+          answer = bubble("bot", chatFormat(data.reponse), data.sources);
+          if (data.langue) convLang = { conv: data.langue, imposee: data.langue_imposee || null };
+          history.push({ role: "user", content: text }, { role: "assistant", content: data.reponse, sources: data.sources || [] });
+          save();
+          return;
+        }
+        // Réponse en flux : le texte apparaît progressivement, à un rythme régulier.
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let target = "";
+        let shown = 0;
+        let final = null;
+        let failure = null;
+        let timer = null;
+        const render = () => {
+          if (!answer) { typing.remove(); answer = bubble("bot eac-streaming", ""); }
+          answer.innerHTML = chatFormat(target.slice(0, shown)) || "<p></p>";
+          const last = answer.lastElementChild?.tagName === "UL" ? answer.lastElementChild.lastElementChild : answer.lastElementChild;
+          if (last && shown < target.length) last.insertAdjacentHTML("beforeend", '<span class="eac-caret"></span>');
+          const log = panel.querySelector(".eac-log");
+          log.scrollTop = log.scrollHeight;
+        };
+        const revealed = new Promise((resolve) => {
+          const tick = () => {
+            if (shown < target.length) {
+              shown = Math.min(target.length, shown + Math.max(2, Math.ceil((target.length - shown) / 24)));
+              render();
+            } else if (final || failure) {
+              clearInterval(timer);
+              resolve();
+            }
+          };
+          timer = setInterval(tick, 28);
+        });
+        const handle = (raw) => {
+          if (!raw.trim()) return;
+          let msg;
+          try { msg = JSON.parse(raw); } catch { return; }
+          if (msg.type === "meta") convLang = { conv: msg.langue || convLang.conv, imposee: msg.langue_imposee || null };
+          else if (msg.type === "delta") target += msg.text;
+          else if (msg.type === "done") { final = msg; target = msg.reponse; }
+          else if (msg.type === "error") failure = msg.error;
+        };
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop();
+          lines.forEach(handle);
+        }
+        handle(buffer + decoder.decode());
+        if (!final && !failure) failure = t().offline;
+        await revealed;
+        if (failure && !target) throw new Error(failure);
         typing.remove();
-        if (!res.ok) throw new Error(data.error || t().offline);
-        history.push({ role: "user", content: text }, { role: "assistant", content: data.reponse, sources: data.sources || [] });
+        if (!answer) answer = bubble("bot", "");
+        answer.className = "eac-msg eac-msg--bot";
+        answer.innerHTML = chatFormat(target);
+        const sources = final?.sources || [];
+        if (sources.length) {
+          const s = document.createElement("p");
+          s.className = "eac-sources";
+          s.innerHTML = `${t().sources} : ` + sources.map((src) => {
+            const url = chatSafeUrl(src.url);
+            return url ? `<a href="${chatEscape(url)}">${chatEscape(src.titre)}</a>` : chatEscape(src.titre);
+          }).join(" · ");
+          answer.appendChild(s);
+        }
+        history.push({ role: "user", content: text }, { role: "assistant", content: target, sources });
         save();
-        bubble("bot", chatFormat(data.reponse), data.sources);
       } catch (error) {
         typing.remove();
+        if (answer && !answer.textContent.trim()) answer.remove();
         bubble("bot eac-error", `<p>${chatEscape(error.message || t().offline)}</p>`);
       } finally {
         busy = false;
@@ -740,6 +825,7 @@ document.documentElement.classList.add("js-ready");
         if (action === "close") toggle(false);
         if (action === "reset") {
           history = [];
+          convLang = { conv: null, imposee: null };
           save();
           renderAll();
           input.focus();

@@ -1,6 +1,10 @@
 // POST /api/chat — Assistant En Avant (public).
-//   { question, langue?: 'fr'|'en'|'ht'|'es', history?: [{ role:'user'|'assistant', content }] }
-//   → { reponse, sources: [{ titre, url }] }
+//   { question, langue?: langue du site, langue_conv?: langue de la conversation, langue_imposee?: langue demandée plus tôt,
+//     history?: [{ role:'user'|'assistant', content }], stream?: true }
+//   → { reponse, sources: [{ titre, url }], langue, langue_imposee }
+//   stream: true → flux NDJSON : {type:'meta', langue, langue_imposee} puis {type:'delta', text}… puis
+//   {type:'done', reponse, sources} (ou {type:'error', error}). Les erreurs avant le début de la réponse restent en JSON.
+// Langue de réponse : demandée dans le message > demandée plus tôt > majoritaire dans le message > conversation > site.
 // Garde-fous : 10 messages / 5 min par visiteur, 40 / 24 h (100 pour un membre connecté), plafond global par jour
 // (CHAT_DAILY_LIMIT, 1500 par défaut) ; question ≤ 800 caractères ; réponse ≤ 2 000 tokens.
 // L'adresse IP n'est jamais stockée : seule une empreinte SHA-256 sert au quota.
@@ -9,7 +13,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getServiceClient } from '../_lib/supabase.js';
 import { json, methodGuard, getBody, handleError } from '../_lib/http.js';
 import { enforceDurableRateLimit } from '../_lib/rate-limit.js';
-import { SYSTEM, buildPrompt, cleanHistory, loadIndex, search, sourcesOf, langueOf, message, displayNameOf } from '../_lib/chat.js';
+import {
+  SYSTEM, ANALYSE, buildPrompt, cleanHistory, loadIndex, search, sourcesOf, langueOf, message, displayNameOf,
+  detectLangue, langueDemandee, choisirLangue, parseAnalyse, LANGUES,
+} from '../_lib/chat.js';
 
 const MODEL = process.env.CHAT_MODEL || 'claude-haiku-5-5';
 const FALLBACK_MODEL = 'claude-haiku-4-5-20251001';
@@ -34,17 +41,24 @@ function formatDate(value) {
 }
 
 /**
- * Le Livre blanc est en français : une question posée dans une autre langue est
- * d'abord traduite en français pour la recherche des passages.
+ * Analyse rapide du message : langue majoritaire, langue demandée, ton, requête de
+ * recherche en français (le Livre blanc est en français). Repli local si l'appel échoue.
  */
-async function frenchQuery(anthropic, model, question) {
-  const r = await anthropic.messages.create({
-    model,
-    max_tokens: 200,
-    system: 'Traduis la question suivante en français. Réponds uniquement par la traduction, sans guillemets ni commentaire. Si elle est déjà en français, recopie-la.',
-    messages: [{ role: 'user', content: question.slice(0, 800) }],
-  });
-  return (r.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(' ').trim().slice(0, 800);
+async function analyse(anthropic, model, question, history) {
+  const context = history.slice(-2).map((m) => `${m.role === 'user' ? 'Visiteur' : 'Assistant'} : ${m.content.slice(0, 300)}`).join('\n');
+  try {
+    const r = await anthropic.messages.create({
+      model,
+      max_tokens: 250,
+      system: ANALYSE,
+      messages: [{ role: 'user', content: `${context ? `<contexte>\n${context}\n</contexte>\n` : ''}<message>${question}</message>` }],
+    }, { timeout: 8000 });
+    const out = parseAnalyse((r.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(''));
+    return { ...out, ok: true };
+  } catch (error) {
+    console.warn('[chat] analyse indisponible :', error?.status, error?.message);
+    return { langue: detectLangue(question), langueDemandee: langueDemandee(question), requeteFr: '', ton: '', ok: false };
+  }
 }
 
 /**
@@ -64,12 +78,13 @@ async function connectedMember(req, supabase) {
   }
 }
 
-async function ask(anthropic, model, messages) {
+async function ask(anthropic, model, messages, stream = false) {
   return anthropic.messages.create({
     model,
     max_tokens: 2000,
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages,
+    ...(stream ? { stream: true } : {}),
   });
 }
 
@@ -78,8 +93,10 @@ export default async function handler(req, res) {
   if (!methodGuard(req, res, 'POST')) return;
   try {
     const body = getBody(req);
-    const langue = langueOf(body.langue);
+    const site = langueOf(body.langue);
     const question = String(body.question ?? '').replace(/\s+/g, ' ').trim();
+    // Messages d'erreur : langue probable du visiteur.
+    let langue = choisirLangue({ demandee: langueDemandee(question), imposee: body.langue_imposee, dominante: detectLangue(question), conversation: body.langue_conv, site });
     if (question.length < 2) return json(res, 422, { error: message('vide', langue) });
     if (question.length > 800) return json(res, 422, { error: message('long', langue) });
     if (!process.env.ANTHROPIC_API_KEY) return json(res, 503, { error: message('indispo', langue) });
@@ -97,29 +114,32 @@ export default async function handler(req, res) {
     }
 
     const history = cleanHistory(body.history);
-    const lastUser = [...history].reverse().find((m) => m.role === 'user')?.content || '';
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 1 });
-    // Recherche en français pour une question dans une autre langue (échec : question telle quelle).
-    const searchText = langue === 'fr' ? question
-      : await frenchQuery(anthropic, MODEL, `${question}${question.length < 60 && lastUser ? `\n(contexte : ${lastUser})` : ''}`)
-        .catch(() => question);
-    const [index, eventsResult] = await Promise.all([
+    const [info, index, eventsResult] = await Promise.all([
+      analyse(anthropic, MODEL, question, history),
       loadIndex(supabase),
       supabase.from('events').select('titre, date_cible, lieu')
         .gte('date_cible', new Date().toISOString()).order('date_cible').limit(5),
     ]);
-    // La question précédente aide pour les relances courtes (« et pour la santé ? »).
-    const passages = search(index, langue === 'fr' ? `${question} ${question.length < 60 ? lastUser : ''}` : `${searchText} ${question}`, 6);
+    const demandee = info.ok ? info.langueDemandee : langueDemandee(question);
+    const imposee = demandee || (Object.hasOwn(LANGUES, body.langue_imposee ?? '') ? body.langue_imposee : null);
+    langue = choisirLangue({ demandee, imposee, dominante: info.langue, conversation: body.langue_conv, site });
+
+    // Recherche : requête reformulée en français + question ; relance courte → question précédente en appui.
+    const lastUser = [...history].reverse().find((m) => m.role === 'user')?.content || '';
+    const query = `${info.requeteFr} ${question} ${!info.requeteFr && question.length < 60 ? lastUser : ''}`;
+    const passages = search(index, query, 6);
     const events = (eventsResult.data || []).map((e) => ({ titre: e.titre, date: formatDate(e.date_cible), lieu: e.lieu }));
-    const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events, langue, visiteur: membre }) }];
+    const messages = [...history, { role: 'user', content: buildPrompt({ question, passages, events, langue, visiteur: membre, ton: info.ton }) }];
+    const stream = body.stream === true;
 
     let response;
     try {
       try {
-        response = await ask(anthropic, MODEL, messages);
+        response = await ask(anthropic, MODEL, messages, stream);
       } catch (error) {
         if (error?.status !== 404 || MODEL === FALLBACK_MODEL) throw error;
-        response = await ask(anthropic, FALLBACK_MODEL, messages);
+        response = await ask(anthropic, FALLBACK_MODEL, messages, stream);
       }
     } catch (error) {
       // Le détail technique reste dans les journaux, jamais affiché au visiteur.
@@ -129,13 +149,49 @@ export default async function handler(req, res) {
         error: message(busy ? 'occupe' : 'indispo', langue),
       });
     }
-    let reponse = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
-    if (!reponse) return json(res, 502, { error: message('vide_reponse', langue) });
-    if (response.stop_reason === 'max_tokens') {
-      console.warn('[chat] réponse tronquée (max_tokens)');
-      reponse = `${reponse.replace(/\s+\S*$/, '')}…`;
+    const finish = (text, stop) => {
+      let reponse = String(text || '').trim();
+      if (reponse && stop === 'max_tokens') {
+        console.warn('[chat] réponse tronquée (max_tokens)');
+        reponse = `${reponse.replace(/\s+\S*$/, '')}…`;
+      }
+      return reponse.slice(0, 4000);
+    };
+
+    if (stream) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+      res.setHeader('X-Accel-Buffering', 'no');
+      const line = (payload) => res.write(`${JSON.stringify(payload)}\n`);
+      line({ type: 'meta', langue, langue_imposee: imposee });
+      let text = '';
+      let stop = null;
+      try {
+        for await (const event of response) {
+          if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+            text += event.delta.text;
+            line({ type: 'delta', text: event.delta.text });
+          } else if (event.type === 'message_delta') {
+            stop = event.delta?.stop_reason || stop;
+          }
+        }
+      } catch (error) {
+        console.error('[chat] flux interrompu :', error?.status, error?.message);
+        if (!text) {
+          line({ type: 'error', error: message('indispo', langue) });
+          return res.end();
+        }
+        stop = 'max_tokens';
+      }
+      const reponse = finish(text, stop);
+      if (!reponse) line({ type: 'error', error: message('vide_reponse', langue) });
+      else line({ type: 'done', reponse, sources: sourcesOf(passages, reponse), langue });
+      return res.end();
     }
-    return json(res, 200, { reponse: reponse.slice(0, 4000), sources: sourcesOf(passages, reponse) });
+
+    const reponse = finish((response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n'), response.stop_reason);
+    if (!reponse) return json(res, 502, { error: message('vide_reponse', langue) });
+    return json(res, 200, { reponse, sources: sourcesOf(passages, reponse), langue, langue_imposee: imposee });
   } catch (error) {
     console.error('[chat] erreur :', error?.message || error);
     return handleError(res, Number.isInteger(error?.status) && error.status < 500 ? error : new Error('chat'),
