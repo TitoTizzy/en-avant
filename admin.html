@@ -607,51 +607,122 @@
 
       <!-- ════════════════════ TRIVIA IA ══════════════════════════════ -->
       <section class="adm-panel" id="panel-trivia" hidden>
-        <div class="u-card adm-full-create-surface" style="margin-bottom:1.2rem;">
-          <h4 style="margin:0 0 0.6rem; color:var(--ink-100);">Générer des questions via Claude</h4>
-          <p style="margin:0 0 1.4rem; color:var(--ink-400); font-size:0.94rem;">
-            La génération lit le Livre blanc depuis le bucket privé <code>documents</code>
-            (<code>livre-blanc.txt</code>). Vous pouvez aussi coller un extrait ci-dessous.
-          </p>
-          <div class="ea-field">
-            <label for="tv-count">Nombre de questions (1–12)</label>
-            <input type="number" id="tv-count" min="1" max="12" value="8">
-          </div>
-          <div class="ea-field">
-            <label for="tv-source">Texte source (optionnel)</label>
-            <textarea id="tv-source" rows="5" placeholder="Coller un extrait du Livre blanc…" style="resize:vertical;"></textarea>
-          </div>
-          <button type="button" class="btn btn-primary" id="tv-generate">
-            <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-            Générer les questions
-          </button>
-          <div class="ea-form-status" id="tv-status" role="status" aria-live="polite"></div>
-          <ul id="tv-result" style="margin:1.2rem 0 0; padding-left:1.2rem; color:var(--ink-300); display:grid; gap:0.5rem;"></ul>
+        <div class="member-tabs quiz-admin-tabs" role="tablist" aria-label="Administration du quiz">
+          <button class="member-tab is-active" data-quiz-tab="generation" role="tab" aria-selected="true" type="button">Génération</button>
+          <button class="member-tab" data-quiz-tab="stats" role="tab" aria-selected="false" type="button">Statistiques</button>
+          <button class="member-tab" data-quiz-tab="banque" role="tab" aria-selected="false" type="button">Banque de questions</button>
+          <button class="member-tab" data-quiz-tab="defi" role="tab" aria-selected="false" type="button">Défi de la semaine</button>
+          <button class="member-tab" data-quiz-tab="joueurs" role="tab" aria-selected="false" type="button">Joueurs</button>
+          <button class="member-tab" data-quiz-tab="images" role="tab" aria-selected="false" type="button">Images</button>
+          <button class="member-tab" data-quiz-tab="scores" role="tab" aria-selected="false" type="button">Quiz visiteurs</button>
         </div>
-        <div class="u-card">
-          <div class="adm-record-head">
-            <div>
-              <h4>Banque de questions</h4>
-              <p>Consultez et supprimez les questions disponibles dans le quiz public.</p>
-            </div>
-            <button type="button" class="btn btn-ghost btn-xs" id="trivia-refresh">
-              <i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualiser
+
+        <!-- Génération -->
+        <div class="quiz-pane" data-quiz-pane="generation">
+          <div class="u-card adm-full-create-surface" style="margin-bottom:1.2rem;">
+            <h4 style="margin:0 0 0.6rem; color:var(--ink-100);">Générer 50 nouvelles questions</h4>
+            <p style="margin:0 0 1.2rem; color:var(--ink-400); font-size:0.94rem;">
+              L'IA lit le Livre blanc (bucket privé <code>documents</code>) et les fiches des visuels du quiz,
+              puis écrit 50 questions de tous les formats : QCM, vrai ou faux, chiffre à deviner, citation,
+              question avec image, remise en ordre. Les questions déjà en base sont écartées.
+              Les nouvelles questions sont <strong>jouables immédiatement</strong> ; vous pouvez désactiver
+              une question dans la banque à tout moment.
+            </p>
+            <button type="button" class="btn btn-primary" id="tv-generate">
+              <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+              Générer 50 questions
             </button>
+            <div class="ea-form-status" id="tv-status" role="status" aria-live="polite"></div>
+            <ul id="tv-result" class="quiz-admin-result"></ul>
           </div>
-          <div id="trivia-admin" class="adm-record-list">
-            <p class="adm-loading">Chargement des questions…</p>
+          <div class="u-card">
+            <div class="adm-record-head"><div><h4>Historique des générations</h4>
+              <p>Questions retenues, doublons écartés et réponses invalides de l'IA.</p></div></div>
+            <div id="quiz-generations" class="adm-record-list"><p class="adm-loading">Chargement…</p></div>
           </div>
         </div>
-        <div class="u-card" style="margin-top:1.2rem;">
-          <div class="adm-record-head">
-            <div>
-              <h4>Scores récents</h4>
-              <p>Surveillez les participations et retirez les entrées inappropriées.</p>
-            </div>
+
+        <!-- Statistiques -->
+        <div class="quiz-pane" data-quiz-pane="stats" hidden>
+          <div class="quiz-admin-kpis" id="quiz-kpis"><p class="adm-loading">Chargement…</p></div>
+          <div class="u-card" style="margin-top:1.2rem;">
+            <div class="adm-record-head"><div><h4>Questions les plus ratées</h4>
+              <p>Au moins 5 réponses. Un taux très bas signale souvent une question mal posée.</p></div></div>
+            <div id="quiz-hardest" class="adm-record-list"><p class="adm-loading">Chargement…</p></div>
           </div>
-          <div id="trivia-scores-admin" class="adm-record-list">
-            <p class="adm-loading">Chargement des scores…</p>
+        </div>
+
+        <!-- Banque -->
+        <div class="quiz-pane" data-quiz-pane="banque" hidden>
+          <div class="u-card">
+            <form class="quiz-admin-filters" id="quiz-bank-filters">
+              <input type="search" name="q" placeholder="Rechercher une question…" aria-label="Rechercher">
+              <select name="format" aria-label="Format">
+                <option value="">Tous les formats</option>
+                <option value="qcm">QCM</option><option value="vrai_faux">Vrai ou faux</option>
+                <option value="chiffre">Chiffre à deviner</option><option value="citation">Citation</option>
+                <option value="image">Image</option><option value="ordre">Remise en ordre</option>
+              </select>
+              <select name="chantier" aria-label="Chantier" id="quiz-bank-chantier"><option value="">Tous les chantiers</option></select>
+              <select name="difficulte" aria-label="Difficulté">
+                <option value="">Toutes difficultés</option><option value="facile">Facile</option>
+                <option value="moyen">Moyen</option><option value="difficile">Difficile</option>
+              </select>
+              <select name="statut" aria-label="Statut">
+                <option value="">Actives et désactivées</option><option value="active">Actives</option>
+                <option value="inactive">Désactivées</option>
+              </select>
+              <button type="submit" class="btn btn-ghost btn-xs"><i class="fa-solid fa-filter" aria-hidden="true"></i> Filtrer</button>
+            </form>
+            <p class="quiz-admin-count" id="quiz-bank-count"></p>
+            <div id="trivia-admin" class="adm-record-list"><p class="adm-loading">Chargement des questions…</p></div>
+            <div class="quiz-admin-pager" id="quiz-bank-pager"></div>
           </div>
+        </div>
+
+        <!-- Défi de la semaine -->
+        <div class="quiz-pane" data-quiz-pane="defi" hidden>
+          <div class="ea-form-status" id="quiz-defi-status" role="status" aria-live="polite"></div>
+          <div class="quiz-admin-grid">
+            <div class="u-card"><div class="adm-record-head"><div><h4>Semaine en cours</h4>
+              <p id="quiz-defi-courante-info">Renouvelé chaque lundi à minuit (heure d'Haïti).</p></div></div>
+              <div id="quiz-defi-courante" class="adm-record-list"><p class="adm-loading">Chargement…</p></div></div>
+            <div class="u-card"><div class="adm-record-head"><div><h4>Semaine suivante</h4>
+              <p>Préparez le prochain défi : remplacez les questions avant lundi.</p></div>
+              <button type="button" class="btn btn-ghost btn-xs" id="quiz-defi-prepare">Préparer</button></div>
+              <div id="quiz-defi-suivante" class="adm-record-list"><p class="adm-loading">Chargement…</p></div></div>
+          </div>
+          <div class="u-card" style="margin-top:1.2rem;"><div class="adm-record-head"><div><h4>Classement du défi en cours</h4></div></div>
+            <ol id="quiz-defi-classement" class="quiz-admin-ranking"></ol></div>
+        </div>
+
+        <!-- Joueurs -->
+        <div class="quiz-pane" data-quiz-pane="joueurs" hidden>
+          <div class="u-card">
+            <form class="quiz-admin-filters" id="quiz-players-filter">
+              <input type="search" name="q" placeholder="Rechercher un pseudo…" aria-label="Rechercher un joueur">
+              <button type="submit" class="btn btn-ghost btn-xs">Rechercher</button>
+            </form>
+            <div class="ea-form-status" id="quiz-players-status" role="status" aria-live="polite"></div>
+            <div class="adm-table-wrap"><table class="adm-table">
+              <thead><tr><th>Pseudo</th><th>Titre</th><th>Score cumulé</th><th>Parties</th><th>Dernière partie</th><th></th></tr></thead>
+              <tbody id="quiz-players"><tr><td colspan="6">Chargement…</td></tr></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <!-- Images -->
+        <div class="quiz-pane" data-quiz-pane="images" hidden>
+          <div class="u-card"><div class="adm-record-head"><div><h4>Bibliothèque d'images du quiz</h4>
+            <p>Visuels tirés du Livre blanc (dossier <code>pictures/quiz</code>) et nombre de questions qui les utilisent.</p></div></div>
+            <div id="quiz-images" class="quiz-admin-images"><p class="adm-loading">Chargement…</p></div></div>
+        </div>
+
+        <!-- Scores du quiz visiteur -->
+        <div class="quiz-pane" data-quiz-pane="scores" hidden>
+          <div class="u-card"><div class="adm-record-head"><div><h4>Scores du quiz visiteurs</h4>
+            <p>Classement public (8 questions). Retirez les entrées inappropriées.</p></div></div>
+            <div id="trivia-scores-admin" class="adm-record-list"><p class="adm-loading">Chargement des scores…</p></div></div>
         </div>
       </section>
 

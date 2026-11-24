@@ -3,7 +3,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
-    "api/trivia.js": { "maxDuration": 60 }
+    "api/trivia.js": { "maxDuration": 60, "includeFiles": "pictures/quiz/manifest.json" },
+    "api/admin.js": { "includeFiles": "pictures/quiz/manifest.json" }
   },
   "redirects": [
     { "source": "/register", "destination": "/adherer", "permanent": true },
@@ -37,7 +38,7 @@
     { "source": "/api/trivia/questions",  "destination": "/api/trivia?action=questions" },
     { "source": "/api/trivia/score",      "destination": "/api/trivia?action=score" },
     { "source": "/api/trivia/generate",   "destination": "/api/trivia?action=generate" },
-    { "source": "/api/trivia/generate-session", "destination": "/api/trivia?action=generate-session" },
+    { "source": "/api/trivia/membre", "destination": "/api/trivia?action=membre" },
     { "source": "/api/member/articles",         "destination": "/api/member?action=articles" },
     { "source": "/api/member/adhesion",         "destination": "/api/member?action=adhesion" }
   ],

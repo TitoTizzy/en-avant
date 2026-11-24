@@ -1,7 +1,7 @@
 /* ==========================================================================
    EN AVANT — MODULE TRIVIA v2
-   Mode public  : questions pré-générées via /api/trivia/questions
-   Mode membre  : questions IA générées à la volée via /api/trivia/generate-session
+   Quiz public (8 questions) tiré de la banque via /api/trivia/questions.
+   Les membres connectés ont en plus le quiz complet sur /quiz.
    ========================================================================== */
 
 (() => {
@@ -148,32 +148,10 @@
   /* ------------------------------------------------------------------ */
   async function loadQuestions() {
     sessionId = null;
-    const token = getAuthToken();
+    // Membre connecté : même quiz public de 8 questions, score enregistré sous son pseudo.
+    isMemberMode = Boolean(getAuthToken());
 
-    // Mode membre : génération IA depuis le Livre Blanc
-    if (token) {
-      try {
-        const response = await fetch("/api/trivia/generate-session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          signal: AbortSignal.timeout(40000),
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (response.ok && Array.isArray(payload.questions) && payload.questions.length >= 4) {
-          sessionId = payload.session_id;
-          isMemberMode = true;
-          if (srcLabel) srcLabel.textContent = "Questions générées par l'IA depuis le Livre blanc.";
-          return payload.questions;
-        }
-        // 401/403 → token expiré ou rôle insuffisant, bascule public
-      } catch { /* timeout ou réseau → bascule public */ }
-    }
-
-    // Mode public : questions pré-générées
-    isMemberMode = false;
+    // Questions pré-générées (banque du quiz)
     try {
       const response = await fetch("/api/trivia/questions?count=8", {
         signal: AbortSignal.timeout(5000),
@@ -332,8 +310,12 @@
     if (memberAuto) submitScore({ auto: true });
     else loadLeaderboard();
 
-    // CTA Membre uniquement en mode public
-    if (memberCta) memberCta.hidden = isMemberMode;
+    // Visiteur : invitation à adhérer ou donner. Membre : lien vers le quiz des membres.
+    if (memberCta) {
+      memberCta.querySelector('[data-cta="visiteur"]').hidden = isMemberMode;
+      memberCta.querySelector('[data-cta="membre"]').hidden = !isMemberMode;
+      memberCta.hidden = false;
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -429,8 +411,7 @@
   async function share() {
     const total = questions.length;
     const status = document.getElementById("tq-share-status");
-    const modeLabel = isMemberMode ? " (Trivia IA)" : "";
-    const text = `J'ai fait ${score}/${total}${modeLabel} au Quiz du Livre blanc d'En Avant ! Et vous, connaissez-vous le projet ? 🇭🇹`;
+    const text = `J'ai fait ${score}/${total} au Quiz du Livre blanc d'En Avant ! Et vous, connaissez-vous le projet ? 🇭🇹`;
     const url = window.location.href.split("#")[0];
 
     if (navigator.share) {
@@ -461,17 +442,22 @@
   /* INIT                                                                 */
   /* ------------------------------------------------------------------ */
 
-  // Afficher le badge IA si l'utilisateur est déjà connecté
+  // Membre connecté : lien vers le quiz complet des membres.
   if (modeBadge && getAuthToken()) {
     modeBadge.hidden = false;
   }
 
+  // « J'ai déjà un compte » : après connexion, retour direct au quiz des membres.
+  document.querySelectorAll("[data-login-retour]").forEach((link) => {
+    link.addEventListener("click", () => {
+      try { sessionStorage.setItem("ea-retour", "/quiz"); } catch { /* ignore */ }
+    });
+  });
+
   beginBtn.addEventListener("click", async () => {
     beginBtn.disabled = true;
     beginBtn.classList.add("btn-loading");
-    beginBtn.innerHTML = getAuthToken()
-      ? '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Génération par l\'IA…'
-      : '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Chargement…';
+    beginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Chargement…';
 
     questions = (await loadQuestions()).slice(0, 8);
 

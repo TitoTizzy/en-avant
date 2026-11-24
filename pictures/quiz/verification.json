@@ -1,0 +1,1653 @@
+{
+  "source": "docs/livre-blanc.pdf",
+  "sha256": "4c887ea91a72712a36db68d603cb9d71c615979f5094136a94529a845eff1c5d",
+  "images": 40,
+  "variantes": 80,
+  "faits_non_verifies": [],
+  "normalisation": "Unicode NFC, espaces et césures typographiques en fin de ligne ; casse, chiffres et ponctuation conservés.",
+  "limite_cartes": "Cartogrammes schématiques de regroupement, sans frontières, échelle ni positions géographiques exactes. Le PDF ne fournit pas de fond cartographique.",
+  "resultats": [
+    {
+      "id": "quiz-chantier-01-securite",
+      "octets": {
+        "fichier": 11656,
+        "fichier_mobile": 7102
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "1",
+          "pages_pdf": [
+            38
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "SÉCURITÉ",
+          "pages_pdf": [
+            38
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "1- SÉCURITÉ",
+          "pages_pdf": [
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-02-defense-et-protection-civile",
+      "octets": {
+        "fichier": 11570,
+        "fichier_mobile": 7812
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "2",
+          "pages_pdf": [
+            52
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "DÉFENSE ET PROTECTION CIVILE",
+          "pages_pdf": [
+            52
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "2- DÉFENSE ET PROTECTION CIVILE",
+          "pages_pdf": [
+            52
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-03-economie-et-creation-demplois",
+      "octets": {
+        "fichier": 14208,
+        "fichier_mobile": 9258
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "3",
+          "pages_pdf": [
+            56
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "ECONOMIE ET CRÉATION D’EMPLOIS",
+          "pages_pdf": [
+            56
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "3- ECONOMIE ET CRÉATION D’EMPLOIS",
+          "pages_pdf": [
+            56
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-04-education",
+      "octets": {
+        "fichier": 11842,
+        "fichier_mobile": 7532
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "4",
+          "pages_pdf": [
+            65
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "EDUCATION",
+          "pages_pdf": [
+            65
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "4-EDUCATION",
+          "pages_pdf": [
+            65
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-05-diaspora",
+      "octets": {
+        "fichier": 15598,
+        "fichier_mobile": 9632
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "5",
+          "pages_pdf": [
+            79
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "DIASPORA",
+          "pages_pdf": [
+            79
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "5-DIASPORA",
+          "pages_pdf": [
+            79
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-06-sante",
+      "octets": {
+        "fichier": 8678,
+        "fichier_mobile": 5282
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "6",
+          "pages_pdf": [
+            86
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "SANTÉ",
+          "pages_pdf": [
+            86
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "6- SANTÉ",
+          "pages_pdf": [
+            86
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-07-egalite-hommes-femmes",
+      "octets": {
+        "fichier": 12402,
+        "fichier_mobile": 8176
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "7",
+          "pages_pdf": [
+            94
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "EGALITÉ HOMMES - FEMMES",
+          "pages_pdf": [
+            94
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "7- EGALITÉ HOMMES - FEMMES",
+          "pages_pdf": [
+            94
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-08-environnement-et-amenagement-du-territoire",
+      "octets": {
+        "fichier": 18588,
+        "fichier_mobile": 12202
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "8",
+          "pages_pdf": [
+            102
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "ENVIRONNEMENT ET AMÉNAGEMENT DU TERRITOIRE",
+          "pages_pdf": [
+            102
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "8-ENVIRONNEMENT ET AMÉNAGEMENT DU TERRITOIRE",
+          "pages_pdf": [
+            102
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-09-culture",
+      "octets": {
+        "fichier": 9168,
+        "fichier_mobile": 5818
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "9",
+          "pages_pdf": [
+            109
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "CULTURE",
+          "pages_pdf": [
+            109
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "9-CULTURE",
+          "pages_pdf": [
+            109
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-10-jeunesse-sport-et-action-civique",
+      "octets": {
+        "fichier": 14866,
+        "fichier_mobile": 9708
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "10",
+          "pages_pdf": [
+            114
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "JEUNESSE, SPORT ET ACTION CIVIQUE",
+          "pages_pdf": [
+            114
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "10- JEUNESSE, SPORT ET ACTION CIVIQUE",
+          "pages_pdf": [
+            114
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-11-justice",
+      "octets": {
+        "fichier": 8696,
+        "fichier_mobile": 5628
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "11",
+          "pages_pdf": [
+            119
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "JUSTICE",
+          "pages_pdf": [
+            119
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "11-JUSTICE",
+          "pages_pdf": [
+            119
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-12-tourisme",
+      "octets": {
+        "fichier": 10938,
+        "fichier_mobile": 6850
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "12",
+          "pages_pdf": [
+            129
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "TOURISME",
+          "pages_pdf": [
+            129
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "12- TOURISME",
+          "pages_pdf": [
+            129
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-13-infrastructures",
+      "octets": {
+        "fichier": 11638,
+        "fichier_mobile": 7486
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "13",
+          "pages_pdf": [
+            137
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "INFRASTRUCTURES",
+          "pages_pdf": [
+            137
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "13- INFRASTRUCTURES",
+          "pages_pdf": [
+            137
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-14-diplomatie-politique-etrangere-et-cooperation-externe",
+      "octets": {
+        "fichier": 21198,
+        "fichier_mobile": 14302
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "14",
+          "pages_pdf": [
+            146
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "DIPLOMATIE, POLITIQUE ÉTRANGÈRE ET COOPÉRATION EXTERNE",
+          "pages_pdf": [
+            146
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "14- DIPLOMATIE, POLITIQUE ÉTRANGÈRE ET COOPÉRATION EXTERNE",
+          "pages_pdf": [
+            146
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-15-production-nationale-et-agriculture",
+      "octets": {
+        "fichier": 17414,
+        "fichier_mobile": 11398
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "15",
+          "pages_pdf": [
+            158
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "PRODUCTION NATIONALE ET AGRICULTURE",
+          "pages_pdf": [
+            158
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "15- PRODUCTION NATIONALE ET AGRICULTURE",
+          "pages_pdf": [
+            158
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-16-transparence-et-reddition-de-comptes",
+      "octets": {
+        "fichier": 15424,
+        "fichier_mobile": 10524
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "16",
+          "pages_pdf": [
+            165
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "TRANSPARENCE ET REDDITION DE COMPTES",
+          "pages_pdf": [
+            165
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "16-TRANSPARENCE ET REDDITION DE COMPTES",
+          "pages_pdf": [
+            165
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-17-secteur-prive",
+      "octets": {
+        "fichier": 11092,
+        "fichier_mobile": 7244
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "17",
+          "pages_pdf": [
+            172
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "SECTEUR PRIVÉ",
+          "pages_pdf": [
+            172
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "17- SECTEUR PRIVÉ",
+          "pages_pdf": [
+            172
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-18-energie",
+      "octets": {
+        "fichier": 9228,
+        "fichier_mobile": 5746
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "18",
+          "pages_pdf": [
+            178
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "ENERGIE",
+          "pages_pdf": [
+            178
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "18- ENERGIE",
+          "pages_pdf": [
+            178
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-19-mines",
+      "octets": {
+        "fichier": 10974,
+        "fichier_mobile": 6904
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "19",
+          "pages_pdf": [
+            185
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "MINES",
+          "pages_pdf": [
+            185
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "19-MINES",
+          "pages_pdf": [
+            185
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chantier-20-collectivites-territoriales",
+      "octets": {
+        "fichier": 13070,
+        "fichier_mobile": 8670
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "20",
+          "pages_pdf": [
+            193
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "COLLECTIVITÉS TERRITORIALES",
+          "pages_pdf": [
+            193
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "20 – COLLECTIVITÉS TERRITORIALES",
+          "pages_pdf": [
+            193
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-01-economie-emergente",
+      "octets": {
+        "fichier": 18270,
+        "fichier_mobile": 11518
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "l’année",
+          "pages_pdf": [
+            20
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "2054",
+          "pages_pdf": [
+            20
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "économie émergente",
+          "pages_pdf": [
+            20
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "En Avant propose dans son programme de repousser l’échéance à l’année 2054.",
+          "pages_pdf": [
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-02-personnes-vivant-en-dessous-du-seuil-de-pauvrete",
+      "octets": {
+        "fichier": 23402,
+        "fichier_mobile": 14620
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Réduire de",
+          "pages_pdf": [
+            61
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "20%",
+          "pages_pdf": [
+            61
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "personnes vivant en dessous du seuil de pauvreté",
+          "pages_pdf": [
+            61
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Réduire de 20% le nombre de personnes vivant en dessous du seuil de pauvreté suivant le normes dévaluation des nations-unies.",
+          "pages_pdf": [
+            61
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-03-linflation",
+      "octets": {
+        "fichier": 16196,
+        "fichier_mobile": 10078
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Ramener",
+          "pages_pdf": [
+            61
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "10%",
+          "pages_pdf": [
+            61
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "l’inflation",
+          "pages_pdf": [
+            61
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Ramener l’inflation à une moyenne de 10%",
+          "pages_pdf": [
+            61
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-04-couverture-sanitaire",
+      "octets": {
+        "fichier": 14732,
+        "fichier_mobile": 9266
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Viser",
+          "pages_pdf": [
+            89
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "100%",
+          "pages_pdf": [
+            89
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "couverture sanitaire",
+          "pages_pdf": [
+            89
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Viser Une couverture sanitaire à 100%",
+          "pages_pdf": [
+            89
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-05-budget-sante",
+      "octets": {
+        "fichier": 13220,
+        "fichier_mobile": 8198
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Augmenter",
+          "pages_pdf": [
+            92
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "15 %",
+          "pages_pdf": [
+            92
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "budget santé",
+          "pages_pdf": [
+            92
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Augmenter progressivement le pourcentage du budget santé à 15 % du budget National.",
+          "pages_pdf": [
+            92
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-06-couverture-forestiere-depart",
+      "octets": {
+        "fichier": 17012,
+        "fichier_mobile": 10672
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "de",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "1,5%",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "couverture forestière",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Faire passer la couverture forestière du pays de 1,5% à 5%",
+          "pages_pdf": [
+            106
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-07-couverture-forestiere",
+      "octets": {
+        "fichier": 16152,
+        "fichier_mobile": 9974
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "à",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "5%",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "couverture forestière",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Faire passer la couverture forestière du pays de 1,5% à 5%",
+          "pages_pdf": [
+            106
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-08-revenu-per-capita-rural",
+      "octets": {
+        "fichier": 18710,
+        "fichier_mobile": 11992
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Augmenter de",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "50%",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "revenu per capita rural",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Augmenter de 50% le revenu per capita rural.",
+          "pages_pdf": [
+            163
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-09-autosuffisance",
+      "octets": {
+        "fichier": 18388,
+        "fichier_mobile": 11652
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "atteindre un taux",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "60%",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "autosuffisance",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Réduire de 25% la dépendance alimentaire pour atteindre un taux d’autosuffisance de 60% à la fin du mandat présidentiel.",
+          "pages_pdf": [
+            163
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-chiffre-10-exportations-de-produits-agricoles",
+      "octets": {
+        "fichier": 21292,
+        "fichier_mobile": 13516
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Augmenter",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "100%",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "exportations de produits agricoles",
+          "pages_pdf": [
+            163
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Augmenter les exportations de produits agricoles de 100% sur les 5 prochaines années.",
+          "pages_pdf": [
+            163
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-carte-01-la-region-nord",
+      "octets": {
+        "fichier": 20322,
+        "fichier_mobile": 12990
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "La région Nord",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord-Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Artibonite",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Centre",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nippes",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Grande Anse",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "La région Nord - Le groupement des 5 départements du Nord-Ouest, du Nord, du Nord Est, de l’Artibonite et du Centre, articulés autour de la plaine de l’Artibonite.",
+          "pages_pdf": [
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-carte-02-la-region-sud",
+      "octets": {
+        "fichier": 19826,
+        "fichier_mobile": 12850
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "La région Sud",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord-Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Artibonite",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Centre",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nippes",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Grande Anse",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "La région Sud qui regroupe les quatre départements des Nippes, du Sud, de la Grande Anse et du Sud Est.",
+          "pages_pdf": [
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-carte-03-la-zone-metropolitaine",
+      "octets": {
+        "fichier": 20864,
+        "fichier_mobile": 13684
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "La zone métropolitaine",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord-Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Artibonite",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Centre",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nippes",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Grande Anse",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "La zone métropolitaine plus précisément le département de l’Ouest",
+          "pages_pdf": [
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-carte-04-artibonite",
+      "octets": {
+        "fichier": 19380,
+        "fichier_mobile": 12244
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Artibonite",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord-Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Artibonite",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Centre",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nippes",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Grande Anse",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "La région Nord - Le groupement des 5 départements du Nord-Ouest, du Nord, du Nord Est, de l’Artibonite et du Centre, articulés autour de la plaine de l’Artibonite.",
+          "pages_pdf": [
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-carte-05-centre",
+      "octets": {
+        "fichier": 18388,
+        "fichier_mobile": 11714
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Centre",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord-Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nord Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Artibonite",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Centre",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Nippes",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Grande Anse",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Sud Est",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "Ouest",
+          "pages_pdf": [
+            105
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "La région Nord - Le groupement des 5 départements du Nord-Ouest, du Nord, du Nord Est, de l’Artibonite et du Centre, articulés autour de la plaine de l’Artibonite.",
+          "pages_pdf": [
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-frise-01-energie",
+      "octets": {
+        "fichier": 14162,
+        "fichier_mobile": 9062
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "ENERGIE",
+          "pages_pdf": [
+            178
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "A court terme",
+          "pages_pdf": [
+            182
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "A moyen terme et long terme",
+          "pages_pdf": [
+            182
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "A court terme :",
+          "pages_pdf": [
+            182
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "A moyen terme et long terme, l’EDH devra entreprendre les actions suivantes :",
+          "pages_pdf": [
+            182
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-frise-02-justice",
+      "octets": {
+        "fichier": 11272,
+        "fichier_mobile": 7086
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "JUSTICE",
+          "pages_pdf": [
+            119
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "court terme",
+          "pages_pdf": [
+            123
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "long terme",
+          "pages_pdf": [
+            123,
+            125
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "des actions à court terme",
+          "pages_pdf": [
+            123
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "un effort parallèle de renforcement des capacités institutionnelles sur le long terme.",
+          "pages_pdf": [
+            123
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-frise-03-couverture-forestiere",
+      "octets": {
+        "fichier": 12366,
+        "fichier_mobile": 7630
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "couverture forestière",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "1,5%",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "5%",
+          "pages_pdf": [
+            106
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "Faire passer la couverture forestière du pays de 1,5% à 5%",
+          "pages_pdf": [
+            106
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-frise-04-lacces",
+      "octets": {
+        "fichier": 10242,
+        "fichier_mobile": 6136
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "l’accès",
+          "pages_pdf": [
+            182
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "12.5%",
+          "pages_pdf": [
+            182
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "25%",
+          "pages_pdf": [
+            182
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "de 100% l’accès, soit de 12.5% à 25%.",
+          "pages_pdf": [
+            182
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-frise-05-sante",
+      "octets": {
+        "fichier": 18836,
+        "fichier_mobile": 11756
+      },
+      "verification_source": [
+        {
+          "champ": "elements_visibles",
+          "texte": "Santé",
+          "pages_pdf": [
+            89
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "premiers soins de secours",
+          "pages_pdf": [
+            89
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "transfert des patients",
+          "pages_pdf": [
+            89
+          ]
+        },
+        {
+          "champ": "elements_visibles",
+          "texte": "l’échelle supérieure",
+          "pages_pdf": [
+            89
+          ]
+        },
+        {
+          "champ": "faits",
+          "texte": "facilitant les premiers soins de secours avant le transfert des patients à l’échelle supérieure",
+          "pages_pdf": [
+            89
+          ]
+        }
+      ]
+    }
+  ]
+}
