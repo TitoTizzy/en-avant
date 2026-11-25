@@ -94,6 +94,9 @@ test('Photos de départ : 20 photos dans « Photos d’En Avant », 5 légendes,
   assert.equal(rows.length, 20);
   assert.match(rows[0].url, /galerie-1\.webp$/, 'la photo 1 reste la plus récente (carrousel)');
   assert.equal(rows.filter((r) => r.caption).length, 5);
+  const { rows: album } = await db.query(`select url from media_gallery order by position, created_at`);
+  assert.match(album[0].url, /galerie-1\.webp$/, 'l’album commence par la photo 1');
+  assert.match(album[19].url, /galerie-20\.webp$/);
   const { rows: cover } = await db.query(`select g.url from media_albums a join media_gallery g on g.id = a.cover_id`);
   assert.match(cover[0].url, /galerie-1\.webp$/);
 });
