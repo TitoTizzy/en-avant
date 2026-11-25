@@ -542,6 +542,8 @@ test('Admin : indicateurs de l’accueil avec choix de la période et contenu é
   assert.match(js, /\/api\/admin\/stats\?kind=overview&periode=\$\{periode\}/);
   assert.match(js, /\$\{esc\(i\.label\)\}/, 'libellés des listes échappés');
   assert.doesNotMatch(js, /querySelectorAll\("\.kpi-period"\)/, 'sélecteur limité aux indicateurs de l’accueil');
+  assert.match(js, /const better = k\.inverse \? pct < 0 : pct > 0;/, 'baisse du délai affichée en vert');
+  assert.match(js, /format === "delai"/);
   dom.window.close();
 });
 

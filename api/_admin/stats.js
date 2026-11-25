@@ -211,7 +211,7 @@ async function overview(supabase, identity, days) {
   const safe = (p) => p.catch((error) => { console.warn('[stats]', error?.message); return null; });
   const { data: week } = await supabase.rpc('quiz_week_start', {});
   const [members, donations, leads, subscribers, optouts, deliveries, games, answers, chat, articles] = await Promise.all([
-    want('adhesions') || want('quiz') ? safe(since(supabase, 'members', 'status, pays, departement, created_at', 'created_at', null)) : null,
+    want('adhesions') || want('quiz') ? safe(since(supabase, 'members', 'status, pays, departement, created_at, decided_at', 'created_at', null)) : null,
     want('dons') ? safe(since(supabase, 'donations', 'montant, refunded_cents, devise, statut, frequence, pays, email, transaction_id, created_at', 'created_at', null)) : null,
     want('livre_blanc') ? safe(since(supabase, 'leads_livreblanc', 'ville, downloaded_at', 'downloaded_at', null)) : null,
     safe(since(supabase, 'newsletter_subscribers', 'created_at, unsubscribed_at', 'created_at', null)),

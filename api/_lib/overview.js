@@ -47,6 +47,24 @@ export function top(rows, keyOf, limit = 6) {
 
 const kpi = (label, value, previous, format = 'int', hint = '') => ({ label, value, previous, format, hint });
 
+/** Délai moyen (en heures) entre la demande et l'approbation, pour les approbations de la période. */
+export function delaiMoyen(rows, start, end) {
+  const d = rows
+    .filter((r) => r.status === 'approved' && r.decided_at && inRange(r.decided_at, start, end))
+    .map((r) => (ts(r.decided_at) - ts(r.created_at)) / 3600000)
+    .filter((h) => h >= 0);
+  return { n: d.length, heures: d.length ? Math.round((d.reduce((a, b) => a + b, 0) / d.length) * 10) / 10 : null };
+}
+const delaiKpi = (rows, from, now, prevFrom) => {
+  const cur = delaiMoyen(rows, from, now + 1);
+  const prev = delaiMoyen(rows, prevFrom, from);
+  return {
+    ...kpi('Délai moyen d’approbation', cur.heures, prev.heures, 'delai',
+      cur.n ? `${cur.n} approbation${cur.n > 1 ? 's' : ''} mesurée${cur.n > 1 ? 's' : ''}` : 'mesuré à partir des prochaines approbations'),
+    inverse: true,
+  };
+};
+
 /**
  * @param data lignes lues en base (voir api/_admin/stats.js)
  * @param opts { now, days, sections: noms autorisés pour la personne connectée }
@@ -72,6 +90,7 @@ export function buildOverview(data, { now = Date.now(), days = 30, sections = nu
         kpi('Approuvées (sur ces demandes)', c.filter((r) => r.status === 'approved').length, p.filter((r) => r.status === 'approved').length),
         kpi('En attente d’examen', m.filter((r) => r.status === 'pending').length, null, 'int', 'toutes périodes'),
         kpi('Taux d’approbation', decided.length ? Math.round((100 * c.filter((r) => r.status === 'approved').length) / decided.length) : null, null, 'pct', 'demandes déjà examinées'),
+        delaiKpi(m, from, now, prevFrom),
         kpi('Adhérents au total', approved.length, null, 'int', 'adhésions approuvées'),
       ],
       series: { label: 'Demandes d’adhésion', ...buckets(m, 'created_at', { now, days }) },
