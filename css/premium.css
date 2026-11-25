@@ -1354,3 +1354,43 @@ body.has-maint { padding-top: 36px; }
   .ga-tools .kpi-period { flex: 1; padding: .45rem .2rem; font-size: .72rem; }
   .ga-grid-2, .ga-grid-3 { grid-template-columns: 1fr; }
 }
+
+/* ---------- Galerie en albums (back-office) ---------- */
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.adm-album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; }
+.adm-album-card { display: flex; flex-direction: column; padding: 0 !important; overflow: hidden; text-align: left; cursor: pointer; color: inherit; font: inherit; border: 1px solid var(--line-1); transition: border-color .2s ease, transform .2s ease; }
+.adm-album-card:hover, .adm-album-card:focus-visible { border-color: rgba(255,138,76,.55); transform: translateY(-2px); }
+.adm-album-cover { display: grid; place-items: center; aspect-ratio: 4 / 3; font-size: 2rem; color: var(--ink-400); }
+.adm-album-info { display: flex; flex-direction: column; gap: .2rem; padding: .85rem 1rem 1rem; }
+.adm-album-info strong { color: var(--ink-100); font-size: .95rem; line-height: 1.3; }
+.adm-album-info small { color: var(--ink-400); font-size: .76rem; }
+.adm-album-hidden { font-style: normal; font-size: .72rem; color: #fbbf24; }
+.adm-album-fields { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 1rem; }
+.btn-danger-soft { color: #ff9a9a !important; border-color: rgba(255,120,120,.35) !important; margin-right: auto; }
+.btn-danger-soft:hover { background: rgba(255,120,120,.1) !important; }
+.adm-album-photos { display: block; margin-top: 1rem; }
+.adm-album-form { min-height: 0 !important; }
+.adm-album-card { align-items: stretch; justify-content: flex-start; margin: 0; }
+.adm-album-photos-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; margin-bottom: .8rem; }
+.adm-album-photos-head h4 { margin: 0; font-size: 1rem; color: var(--ink-100); }
+.adm-album-photos-head small { color: var(--ink-400); font-weight: 500; }
+.adm-upload-btn { cursor: pointer; }
+.adm-album-drop { display: flex; align-items: center; gap: .7rem; padding: 1rem 1.1rem; margin-bottom: 1rem; border: 1px dashed var(--line-2); border-radius: 12px; color: var(--ink-400); font-size: .85rem; transition: border-color .2s ease, background .2s ease; }
+.adm-album-drop i { font-size: 1.3rem; color: var(--orange-light); }
+.adm-album-drop.drag-over { border-color: var(--orange); background: rgba(255,106,42,.08); color: var(--ink-200); }
+.adm-upload-progress { margin-bottom: 1rem; }
+.adm-upload-bar { height: 6px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; }
+.adm-upload-bar span { display: block; height: 100%; width: 0; background: var(--grad-btn); transition: width .3s ease; }
+.adm-upload-progress p { margin: .4rem 0 0; font-size: .78rem; color: var(--ink-300); }
+.adm-album-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .9rem; }
+.adm-album-photo { margin: 0; border: 1px solid var(--line-1); border-radius: 12px; overflow: hidden; background: rgba(255,255,255,.02); }
+.adm-album-photo.is-cover { border-color: rgba(255,138,76,.6); }
+.adm-album-photo-img { aspect-ratio: 4 / 3; }
+.adm-cover-badge { position: absolute; top: .5rem; left: .5rem; z-index: 3; padding: .2rem .55rem; border-radius: 99px; background: rgba(6,10,19,.78); color: var(--peach); font-size: .68rem; font-weight: 800; }
+.adm-album-photo figcaption { display: flex; flex-direction: column; gap: .45rem; padding: .6rem; }
+.adm-photo-caption { width: 100%; padding: .45rem .6rem; border-radius: 8px; border: 1px solid var(--line-1); background: rgba(255,255,255,.04); color: var(--ink-100); font: inherit; font-size: .8rem; }
+.adm-photo-caption:focus { outline: none; border-color: var(--orange); }
+.adm-photo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.adm-photo-actions .photo-move { flex: 1 1 100%; order: -1; min-width: 0; font-size: .74rem; }
+.adm-photo-actions .photo-delete { margin-left: auto; }
+@media (max-width: 640px) { .adm-album-fields { grid-template-columns: 1fr; } .adm-album-photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

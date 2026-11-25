@@ -463,7 +463,8 @@ test('Accueil : classement du quiz flouté jusqu’à 10 joueurs, puis vrai top 
     const box = window.document.getElementById('home-leaderboard');
     assert.equal(box.classList.contains('is-live'), live);
     if (!live) {
-      assert.match(window.document.getElementById('home-lb-status').textContent, /3\/10/);
+      assert.equal(window.document.getElementById('home-lb-status').textContent, 'Classement global — s’ouvre bientôt');
+      assert.doesNotMatch(window.document.getElementById('home-lb-status').textContent, /\d/, 'aucun nombre de joueurs affiché');
     } else {
       const rows = [...box.querySelectorAll('.lb-lb-row')];
       assert.equal(rows.length, 2);
@@ -670,6 +671,88 @@ test('Article : « Autres articles » avec miniatures, sans l’article en cours
   const cover = doc.getElementById('art-cover');
   assert.ok(cover.classList.contains('photo-fill') && cover.querySelector('img.photo-blur') && doc.getElementById('art-cover-img').classList.contains('photo-main'), 'couverture entière');
   dom.window.close();
+});
+
+async function galerie(path, impl) {
+  const dom = await page('galerie.html', path);
+  dom.window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+  dom.window.fetch = impl;
+  dom.window.eval(await read('js/galerie.js'));
+  for (let i = 0; i < 20; i += 1) await settle();
+  return dom;
+}
+
+test('Galerie : liste des albums (couverture entière, titres échappés), lien vers chaque album', async () => {
+  const dom = await galerie('/galerie', async (url) => (String(url).includes('albums=1')
+    ? response(200, { albums: [
+      { slug: 'cap', titre: 'Cap <b>2026</b>', description: 'Rassemblement', date_album: '2026-11-20', nb_photos: 12, cover_url: 'https://cdn.test/cap.webp' },
+      { slug: 'miami', titre: 'Miami', description: '', date_album: null, nb_photos: 1, cover_url: 'https://cdn.test/m.jpg' },
+    ] }) : response(404, {})));
+  const doc = dom.window.document;
+  const cards = [...doc.querySelectorAll('.gal-album')];
+  assert.equal(cards.length, 2);
+  assert.match(cards[0].getAttribute('href'), /^\/galerie\?album=cap$/);
+  assert.equal(cards[0].querySelector('strong').textContent, 'Cap <b>2026</b>');
+  assert.equal(cards[0].querySelector('strong b'), null);
+  assert.ok(cards[0].querySelector('.gal-album-cover.photo-fill img.photo-main[src="https://cdn.test/cap.webp"]'));
+  assert.match(cards[0].textContent, /12 photos/);
+  assert.match(cards[1].textContent, /1 photo\b/);
+  dom.window.close();
+});
+
+test('Galerie : un album, visionneuse plein écran (flèches, Échap, focus rendu)', async () => {
+  const photos = [{ id: '1', url: 'https://cdn.test/1.jpg', caption: 'Accueil <i>des</i> militants' }, { id: '2', url: 'https://cdn.test/2.jpg', caption: null }, { id: '3', url: 'https://cdn.test/3.jpg', caption: 'Discours' }];
+  const dom = await galerie('/galerie?album=cap', async (url) => (String(url).includes('album=cap')
+    ? response(200, { album: { slug: 'cap', titre: 'Cap-Haïtien', description: 'Grand rassemblement', date_album: '2026-11-20', nb_photos: 3 }, photos })
+    : response(404, {})));
+  const { window } = dom; const doc = window.document;
+  assert.equal(doc.querySelector('[data-gal-title]').textContent, 'Cap-Haïtien');
+  assert.equal(doc.querySelector('[data-gal-crumbs]').hidden, false);
+  assert.match(doc.title, /^Cap-Haïtien — Galerie photos/);
+  assert.match(doc.querySelector('link[rel="canonical"]').href, /galerie\?album=cap$/);
+  const tiles = [...doc.querySelectorAll('.gal-photo')];
+  assert.equal(tiles.length, 3);
+  assert.equal(tiles[0].querySelector('.gal-photo-cap').textContent, 'Accueil <i>des</i> militants');
+  tiles[1].click();
+  const viewer = doc.querySelector('[data-gal-viewer]');
+  assert.equal(viewer.hidden, false);
+  assert.equal(doc.querySelector('[data-gal-img]').getAttribute('src'), 'https://cdn.test/2.jpg');
+  assert.equal(doc.querySelector('[data-gal-count]').textContent, '2 / 3');
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight' }));
+  assert.equal(doc.querySelector('[data-gal-caption]').textContent, 'Discours');
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight' }));
+  assert.equal(doc.querySelector('[data-gal-count]').textContent, '1 / 3', 'revient au début');
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  assert.equal(viewer.hidden, true);
+  assert.equal(doc.activeElement, tiles[1], 'le focus revient sur la photo ouverte');
+  dom.window.close();
+});
+
+test('Galerie : album introuvable, panne et galerie vide ont des messages clairs', async () => {
+  let dom = await galerie('/galerie?album=nope', async () => response(404, { error: 'Album introuvable.' }));
+  assert.equal(dom.window.document.querySelector('[data-gal-title]').textContent, 'Album introuvable');
+  dom.window.close();
+  dom = await galerie('/galerie', async () => { throw new Error('réseau'); });
+  assert.match(dom.window.document.querySelector('[data-gal-root]').textContent, /n’a pas pu être chargée/);
+  dom.window.close();
+  dom = await galerie('/galerie', async () => response(200, { albums: [] }));
+  assert.match(dom.window.document.querySelector('[data-gal-root]').textContent, /Aucun album/);
+  dom.window.close();
+});
+
+test('Galerie : lien depuis l’accueil, menu, pied de page et plan du site', async () => {
+  const home = new JSDOM(await read('index.html')).window.document;
+  const more = home.querySelector('#galerie .gallery-more a');
+  assert.equal(more.getAttribute('href'), '/galerie');
+  assert.match(more.textContent, /Voir plus d’albums photos/);
+  for (const file of ['index.html', 'blog.html', 'galerie.html', 'a-propos/identite.html']) {
+    const doc = new JSDOM(await read(file)).window.document;
+    assert.ok(doc.querySelector('#main-nav a[href="/galerie"]'), `menu de ${file}`);
+    assert.ok(doc.querySelector('footer a[href="/galerie"]'), `pied de page de ${file}`);
+  }
+  const gal = new JSDOM(await read('galerie.html')).window.document;
+  assert.equal(gal.querySelector('#main-nav a[href="/galerie"]').getAttribute('aria-current'), 'page');
+  assert.match(await read('api/articles.js'), /\['\/galerie', '0\.7', 'weekly'\]/);
 });
 
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {

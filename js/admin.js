@@ -2626,152 +2626,275 @@
   }
 
 
-  let galleryCache = [];
+  /* ═══════════════════ GALERIE EN ALBUMS ═══════════════════ */
+  const gallery = { albums: [], media: [], current: null };
+  const fmtAlbumDate = (d) => (d ? new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "");
+  const photosOf = (albumId) => gallery.media.filter((m) => m.album_id === albumId);
 
-  function galleryCard(item) {
-    const card = document.createElement("article");
-    card.className = "u-card adm-media-card adm-gallery-card";
-    card.dataset.id = item.id;
-    card.innerHTML = `
-      <img src="${esc(item.url)}" alt="${esc(item.caption || "")}">
-      <div class="adm-gallery-card-body">
-        <p>${esc(item.caption || "Sans légende")}</p>
-        <div class="adm-record-actions">
-          <button class="btn btn-primary btn-xs gallery-edit" type="button">
-            <i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier
-          </button>
-          <button class="btn btn-ghost btn-xs gallery-delete" type="button">
-            <i class="fa-solid fa-trash" aria-hidden="true"></i> Supprimer
-          </button>
-        </div>
-      </div>`;
-    return card;
+  /** Réduit une photo (2000 px max, WebP ou JPEG) pour rester bien sous 3 Mo. */
+  async function compressPhoto(file) {
+    const MAX = 2000;
+    const LIMIT = 2.8 * 1024 * 1024;
+    const bitmap = await createImageBitmap(file).catch(() => null);
+    if (!bitmap) {
+      if (file.size <= LIMIT && /image\/(jpeg|png|webp)/.test(file.type)) return file;
+      throw new Error(`« ${file.name} » n’est pas une image lisible.`);
+    }
+    const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    for (const [type, q] of [["image/webp", 0.86], ["image/jpeg", 0.85], ["image/jpeg", 0.72], ["image/jpeg", 0.6]]) {
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, type, q));
+      if (blob && blob.type === type && blob.size <= LIMIT) return blob;
+    }
+    throw new Error(`« ${file.name} » reste trop lourde même allégée.`);
   }
+  const blobToBase64 = (blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
+    reader.readAsDataURL(blob);
+  });
 
   async function loadGallery() {
     const host = document.getElementById("gallery-admin");
     if (!host) return;
     try {
       const payload = await api("/api/admin/media");
-      galleryCache = payload.media || [];
-      host.innerHTML = "";
-      if (!galleryCache.length) {
-        host.innerHTML = '<div class="u-card adm-empty">Aucune photo enregistrée.</div>';
-        return;
-      }
-      galleryCache.forEach((item) => host.appendChild(galleryCard(item)));
+      gallery.albums = payload.albums || [];
+      gallery.media = payload.media || [];
+      renderAlbumList();
+      if (gallery.current && !document.getElementById("gallery-album-view").hidden) renderAlbumPhotos();
     } catch (error) {
       host.innerHTML = `<div class="u-card adm-empty">${esc(error.message)}</div>`;
     }
   }
 
-  function showGalleryList() {
-    document.getElementById("gallery-list-view").hidden = false;
-    document.getElementById("gallery-editor-view").hidden = true;
-    setModuleStatus("gallery-editor-status", "", "");
+  function renderAlbumList() {
+    const host = document.getElementById("gallery-admin");
+    if (!gallery.albums.length) {
+      host.innerHTML = '<div class="u-card adm-empty">Aucun album pour le moment. Créez-en un avec « Nouvel album ».</div>';
+      return;
+    }
+    host.innerHTML = gallery.albums.map((a) => {
+      const photos = photosOf(a.id);
+      const cover = photos.find((p) => p.id === a.cover_id) || photos[0];
+      return `<button type="button" class="u-card adm-album-card" data-album="${esc(a.id)}">
+        <span class="adm-album-cover photo-fill">${cover
+          ? `<img class="photo-blur" src="${esc(cover.url)}" alt="" aria-hidden="true" loading="lazy"><img class="photo-main" src="${esc(cover.url)}" alt="" loading="lazy">`
+          : '<i class="fa-regular fa-images" aria-hidden="true"></i>'}</span>
+        <span class="adm-album-info"><strong>${esc(a.titre)}</strong>
+          <small>${[fmtAlbumDate(a.date_album), `${photos.length} photo${photos.length > 1 ? "s" : ""}`].filter(Boolean).map(esc).join(" · ")}</small>
+          ${photos.length ? "" : '<em class="adm-album-hidden">Vide : invisible sur le site</em>'}</span>
+      </button>`;
+    }).join("");
   }
 
-  function openGalleryEditor(mediaId = "") {
-    const item = mediaId ? galleryCache.find((media) => media.id === mediaId) : null;
-    const form = document.getElementById("gallery-editor-form");
-    if (!form) return;
-    form.reset();
-    document.getElementById("gallery-id").value = item?.id || "";
-    document.getElementById("gallery-caption").value = item?.caption || "";
-    document.getElementById("gallery-editor-title").textContent = item ? "Modifier la photo" : "Ajouter une photo";
-    document.getElementById("gallery-editor-subtitle").textContent = item
-      ? "Modifiez la légende de cette photo."
-      : "JPG, PNG ou WebP, 3 Mo maximum.";
-    document.getElementById("gallery-save-label").textContent = item ? "Enregistrer les modifications" : "Ajouter la photo";
-    document.getElementById("gallery-image-field").hidden = Boolean(item);
-    const preview = document.getElementById("gallery-image-preview");
-    preview.src = item?.url || "";
-    preview.hidden = !item?.url;
+  function showGalleryList() {
+    gallery.current = null;
+    document.getElementById("gallery-list-view").hidden = false;
+    document.getElementById("gallery-album-view").hidden = true;
+    ["album-form-status", "album-photos-status"].forEach((id) => setModuleStatus(id, "", ""));
+  }
+
+  function openAlbum(albumId = "") {
+    const album = albumId ? gallery.albums.find((a) => a.id === albumId) : null;
+    gallery.current = album?.id || null;
+    document.getElementById("album-id").value = album?.id || "";
+    document.getElementById("album-titre").value = album?.titre || "";
+    document.getElementById("album-date").value = album?.date_album || "";
+    document.getElementById("album-description").value = album?.description || "";
+    document.getElementById("album-view-title").textContent = album ? album.titre : "Nouvel album";
+    document.getElementById("album-view-subtitle").textContent = album
+      ? "Modifiez les informations de l’album, ajoutez ou organisez ses photos."
+      : "Donnez un titre à l’album, puis ajoutez vos photos.";
+    document.getElementById("album-save-label").textContent = album ? "Enregistrer" : "Créer l’album";
+    document.getElementById("album-delete").hidden = !album;
+    document.getElementById("album-photos-box").hidden = !album;
+    const link = document.getElementById("album-public-link");
+    link.hidden = !album;
+    if (album) link.href = `/galerie?album=${encodeURIComponent(album.slug)}`;
+    ["album-form-status", "album-photos-status"].forEach((id) => setModuleStatus(id, "", ""));
     document.getElementById("gallery-list-view").hidden = true;
-    document.getElementById("gallery-editor-view").hidden = false;
-    (item ? document.getElementById("gallery-caption") : document.getElementById("gallery-image")).focus();
+    document.getElementById("gallery-album-view").hidden = false;
+    if (album) renderAlbumPhotos();
+    document.getElementById("album-titre").focus();
+  }
+
+  function renderAlbumPhotos() {
+    const album = gallery.albums.find((a) => a.id === gallery.current);
+    const host = document.getElementById("album-photos");
+    if (!album || !host) return;
+    const photos = photosOf(album.id);
+    const coverId = album.cover_id || photos[0]?.id;
+    document.getElementById("album-photo-count").textContent = `(${photos.length})`;
+    const others = gallery.albums.filter((a) => a.id !== album.id);
+    host.innerHTML = photos.length ? photos.map((p) => `
+      <figure class="adm-album-photo${p.id === coverId ? " is-cover" : ""}" data-photo="${esc(p.id)}">
+        <div class="adm-album-photo-img photo-fill"><img class="photo-blur" src="${esc(p.url)}" alt="" aria-hidden="true" loading="lazy"><img class="photo-main" src="${esc(p.url)}" alt="${esc(p.caption || "")}" loading="lazy">
+          ${p.id === coverId ? '<span class="adm-cover-badge"><i class="fa-solid fa-star" aria-hidden="true"></i> Couverture</span>' : ""}</div>
+        <figcaption>
+          <input class="adm-photo-caption" value="${esc(p.caption || "")}" maxlength="180" placeholder="Ajouter une légende…" aria-label="Légende de la photo">
+          <div class="adm-photo-actions">
+            ${p.id === coverId ? "" : '<button type="button" class="btn btn-ghost btn-xs photo-cover" title="Utiliser comme couverture"><i class="fa-regular fa-star" aria-hidden="true"></i> Couverture</button>'}
+            ${others.length ? `<select class="ea-select-sm photo-move" aria-label="Déplacer vers un autre album"><option value="">Déplacer vers…</option>${others.map((o) => `<option value="${esc(o.id)}">${esc(o.titre)}</option>`).join("")}</select>` : ""}
+            <button type="button" class="btn btn-ghost btn-xs photo-delete" title="Supprimer la photo"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+          </div>
+        </figcaption>
+      </figure>`).join("") : '<p class="adm-empty">Aucune photo dans cet album pour le moment.</p>';
+  }
+
+  async function uploadPhotos(files) {
+    const albumId = gallery.current;
+    if (!albumId || !files.length) return;
+    const list = [...files].filter((f) => f.type.startsWith("image/"));
+    const box = document.getElementById("album-upload-progress");
+    const bar = document.getElementById("album-upload-bar");
+    const text = document.getElementById("album-upload-text");
+    box.hidden = false;
+    const errors = [];
+    let ok = 0;
+    for (const [i, file] of list.entries()) {
+      text.textContent = `Envoi ${i + 1} sur ${list.length} : ${file.name}`;
+      bar.style.width = `${Math.round((i / list.length) * 100)}%`;
+      try {
+        const blob = await compressPhoto(file);
+        const ext = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }[blob.type] || "jpg";
+        const payload = await api("/api/admin/media", {
+          method: "POST",
+          body: JSON.stringify({ album_id: albumId, image_base64: await blobToBase64(blob), image_ext: ext }),
+        });
+        gallery.media.push(payload.media);
+        const album = gallery.albums.find((a) => a.id === albumId);
+        if (album && !album.cover_id) album.cover_id = payload.media.id;
+        ok += 1;
+        renderAlbumPhotos();
+      } catch (error) {
+        errors.push(`${file.name} : ${error.message}`);
+      }
+    }
+    bar.style.width = "100%";
+    text.textContent = `${ok} photo${ok > 1 ? "s" : ""} ajoutée${ok > 1 ? "s" : ""}.`;
+    setTimeout(() => { box.hidden = true; bar.style.width = "0"; }, 2500);
+    setModuleStatus("album-photos-status", errors.length ? "error" : "success",
+      errors.length ? `${ok} envoyée(s), ${errors.length} échec(s) : ${errors.join(" ; ")}` : `${ok} photo(s) ajoutée(s) à l’album.`);
+    renderAlbumList();
   }
 
   function bindGallery() {
-    const form = document.getElementById("gallery-editor-form");
     const host = document.getElementById("gallery-admin");
-    const imageInput = document.getElementById("gallery-image");
-    if (!form || !host || !imageInput) return;
+    const form = document.getElementById("album-form");
+    const files = document.getElementById("album-files");
+    const drop = document.getElementById("album-drop");
+    const photos = document.getElementById("album-photos");
+    if (!host || !form) return;
 
-    document.getElementById("gallery-new-button")?.addEventListener("click", () => openGalleryEditor());
-    document.getElementById("gallery-editor-back")?.addEventListener("click", showGalleryList);
-    document.getElementById("gallery-editor-cancel")?.addEventListener("click", showGalleryList);
-    imageInput.addEventListener("change", () => {
-      const file = imageInput.files?.[0];
-      if (!file) return;
-      const preview = document.getElementById("gallery-image-preview");
-      preview.src = URL.createObjectURL(file);
-      preview.hidden = false;
+    document.getElementById("album-new-button")?.addEventListener("click", () => openAlbum());
+    document.getElementById("album-back")?.addEventListener("click", showGalleryList);
+    host.addEventListener("click", (event) => {
+      const card = event.target.closest("[data-album]");
+      if (card) openAlbum(card.dataset.album);
     });
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const button = document.getElementById("gallery-save-submit");
-      const id = document.getElementById("gallery-id").value;
+      const button = document.getElementById("album-save");
+      const id = document.getElementById("album-id").value;
+      const fields = {
+        titre: document.getElementById("album-titre").value,
+        date_album: document.getElementById("album-date").value || null,
+        description: document.getElementById("album-description").value,
+      };
       button.classList.add("btn-loading");
       try {
-        if (id) {
-          await api("/api/admin/media", {
-            method: "PATCH",
-            body: JSON.stringify({
-              id,
-              caption: document.getElementById("gallery-caption").value,
-            }),
-          });
-        } else {
-          const file = imageInput.files?.[0];
-          const ext = file && { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[file.type];
-          if (!file || !ext || file.size > 3 * 1024 * 1024) {
-            throw new Error("Sélectionnez une image JPG, PNG ou WebP de 3 Mo maximum.");
-          }
-          const dataUrl = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result));
-            reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
-            reader.readAsDataURL(file);
-          });
-          await api("/api/admin/media", {
-            method: "POST",
-            body: JSON.stringify({
-              caption: document.getElementById("gallery-caption").value,
-              image_base64: dataUrl.split(",")[1],
-              image_ext: ext,
-            }),
-          });
-        }
+        const payload = await api("/api/admin/media", {
+          method: id ? "PATCH" : "POST",
+          body: JSON.stringify({ action: "album", ...(id ? { id } : {}), ...fields }),
+        });
         await loadGallery();
-        showGalleryList();
-        setModuleStatus("gallery-status", "success", id ? "Photo modifiée." : "Photo ajoutée.");
+        openAlbum(payload.album.id);
+        setModuleStatus("album-form-status", "success", id ? "Album enregistré." : "Album créé. Ajoutez maintenant vos photos.");
       } catch (error) {
-        setModuleStatus("gallery-editor-status", "error", error.message);
+        setModuleStatus("album-form-status", "error", error.message);
       } finally {
         button.classList.remove("btn-loading");
       }
     });
 
-    host.addEventListener("click", async (event) => {
-      const card = event.target.closest(".adm-gallery-card");
-      if (!card) return;
-      if (event.target.closest(".gallery-edit")) {
-        openGalleryEditor(card.dataset.id);
-        return;
-      }
-      if (!event.target.closest(".gallery-delete")) return;
-      if (!window.confirm("Supprimer définitivement cette photo ?")) return;
+    document.getElementById("album-delete")?.addEventListener("click", async () => {
+      const album = gallery.albums.find((a) => a.id === gallery.current);
+      if (!album) return;
+      const n = photosOf(album.id).length;
+      const message = n
+        ? `Supprimer l’album « ${album.titre} » ET ses ${n} photo(s) ? Cette action est définitive.\n\nPour garder les photos, déplacez-les d’abord vers un autre album.`
+        : `Supprimer l’album vide « ${album.titre} » ?`;
+      if (!window.confirm(message)) return;
       try {
-        await api("/api/admin/media", {
-          method: "DELETE",
-          body: JSON.stringify({ id: card.dataset.id }),
-        });
+        await api("/api/admin/media", { method: "DELETE", body: JSON.stringify({ action: "album", id: album.id, avec_photos: n > 0 }) });
         await loadGallery();
-        setModuleStatus("gallery-status", "success", "Photo supprimée.");
+        showGalleryList();
+        setModuleStatus("gallery-status", "success", `Album « ${album.titre} » supprimé.`);
       } catch (error) {
-        setModuleStatus("gallery-status", "error", error.message);
+        setModuleStatus("album-form-status", "error", error.message);
+      }
+    });
+
+    files?.addEventListener("change", async () => {
+      await uploadPhotos(files.files || []);
+      files.value = "";
+    });
+    drop?.addEventListener("dragover", (event) => { event.preventDefault(); drop.classList.add("drag-over"); });
+    drop?.addEventListener("dragleave", () => drop.classList.remove("drag-over"));
+    drop?.addEventListener("drop", (event) => {
+      event.preventDefault();
+      drop.classList.remove("drag-over");
+      uploadPhotos(event.dataTransfer?.files || []);
+    });
+
+    photos?.addEventListener("change", async (event) => {
+      const fig = event.target.closest("[data-photo]");
+      if (!fig) return;
+      const id = fig.dataset.photo;
+      try {
+        if (event.target.matches(".photo-move") && event.target.value) {
+          const dest = gallery.albums.find((a) => a.id === event.target.value);
+          await api("/api/admin/media", { method: "PATCH", body: JSON.stringify({ id, album_id: dest.id }) });
+          await loadGallery();
+          setModuleStatus("album-photos-status", "success", `Photo déplacée vers « ${dest.titre} ».`);
+        } else if (event.target.matches(".adm-photo-caption")) {
+          await api("/api/admin/media", { method: "PATCH", body: JSON.stringify({ id, caption: event.target.value }) });
+          const item = gallery.media.find((m) => m.id === id);
+          if (item) item.caption = event.target.value.trim() || null;
+          setModuleStatus("album-photos-status", "success", "Légende enregistrée.");
+        }
+      } catch (error) {
+        setModuleStatus("album-photos-status", "error", error.message);
+      }
+    });
+
+    photos?.addEventListener("click", async (event) => {
+      const fig = event.target.closest("[data-photo]");
+      if (!fig) return;
+      const id = fig.dataset.photo;
+      try {
+        if (event.target.closest(".photo-cover")) {
+          await api("/api/admin/media", { method: "PATCH", body: JSON.stringify({ action: "album", id: gallery.current, cover_id: id }) });
+          const album = gallery.albums.find((a) => a.id === gallery.current);
+          if (album) album.cover_id = id;
+          renderAlbumPhotos();
+          renderAlbumList();
+          setModuleStatus("album-photos-status", "success", "Nouvelle photo de couverture.");
+        } else if (event.target.closest(".photo-delete")) {
+          if (!window.confirm("Supprimer définitivement cette photo ?")) return;
+          await api("/api/admin/media", { method: "DELETE", body: JSON.stringify({ id }) });
+          await loadGallery();
+          setModuleStatus("album-photos-status", "success", "Photo supprimée.");
+        }
+      } catch (error) {
+        setModuleStatus("album-photos-status", "error", error.message);
       }
     });
   }
