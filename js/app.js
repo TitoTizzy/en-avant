@@ -353,7 +353,7 @@ function initSlider() {
       const status = document.getElementById("home-lb-status");
       if (!data.actif || !data.top.length) {
         if (status) {
-          status.textContent = `Classement global — s’ouvre à ${data.seuil} joueurs (${data.joueurs}/${data.seuil})`;
+          status.textContent = "Classement global — s’ouvre bientôt";
           const bar = document.createElement("div");
           bar.className = "lb-lb-progress";
           bar.innerHTML = `<span style="width:${Math.min(100, Math.round((data.joueurs / data.seuil) * 100))}%"></span>`;

@@ -11,6 +11,7 @@ const STATIC_PAGES = [
   ['/livre-blanc', '0.9', 'monthly'],
   ['/adherer', '0.9', 'monthly'],
   ['/blog', '0.8', 'daily'],
+  ['/galerie', '0.7', 'weekly'],
   ['/Apropos', '0.7', 'monthly'],
   ['/historique', '0.6', 'yearly'],
   ['/organisation', '0.6', 'monthly'],

@@ -67,6 +67,7 @@ export const NAV = [
   { label: 'Accueil', href: '/index.html', file: 'index.html' },
   ...RUBRIQUES.slice(0, 4),
   { label: 'Blog', href: '/blog.html', file: 'blog.html' },
+  { label: 'Galerie', href: '/galerie', file: 'galerie.html' },
   { label: 'Livre blanc', href: '/livre-blanc.html', file: 'livre-blanc.html' },
 ];
 

@@ -1061,52 +1061,84 @@
 
       <!-- ════════════════════ GALERIE ════════════════════════════════ -->
       <section class="adm-panel" id="panel-gallery" hidden>
+        <!-- Liste des albums -->
         <div id="gallery-list-view">
           <div class="adm-articles-heading">
             <div>
               <h3>Galerie photo</h3>
-              <p>Gérez les photos visibles sur le site public.</p>
+              <p>Vos albums : ils apparaissent sur la page Galerie du site. Les photos les plus récentes défilent aussi sur l’accueil.</p>
             </div>
-            <button type="button" class="btn btn-primary" id="gallery-new-button">
-              <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter une photo
+            <button type="button" class="btn btn-primary" id="album-new-button">
+              <i class="fa-solid fa-folder-plus" aria-hidden="true"></i> Nouvel album
             </button>
           </div>
-          <div id="gallery-admin" class="adm-media-grid">
+          <div id="gallery-admin" class="adm-album-grid">
             <p class="adm-loading">Chargement de la galerie…</p>
           </div>
           <div class="ea-form-status" id="gallery-status" role="status" aria-live="polite"></div>
         </div>
 
-        <div id="gallery-editor-view" hidden>
+        <!-- Un album : informations + photos -->
+        <div id="gallery-album-view" hidden>
           <div class="adm-articles-heading">
             <div>
-              <button class="adm-back-button" type="button" id="gallery-editor-back">
-                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour à la galerie
+              <button class="adm-back-button" type="button" id="album-back">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Tous les albums
               </button>
-              <h3 id="gallery-editor-title">Ajouter une photo</h3>
-              <p id="gallery-editor-subtitle">JPG, PNG ou WebP, 3 Mo maximum.</p>
+              <h3 id="album-view-title">Nouvel album</h3>
+              <p id="album-view-subtitle">Donnez un titre à l’album, puis ajoutez vos photos.</p>
             </div>
+            <a class="btn btn-ghost btn-xs" id="album-public-link" href="/galerie" target="_blank" rel="noopener" hidden>
+              <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Voir sur le site
+            </a>
           </div>
-          <form class="u-card adm-article-editor" id="gallery-editor-form" novalidate>
-            <input type="hidden" id="gallery-id">
-            <div class="ea-field" id="gallery-image-field">
-              <label for="gallery-image">Fichier image</label>
-              <input id="gallery-image" type="file" accept="image/jpeg,image/png,image/webp">
+
+          <form class="u-card adm-article-editor adm-album-form" id="album-form" novalidate>
+            <input type="hidden" id="album-id">
+            <div class="adm-album-fields">
+              <div class="ea-field">
+                <label for="album-titre">Titre de l’album</label>
+                <input id="album-titre" maxlength="120" required placeholder="Ex. Rassemblement au Cap-Haïtien">
+              </div>
+              <div class="ea-field">
+                <label for="album-date">Date <small>(facultatif)</small></label>
+                <input id="album-date" type="date">
+              </div>
             </div>
-            <img loading="lazy" decoding="async" id="gallery-image-preview" class="adm-article-editor-cover" alt="" hidden>
             <div class="ea-field">
-              <label for="gallery-caption">Légende</label>
-              <input id="gallery-caption" maxlength="180" placeholder="Présence, proximité, mobilisation">
+              <label for="album-description">Description <small>(facultatif)</small></label>
+              <textarea id="album-description" maxlength="600" rows="2" placeholder="Quelques mots sur l’événement…"></textarea>
             </div>
             <div class="adm-editor-actions">
-              <button class="btn btn-ghost" type="button" id="gallery-editor-cancel">Annuler</button>
-              <button class="btn btn-primary" type="submit" id="gallery-save-submit">
-                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
-                <span id="gallery-save-label">Ajouter la photo</span>
+              <button class="btn btn-ghost btn-danger-soft" type="button" id="album-delete" hidden>
+                <i class="fa-solid fa-trash" aria-hidden="true"></i> Supprimer l’album
+              </button>
+              <button class="btn btn-primary" type="submit" id="album-save">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> <span id="album-save-label">Créer l’album</span>
               </button>
             </div>
-            <div class="ea-form-status" id="gallery-editor-status" role="status" aria-live="polite"></div>
+            <div class="ea-form-status" id="album-form-status" role="status" aria-live="polite"></div>
           </form>
+
+          <div class="u-card adm-album-photos" id="album-photos-box" hidden>
+            <div class="adm-album-photos-head">
+              <h4>Photos de l’album <small id="album-photo-count"></small></h4>
+              <label class="btn btn-primary adm-upload-btn" for="album-files">
+                <i class="fa-solid fa-images" aria-hidden="true"></i> Ajouter des photos
+              </label>
+              <input id="album-files" type="file" accept="image/jpeg,image/png,image/webp" multiple class="sr-only">
+            </div>
+            <div class="adm-album-drop" id="album-drop">
+              <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+              Glissez vos photos ici, ou utilisez « Ajouter des photos ». Vous pouvez en choisir plusieurs d’un coup : elles sont allégées automatiquement.
+            </div>
+            <div class="adm-upload-progress" id="album-upload-progress" hidden>
+              <div class="adm-upload-bar"><span id="album-upload-bar"></span></div>
+              <p id="album-upload-text"></p>
+            </div>
+            <div id="album-photos" class="adm-album-photo-grid"></div>
+            <div class="ea-form-status" id="album-photos-status" role="status" aria-live="polite"></div>
+          </div>
         </div>
       </section>
 

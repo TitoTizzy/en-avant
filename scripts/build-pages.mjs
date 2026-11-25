@@ -191,8 +191,13 @@ function applyNav(html, file) {
 
 /** Pied de page : lien vers les candidats et la diaspora sous « Découvrir ». */
 function applyFooter(html) {
-  if (html.includes('href="/organisation/candidats"')) return html;
-  return html.replace(/(<li><a href="\/organisation(?:\.html)?">[^<]*<\/a><\/li>)/, `$1\n          <li><a href="/organisation/candidats">Nos candidats</a></li>\n          <li><a href="/organisation/diaspora">Diaspora et branches extérieures</a></li>`);
+  if (!html.includes('href="/organisation/candidats"')) {
+    html = html.replace(/(<li><a href="\/organisation(?:\.html)?">[^<]*<\/a><\/li>)/, `$1\n          <li><a href="/organisation/candidats">Nos candidats</a></li>\n          <li><a href="/organisation/diaspora">Diaspora et branches extérieures</a></li>`);
+  }
+  if (!html.includes('href="/galerie">Voir la galerie photos')) {
+    html = html.replace(/(<li><a href="\/blog(?:\.html)?">Suivre l'actualité<\/a><\/li>)/, `$1\n          <li><a href="/galerie">Voir la galerie photos</a></li>`);
+  }
+  return html;
 }
 
 const TEMPLATE = read('organisation.html');
