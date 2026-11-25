@@ -1,6 +1,7 @@
 -- Photos de départ de la Galerie : les 20 photos du site (pictures/home-galerie), rangées dans
 -- l'album « Photos d'En Avant ». Les 5 premières gardent les légendes de l'accueil et restent
--- les plus récentes (donc celles du carrousel). Réexécutable sans doublon.
+-- les plus récentes (donc celles du carrousel). Dans l'album, elles s'affichent de 1 à 20
+-- (position négative : les photos ajoutées ensuite, position 0, viennent après). Réexécutable sans doublon.
 -- Supprimer une de ces photos depuis le back-office la retire de la galerie sans toucher au fichier du site.
 do $$
 declare v_album uuid;
@@ -10,8 +11,8 @@ begin
   on conflict (slug) do nothing;
   select id into v_album from public.media_albums where slug = 'photos-d-en-avant';
 
-  insert into public.media_gallery (url, caption, type, album_id, created_at)
-  select v.url, v.caption, 'photo', v_album, v.created_at
+  insert into public.media_gallery (url, caption, type, album_id, created_at, position)
+  select v.url, v.caption, 'photo', v_album, v.created_at, (substring(v.url from 'galerie-([0-9]+)\.webp$'))::int - 21
   from (values
     ('https://enavant.org/pictures/home-galerie/galerie-1.webp', 'Présence, proximité, mobilisation', now() - interval '1 minutes'),
     ('https://enavant.org/pictures/home-galerie/galerie-2.webp', 'Dialoguer avec les forces vives du pays', now() - interval '2 minutes'),
