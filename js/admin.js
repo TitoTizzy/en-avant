@@ -598,6 +598,12 @@
     if (v === null || v === undefined) return "—";
     if (format === "money") return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: v >= 100 ? 0 : 2 }).format(v);
     if (format === "pct") return `${v} %`;
+    if (format === "delai") {
+      if (v < 1) return `${Math.max(1, Math.round(v * 60))} min`;
+      if (v < 48) return `${Math.round(v)} h`;
+      const j = Math.floor(v / 24); const h = Math.round(v % 24);
+      return h ? `${j} j ${h} h` : `${j} j`;
+    }
     return new Intl.NumberFormat("fr-FR").format(v);
   };
   function kpiDelta(k) {
@@ -605,7 +611,9 @@
     if (!k.previous && !k.value) return '<span class="kpi-delta kpi-delta--flat">= stable</span>';
     if (!k.previous) return '<span class="kpi-delta kpi-delta--up">nouveau</span>';
     const pct = Math.round(((k.value - k.previous) / k.previous) * 100);
-    const cls = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+    // Vert = bonne évolution : une hausse, sauf pour les indicateurs où « moins = mieux » (k.inverse).
+    const better = k.inverse ? pct < 0 : pct > 0;
+    const cls = pct === 0 ? "flat" : better ? "up" : "down";
     const arrow = pct > 0 ? "▲" : pct < 0 ? "▼" : "=";
     return `<span class="kpi-delta kpi-delta--${cls}" title="Période précédente : ${esc(fmtKpi(k.previous, k.format))}">${arrow} ${Math.abs(pct)} %</span>`;
   }
@@ -675,7 +683,6 @@
   function gaTile(k) {
     const value = k.format === "duree" ? fmtDuree(k.value) : fmtKpi(k.value, k.format);
     let delta = kpiDelta({ ...k, format: k.format === "duree" ? "int" : k.format });
-    if (k.inverse && delta) delta = delta.replace("kpi-delta--up", "kpi-delta--TMP").replace("kpi-delta--down", "kpi-delta--up").replace("kpi-delta--TMP", "kpi-delta--down");
     if (k.format === "duree" && k.previous != null) delta = delta.replace(/title="[^"]*"/, `title="Période précédente : ${esc(fmtDuree(k.previous))}"`);
     return `<div class="kpi-tile"><span class="kpi-label">${esc(k.label)}</span><strong class="kpi-value">${esc(value)}</strong>
       <span class="kpi-foot">${delta}${k.hint ? `<small>${esc(k.hint)}</small>` : ""}</span></div>`;
