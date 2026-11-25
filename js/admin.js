@@ -2638,6 +2638,9 @@
     const bitmap = await createImageBitmap(file).catch(() => null);
     if (!bitmap) {
       if (file.size <= LIMIT && /image\/(jpeg|png|webp)/.test(file.type)) return file;
+      if (/heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name)) {
+        throw new Error(`« ${file.name} » est au format HEIC (iPhone), que ce navigateur ne sait pas lire. Envoyez-la depuis l’iPhone, ou convertissez-la en JPG.`);
+      }
       throw new Error(`« ${file.name} » n’est pas une image lisible.`);
     }
     const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
@@ -2747,10 +2750,41 @@
       </figure>`).join("") : '<p class="adm-empty">Aucune photo dans cet album pour le moment.</p>';
   }
 
+  /** Crée l'album à partir du formulaire s'il n'existe pas encore (photos ajoutées avant « Créer l'album »). */
+  async function ensureAlbumForUpload() {
+    if (gallery.current) return gallery.current;
+    const titre = document.getElementById("album-titre").value.trim();
+    if (titre.length < 2) {
+      setModuleStatus("album-photos-status", "error", "Donnez d’abord un titre à l’album (en haut), puis ajoutez vos photos.");
+      document.getElementById("album-titre").focus();
+      return null;
+    }
+    const payload = await api("/api/admin/media", {
+      method: "POST",
+      body: JSON.stringify({
+        action: "album", titre,
+        date_album: document.getElementById("album-date").value || null,
+        description: document.getElementById("album-description").value,
+      }),
+    });
+    await loadGallery();
+    openAlbum(payload.album.id);
+    setModuleStatus("album-form-status", "success", "Album créé.");
+    return payload.album.id;
+  }
+
   async function uploadPhotos(files) {
-    const albumId = gallery.current;
-    if (!albumId || !files.length) return;
-    const list = [...files].filter((f) => f.type.startsWith("image/"));
+    const list = [...files].filter((f) => f.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+    if (!list.length) {
+      setModuleStatus("album-photos-status", "error", "Aucune image reconnue : choisissez des photos JPG, PNG ou WebP.");
+      return;
+    }
+    let albumId;
+    try { albumId = await ensureAlbumForUpload(); } catch (error) {
+      setModuleStatus("album-photos-status", "error", error.message);
+      return;
+    }
+    if (!albumId) return;
     const box = document.getElementById("album-upload-progress");
     const bar = document.getElementById("album-upload-bar");
     const text = document.getElementById("album-upload-text");

@@ -755,6 +755,17 @@ test('Galerie : lien depuis l’accueil, menu, pied de page et plan du site', as
   assert.match(await read('api/articles.js'), /\['\/galerie', '0\.7', 'weekly'\]/);
 });
 
+test('Galerie (back-office) : zone photos masquée tant que l’album n’existe pas, jamais d’envoi silencieux', async () => {
+  const css = await read('css/premium.css');
+  assert.match(css, /#panel-gallery \[hidden\] \{ display: none !important; \}/);
+  const doc = new JSDOM(await read('admin.html')).window.document;
+  assert.ok(doc.getElementById('album-photos-box').hidden, 'zone photos cachée par défaut');
+  assert.ok(doc.getElementById('album-delete').hidden);
+  const js = await read('js/admin.js');
+  assert.match(js, /async function ensureAlbumForUpload\(\)/, 'album créé automatiquement si des photos arrivent avant « Créer l’album »');
+  assert.doesNotMatch(js, /if \(!albumId \|\| !files\.length\) return;/, 'plus de sortie silencieuse');
+});
+
 test('Serveur local : URLs propres, dispatchers et fichiers internes protégés', async t => {
   const reservation = createServer();
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
