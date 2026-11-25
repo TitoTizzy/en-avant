@@ -99,18 +99,30 @@ function initMobileMenu() {
 /* Photo d'article : on crée TOUJOURS une image neuve (jamais de srcset/sizes hérités du HTML,
    qui l'emporteraient sur src et afficheraient une autre photo). Repli si l'image manque ou casse. */
 const NEWS_FALLBACK_IMG = "/pictures/foule-Assise-800.webp";
-function newsImage(url, alt, { eager = false } = {}) {
-  const img = document.createElement("img");
-  img.decoding = "async";
-  img.loading = eager ? "eager" : "lazy";
-  img.alt = alt || "";
-  img.src = url || NEWS_FALLBACK_IMG;
-  img.addEventListener("error", () => {
-    if (img.dataset.fallback) return;
-    img.dataset.fallback = "1";
-    img.src = NEWS_FALLBACK_IMG;
+/* Photo ENTIÈRE (jamais rognée) : l'image nette est affichée en « contain » et l'espace
+   restant est comblé par la même photo floutée et assombrie (classe .photo-fill).
+   Renvoie [fond flou, photo nette] à placer dans un conteneur .photo-fill. */
+function newsPhoto(url, alt, { eager = false } = {}) {
+  const make = (cls) => {
+    const img = document.createElement("img");
+    img.className = cls;
+    img.decoding = "async";
+    img.loading = eager ? "eager" : "lazy";
+    img.src = url || NEWS_FALLBACK_IMG;
+    return img;
+  };
+  const blur = make("photo-blur");
+  blur.alt = "";
+  blur.setAttribute("aria-hidden", "true");
+  const main = make("photo-main");
+  main.alt = alt || "";
+  main.addEventListener("error", () => {
+    if (main.dataset.fallback) return;
+    main.dataset.fallback = "1";
+    main.src = NEWS_FALLBACK_IMG;
+    blur.src = NEWS_FALLBACK_IMG;
   });
-  return img;
+  return [blur, main];
 }
 
 async function hydrateNews() {
@@ -163,7 +175,8 @@ async function hydrateNews() {
     const media = featureCard.querySelector(".feature-media");
     media.href = hrefOf(a);
     media.querySelectorAll("img, .news-skel").forEach((el) => el.remove());
-    media.prepend(newsImage(a.image_url, a.titre, { eager: true }));
+    media.classList.add("photo-fill");
+    media.prepend(...newsPhoto(a.image_url, a.titre, { eager: true }));
     const badge = media.querySelector(".feature-badge");
     if (badge) { badge.textContent = catOf(a); badge.hidden = false; }
     const meta = featureCard.querySelector(".meta-row");
@@ -185,8 +198,8 @@ async function hydrateNews() {
       card.className = "news-item";
       card.href = hrefOf(a);
       const thumb = document.createElement("div");
-      thumb.className = "news-thumb";
-      thumb.appendChild(newsImage(a.image_url, ""));
+      thumb.className = "news-thumb photo-fill";
+      thumb.append(...newsPhoto(a.image_url, ""));
       const body = document.createElement("div");
       body.className = "news-item-body";
       const meta = document.createElement("span");

@@ -606,6 +606,13 @@ test('Accueil : chaque article montre SA photo (aucun srcset hérité), miniatur
   assert.equal(items[1].querySelector('h4 b'), null, 'titres affichés comme texte');
   assert.deepEqual(items.map((i) => i.querySelector('.news-thumb img').getAttribute('src')), ['https://cdn.test/deux.jpg', '/pictures/foule-Assise-800.webp', 'https://cdn.test/quatre.png']);
   assert.equal(doc.querySelectorAll('.news-skel').length, 0, 'squelettes retirés');
+  for (const box of doc.querySelectorAll('.u-news .feature-media, .u-news .news-thumb')) {
+    assert.ok(box.classList.contains('photo-fill'), 'photo affichée en entier');
+    assert.ok(box.querySelector('img.photo-main') && box.querySelector('img.photo-blur[aria-hidden="true"]'));
+    assert.equal(box.querySelector('img.photo-blur').alt, '', 'le fond flou est ignoré par les lecteurs d’écran');
+  }
+  const css = await read('css/ultra.css');
+  assert.match(css, /\.photo-fill > img\.photo-main \{[^}]*object-fit: contain !important/, 'photos jamais rognées');
   assert.doesNotMatch(doc.querySelector('.u-news').textContent, FAUX_ARTICLES);
   dom.window.close();
 });
@@ -659,6 +666,9 @@ test('Article : « Autres articles » avec miniatures, sans l’article en cours
   assert.ok(!others.some((a) => /slug=une$/.test(a.href)), 'l’article lu n’est pas proposé');
   assert.ok(others.every((a) => a.querySelector('.art-other-thumb img')?.getAttribute('src')), 'chaque article a sa miniature');
   assert.equal(doc.querySelector('.art-aside h4').textContent, 'Autres articles');
+  assert.ok(others.every((a) => a.querySelector('.art-other-thumb.photo-fill img.photo-main')));
+  const cover = doc.getElementById('art-cover');
+  assert.ok(cover.classList.contains('photo-fill') && cover.querySelector('img.photo-blur') && doc.getElementById('art-cover-img').classList.contains('photo-main'), 'couverture entière');
   dom.window.close();
 });
 

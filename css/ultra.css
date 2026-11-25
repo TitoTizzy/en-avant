@@ -4681,3 +4681,32 @@ select option:checked { background-color: #ff6a2a; color: #fff; }
 .art-others-all { display: inline-block; margin-top: 1rem; font-size: .88rem; font-weight: 700; color: var(--orange-light); }
 .blog-status { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .8rem; padding: 3rem 0; margin: 0; color: var(--ink-400); text-align: center; }
 .blog-pagination[hidden], .u-news [hidden], .art-others[hidden] { display: none !important; }
+
+/* ----------------------------------------------------------------------------
+   PHOTOS D'ARTICLES ENTIÈRES (jamais rognées)
+   .photo-main : la photo complète (contain) ; .photo-blur : la même photo, floutée
+   et assombrie, qui comble l'espace autour. Utilisé à la une, dans les miniatures,
+   les cartes du blog et la couverture de la page article.
+---------------------------------------------------------------------------- */
+.photo-fill { position: relative; overflow: hidden; background: #0b1322; isolation: isolate; }
+.photo-fill > img.photo-blur {
+  position: absolute; inset: -12%; width: 124%; height: 124%; max-width: none; max-height: none;
+  object-fit: cover; filter: blur(18px) brightness(.5) saturate(1.15); transform: none !important;
+  z-index: 0; pointer-events: none;
+}
+.photo-fill > img.photo-main {
+  position: relative; z-index: 1; display: block; width: 100%; height: 100%;
+  object-fit: contain !important; filter: none; transform: none !important;
+}
+.photo-fill::after { z-index: 2; }
+.photo-fill .feature-badge, .photo-fill .card-badge { z-index: 3; }
+/* Pas de zoom au survol : la photo resterait rognée */
+.feature-card:hover .photo-fill img, .news-item:hover .photo-fill img, .premium-blog-card:hover .photo-fill img { transform: none !important; }
+
+/* À la une : cadre 16:9 (au lieu d'une bande de 380 px) pour montrer la photo en grand */
+.feature-media.photo-fill { height: auto; aspect-ratio: 16 / 9; max-height: 460px; }
+.feature-media.photo-fill::after { background: linear-gradient(180deg, rgba(4, 7, 13, 0.35), transparent 30%); }
+/* Couverture de l'article */
+.art-cover.photo-fill > img.photo-main { max-height: 520px; height: auto; margin-inline: auto; width: auto; max-width: 100%; }
+.art-cover.photo-fill { display: flex; justify-content: center; }
+.art-cover.photo-fill[hidden] { display: none; }

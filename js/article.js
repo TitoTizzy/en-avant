@@ -96,8 +96,16 @@
     readingEl.textContent = `${Math.max(1, Math.round(words / 200))} min de lecture`;
 
     if (article.image_url) {
+      // Couverture affichée en entier, fond flou de la même photo autour.
+      const [blur] = fullPhoto(article.image_url, "");
+      blur.loading = "eager";
+      coverEl.querySelector(".photo-blur")?.remove();
+      coverEl.classList.add("photo-fill");
+      coverImg.classList.add("photo-main");
+      coverImg.loading = "eager";
       coverImg.src = article.image_url;
       coverImg.alt = article.titre;
+      coverEl.prepend(blur);
       coverEl.hidden = false;
     }
 
@@ -106,6 +114,24 @@
 
   /* Autres articles : miniature + date + titre, sans l'article en cours de lecture.
      Image toujours créée neuve (aucun srcset hérité), avec repli si elle manque. */
+  /* Photo ENTIÈRE : nette en « contain », fond comblé par la même photo floutée (.photo-fill). */
+  const FALLBACK_IMG = "/pictures/foule-Assise-800.webp";
+  function fullPhoto(url, alt) {
+    const make = (cls) => {
+      const img = document.createElement("img");
+      img.className = cls; img.loading = "lazy"; img.decoding = "async";
+      img.src = url || FALLBACK_IMG;
+      return img;
+    };
+    const blur = make("photo-blur"); blur.alt = ""; blur.setAttribute("aria-hidden", "true");
+    const main = make("photo-main"); main.alt = alt || "";
+    main.addEventListener("error", () => {
+      if (main.dataset.fallback) return;
+      main.dataset.fallback = "1"; main.src = FALLBACK_IMG; blur.src = FALLBACK_IMG;
+    });
+    return [blur, main];
+  }
+
   async function loadRecent(currentSlug) {
     let items = [];
     try {
@@ -123,12 +149,8 @@
       link.className = "art-other";
       link.href = `/article-details.html?slug=${encodeURIComponent(a.slug)}`;
       const thumb = document.createElement("div");
-      thumb.className = "art-other-thumb";
-      const img = document.createElement("img");
-      img.loading = "lazy"; img.decoding = "async"; img.alt = "";
-      img.src = a.image_url || "/pictures/foule-Assise-800.webp";
-      img.addEventListener("error", () => { if (!img.dataset.fallback) { img.dataset.fallback = "1"; img.src = "/pictures/foule-Assise-800.webp"; } });
-      thumb.appendChild(img);
+      thumb.className = "art-other-thumb photo-fill";
+      thumb.append(...fullPhoto(a.image_url, ""));
       const body = document.createElement("div");
       body.className = "art-other-body";
       const date = document.createElement("small");
