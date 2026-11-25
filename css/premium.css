@@ -1394,3 +1394,5 @@ body.has-maint { padding-top: 36px; }
 .adm-photo-actions .photo-move { flex: 1 1 100%; order: -1; min-width: 0; font-size: .74rem; }
 .adm-photo-actions .photo-delete { margin-left: auto; }
 @media (max-width: 640px) { .adm-album-fields { grid-template-columns: 1fr; } .adm-album-photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Les éléments masqués de la Galerie restent masqués, quel que soit leur style (.btn, .u-card…). */
+#panel-gallery [hidden] { display: none !important; }
