@@ -68,9 +68,9 @@
     art.dataset.title    = titre || "";
 
     art.innerHTML = `
-      <div class="card-image-box">
+      <div class="card-image-box${image_url ? " photo-fill" : ""}">
         ${image_url
-          ? `<img src="${esc(image_url)}" alt="${esc(titre)}" loading="lazy">`
+          ? `<img class="photo-blur" src="${esc(image_url)}" alt="" aria-hidden="true" loading="lazy"><img class="photo-main" src="${esc(image_url)}" alt="${esc(titre)}" loading="lazy">`
           : `<div class="card-image-placeholder" aria-hidden="true"><i class="fa-solid fa-newspaper"></i></div>`
         }
         <span class="card-badge">${esc(cat)}</span>
